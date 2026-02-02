@@ -1,0 +1,22 @@
+func grum(int a, int b) -> int {
+    int c = a + b;
+    float d = c + 30.25;
+    return c;
+}
+
+int c = 0;
+if (a == b) {
+    c = a | b;
+} else {
+    c = a & b;
+}
+
+while (a || b == c && d) {
+    string str = "Henlo Fren :D";
+}
+
+int a = 10;
+int b = 30;
+float c = grum(a, b);
+
+print(c);
