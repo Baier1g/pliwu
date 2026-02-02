@@ -2,90 +2,92 @@
 %{
     #include <stdlib.h>
     #include <string.h>
-    #include "token.h"
     unsigned short line_number = 1;
     long current_character = 1;
     int size = 1000;
-    int token_index = 0;
-    token** tokens;
 
-    extern token* create_token(long, unsigned short, enum TokenType, char*, void*, size_t);
-    extern void print_token(token*);
-    int increment_counter(char*);
+    int increment_counter(int);
 %}
 
-LEFT_PAR    \(
-RIGHT_PAR   \)
-LEFT_BRACE  \{
-RIGHT_BRACE \}
-COMMA       \,
-DIGIT       [0-9]
-INTEGER     {DIGIT}+
-FLOAT       {INTEGER}\.{INTEGER}
-IDENTIFIER  [a-zA-Z]([a-zA-Z0-9]*)
-KEYWORD     if|else|while|for|func|return
-TYPE        int|char|string|float|bool
-OPERATOR    \+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&|\&|\|
-STRING      \"(.*)\"
+SINGLE_LINE_COMMENT \/\/(.*)
+/* HØJ LEVEL GØGL */
+MULTI_LINE_COMMENT  \/\*((.*\n*)*)\*\\
+LEFT_PAR            \(
+RIGHT_PAR           \)
+LEFT_BRACE          \{
+RIGHT_BRACE         \}
+COMMA               \,
+DIGIT               [0-9]
+INTEGER             {DIGIT}+
+FLOAT               {INTEGER}\.{INTEGER}
+IDENTIFIER          [a-zA-Z]([a-zA-Z0-9]*)
+KEYWORD             if|else|while|for|func|return
+TYPE                int|char|string|float|bool
+OPERATOR            (\+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&|\&|\|)
+STRING              \"(.*\n*)*\"
 
 
 
 /***RULES***/
 %%
+{SINGLE_LINE_COMMENT} {
+    printf("%s single line comment\n", yytext);
+    increment_counter(yyleng);
+}
+
+{MULTI_LINE_COMMENT} {
+    printf("%s multi line comment\n", yytext);
+    increment_counter(yyleng);
+}
+
 {LEFT_PAR} {
-    printf("%d", LEFT_PARENTHESES);
-    tokens[token_index] = create_token(current_character, line_number, LEFT_PARENTHESES, yytext, NULL, 0);
-    print_token(*(tokens + token_index++));
-    current_character++; 
+    printf("%s left parentheses\n", yytext);
+    increment_counter(yyleng); 
 }
 
 {RIGHT_PAR} {
-    *(tokens + token_index) = create_token(current_character, line_number, RIGHT_PARENTHESES, yytext, NULL, 0); 
-    print_token(*(tokens + token_index++));
-    current_character++;
+    printf("%s right parentheses\n", yytext);
+    increment_counter(yyleng);
 }
 
 {LEFT_BRACE} {
-    *(tokens + token_index) = create_token(current_character, line_number, LEFT_BRACE, yytext, NULL, 0); 
-    print_token(*(tokens + token_index++));
-    current_character++;
+    printf("%s left brace\n", yytext);
+    increment_counter(yyleng);
 }
 
 {RIGHT_BRACE} {
-    *(tokens + token_index) = create_token(current_character, line_number, RIGHT_BRACE, yytext, NULL, 0); 
-    print_token(*(tokens + token_index++));
-    current_character++;
+    printf("%s right brace\n", yytext);
+    increment_counter(yyleng);
 }
 
 {COMMA} {
-    *(tokens + token_index) = create_token(current_character, line_number, COMMA, yytext, NULL, 0); 
-    print_token(*(tokens + token_index++));
-    current_character++;
+    printf("%s comma\n", yytext);
+    increment_counter(yyleng);
 }
 
 {INTEGER} {
     printf("%s integer\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 {KEYWORD} {
     printf("%s keyword\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 {FLOAT} {
     printf("%s float\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 {TYPE} {
     printf("%s type\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 {IDENTIFIER} {
     printf("%s identifier\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 = {
@@ -95,12 +97,12 @@ STRING      \"(.*)\"
 
 {OPERATOR} {
     printf("%s operator\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 {STRING} {
     printf("%s string\n", yytext);
-    increment_counter(yytext);
+    increment_counter(yyleng);
 }
 
 ; {
@@ -127,16 +129,12 @@ STRING      \"(.*)\"
 /***yywrap idk bro***/
 int yywrap(void){}
 
-int increment_counter(char* str) {
-    current_character += strlen(str);
+int increment_counter(int len) {
+    current_character += len;
 }
 
 /***main functions, reads files and processes contents***/
 int main(int argc, char** argv)  {   
-    tokens = malloc(sizeof(struct token*) * size);
-    if (!tokens) {
-        return -1;
-    }
 
     FILE *fp;
     char *filename = argv[1];
@@ -148,11 +146,7 @@ int main(int argc, char** argv)  {
     yyin = fp;
 
     yylex();
-    printf("\nNumber of lines in the file - %ud\n", line_number);
+    printf("\nNumber of lines in the file - %u\n", line_number);
     printf("\nNumber of characters in the file - %ld\n", current_character);
-    for (int i = 0; i < token_index; i++) {
-        free(*(tokens + i));
-    }
-    free(tokens);
     return 0;
 }
