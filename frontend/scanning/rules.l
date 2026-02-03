@@ -9,9 +9,9 @@
     int increment_counter(int);
 %}
 
+COMMENT_START       \/\*
+COMMENT_END         \*\/
 SINGLE_LINE_COMMENT \/\/(.*)
-/* HØJ LEVEL GØGL */
-MULTI_LINE_COMMENT  \/\*((.*\n*)*)\*\\
 LEFT_PAR            \(
 RIGHT_PAR           \)
 LEFT_BRACE          \{
@@ -20,107 +20,132 @@ COMMA               \,
 DIGIT               [0-9]
 INTEGER             {DIGIT}+
 FLOAT               {INTEGER}\.{INTEGER}
-IDENTIFIER          [a-zA-Z]([a-zA-Z0-9]*)
+IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
 KEYWORD             if|else|while|for|func|return
 TYPE                int|char|string|float|bool
 OPERATOR            (\+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&|\&|\|)
-STRING              \"(.*\n*)*\"
+WHITESPACES         [\t\r ]+
 
 
-
+%s STR COMMENT
 /***RULES***/
 %%
-{SINGLE_LINE_COMMENT} {
+<INITIAL>{COMMENT_START} {
+    increment_counter(yyleng);
+    BEGIN(COMMENT);
+}
+
+<COMMENT>{COMMENT_END} {
+    increment_counter(yyleng);
+    BEGIN(INITIAL);
+}
+
+<INITIAL>\" {
+    increment_counter(yyleng);
+    BEGIN(STR);
+}
+
+<STR>"\"" {
+    increment_counter(yyleng);
+    BEGIN(INITIAL);
+}
+
+<INITIAL>{SINGLE_LINE_COMMENT} {
     printf("%s single line comment\n", yytext);
     increment_counter(yyleng);
 }
 
-{MULTI_LINE_COMMENT} {
+<COMMENT>.* {
     printf("%s multi line comment\n", yytext);
     increment_counter(yyleng);
 }
 
-{LEFT_PAR} {
+<INITIAL>{LEFT_PAR} {
     printf("%s left parentheses\n", yytext);
     increment_counter(yyleng); 
 }
 
-{RIGHT_PAR} {
+<INITIAL>{RIGHT_PAR} {
     printf("%s right parentheses\n", yytext);
     increment_counter(yyleng);
 }
 
-{LEFT_BRACE} {
+<INITIAL>{LEFT_BRACE} {
     printf("%s left brace\n", yytext);
     increment_counter(yyleng);
 }
 
-{RIGHT_BRACE} {
+<INITIAL>{RIGHT_BRACE} {
     printf("%s right brace\n", yytext);
     increment_counter(yyleng);
 }
 
-{COMMA} {
+<INITIAL>{COMMA} {
     printf("%s comma\n", yytext);
     increment_counter(yyleng);
 }
 
-{INTEGER} {
+<INITIAL>{INTEGER} {
     printf("%s integer\n", yytext);
     increment_counter(yyleng);
 }
 
-{KEYWORD} {
+<INITIAL>{KEYWORD} {
     printf("%s keyword\n", yytext);
     increment_counter(yyleng);
 }
 
-{FLOAT} {
+<INITIAL>{FLOAT} {
     printf("%s float\n", yytext);
     increment_counter(yyleng);
 }
 
-{TYPE} {
+<INITIAL>{TYPE} {
     printf("%s type\n", yytext);
     increment_counter(yyleng);
 }
 
-{IDENTIFIER} {
+<INITIAL>{IDENTIFIER} {
     printf("%s identifier\n", yytext);
     increment_counter(yyleng);
 }
 
-= {
+<INITIAL>= {
     printf("%s assign\n", yytext);
-    current_character++;
+    increment_counter(yyleng);
 }
 
-{OPERATOR} {
+<INITIAL>{OPERATOR} {
     printf("%s operator\n", yytext);
     increment_counter(yyleng);
 }
 
-{STRING} {
+<STR>.*(^\") {
     printf("%s string\n", yytext);
     increment_counter(yyleng);
 }
 
-; {
+<INITIAL>";" {
     printf("%s semicolon\n", yytext);
-    current_character++;
+    increment_counter(yyleng);
 }
 
-\n    {
+<INITIAL,COMMENT,STR>"\n"    {
     line_number++;
-    current_character++;
+    increment_counter(yyleng);
+}
+
+<INITIAL>{WHITESPACES} {
+    printf("%s whitespace\n", yytext); 
+    increment_counter(yyleng);
 }
 
 <<EOF>> {
-    printf("%s EOF", yytext);
+    printf("%s EOF\n", yytext);
     return 0; 
 }
 
-.     { current_character++; }
+<INITIAL>.     { printf("%s report errors, bruv\n", yytext); increment_counter(yyleng); }
 
 %%
 

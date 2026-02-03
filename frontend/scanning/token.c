@@ -13,7 +13,7 @@ token* create_token(long count, unsigned short line, enum TokenType type, char *
     tok->line = line;
     tok->type = type;
 
-    tok->lexeme = malloc(sizeof(char *) * strlen(lexeme));
+    tok->lexeme = malloc(sizeof(char*) * strlen(lexeme));
     if (!tok->lexeme) {
         free(tok);
         return NULL;
