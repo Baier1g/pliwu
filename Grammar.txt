@@ -5,7 +5,9 @@ varDecl := type "id =" expr ";"
 type := "int"|"char"|"string"|"bool"|...
 
 funcDecl := "func id(" args ") ->" type "{" stmt* "}"
-args := (type "id"("," type "id")*)*
+args := (type "id" ("," type "id")*)*
+call := "id(" params ")"
+params := "id"|expr|
 
-exprStmt := expr 
+exprStmt := expr|call
 
