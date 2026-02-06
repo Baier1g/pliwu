@@ -26,7 +26,7 @@
 /* LONGER TOKENS */
 %token T_RETURN
 %token T_ELSE
-%token T_INT T_CHAR T_BOOL
+%token T_INT T_CHAR T_BOOL T_VOID
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
@@ -37,12 +37,16 @@
 %%
 program:
     %empty
-|   program declaration
+|   program module
+;
+
+module:
+    funcDefinition
+|   declaration
 ;
 
 declaration:
     varDeclaration
-|   funcDeclaration
 |   statement
 ;
 
@@ -56,7 +60,7 @@ type:
 |   T_BOOL_TYPE
 ;
 
-funcDeclaration:
+funcDefinition:
     T_FUNCTION function;
 
 function:
@@ -74,8 +78,8 @@ functionCall:
 
 args:
     %empty
-|   args primary
-|   args binaryExpression
+|   primary
+|   binaryExpression
 |   args T_COMMA primary
 |   args T_COMMA binaryExpression
 ;
@@ -120,13 +124,11 @@ expression:
 |   unaryExpression
 ;
 
-
-
 binaryExpression:
-    expression '+' primary
-|   expression '-' primary
-|   expression '*' primary
-|   expression '/' primary
+    binaryExpression '+' primary
+|   binaryExpression '-' primary
+|   binaryExpression '*' primary
+|   binaryExpression '/' primary
 |   expression T_LESS_EQ primary
 |   expression T_GREATER_EQ primary
 |   expression T_EQUALS primary

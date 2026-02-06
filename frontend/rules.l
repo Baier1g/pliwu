@@ -21,13 +21,13 @@ DIGIT               [0-9]
 INTEGER             {DIGIT}+
 FLOAT               {INTEGER}\.{INTEGER}
 IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
-KEYWORD             if|else|while|for|func|return
-TYPE                int|char|string|float|bool
+KEYWORD             if|else|func|return
+TYPE                int|char|bool
 OPERATOR            (\+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&|\&|\|)
 WHITESPACES         [\t\r ]+
 
 
-%s STR COMMENT
+%s COMMENT
 /***RULES***/
 %%
 <INITIAL>{COMMENT_START} {
@@ -36,16 +36,6 @@ WHITESPACES         [\t\r ]+
 }
 
 <COMMENT>{COMMENT_END} {
-    increment_counter(yyleng);
-    BEGIN(INITIAL);
-}
-
-<INITIAL>\" {
-    increment_counter(yyleng);
-    BEGIN(STR);
-}
-
-<STR>"\"" {
     increment_counter(yyleng);
     BEGIN(INITIAL);
 }
@@ -120,17 +110,12 @@ WHITESPACES         [\t\r ]+
     increment_counter(yyleng);
 }
 
-<STR>.*(^\") {
-    printf("%s string\n", yytext);
-    increment_counter(yyleng);
-}
-
 <INITIAL>";" {
     printf("%s semicolon\n", yytext);
     increment_counter(yyleng);
 }
 
-<INITIAL,COMMENT,STR>"\n"    {
+<INITIAL,COMMENT>"\n"    {
     line_number++;
     increment_counter(yyleng);
 }

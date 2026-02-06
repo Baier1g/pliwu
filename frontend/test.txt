@@ -1,7 +1,7 @@
 // This function does complicated arithmetic :O
 func grum_func(int a, int b) -> int {
     int c = a + b;
-    float d = c + 30.25;
+    int d = c + 30.25;
     return c;
 }
 
@@ -18,13 +18,6 @@ if (a == b) {
 }
 
 
-while (a || b == c && d) {
-    string str = "Henlo
-    Fren :D";
-}
-
 int a = 10;
 int b = 30;
-float c = grum(a, b);
-
-print(c);
+int c = grum(a, b);
