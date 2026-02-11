@@ -1,7 +1,7 @@
 /***DEFINITIONS***/
 %{
     #include <stdlib.h>
-    #include <string.h>
+    #include "grammar.tab.h"
     unsigned short line_number = 1;
     long current_character = 1;
     int size = 1000;
@@ -23,11 +23,12 @@ FLOAT               {INTEGER}\.{INTEGER}
 IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
 KEYWORD             if|else|func|return
 TYPE                int|char|bool
-OPERATOR            (\+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&|\&|\|)
+OPERATOR            (\+|\-|\*|\/|\-\>|==|\!=|\!|\|\||\&\&)
+CHARACTER           (.|\n)
 WHITESPACES         [\t\r ]+
 
 
-%s COMMENT
+%s STR COMMENT
 /***RULES***/
 %%
 <INITIAL>{COMMENT_START} {
@@ -38,6 +39,21 @@ WHITESPACES         [\t\r ]+
 <COMMENT>{COMMENT_END} {
     increment_counter(yyleng);
     BEGIN(INITIAL);
+}
+
+<INITIAL>\" {;
+    increment_counter(yyleng);
+    BEGIN(STR);
+}
+
+<STR>\" {
+    increment_counter(yyleng);
+    BEGIN(INITIAL);
+}
+
+<STR>{CHARACTER} {
+    printf("%s character\n", yytext);
+    increment_counter(yyleng);
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
@@ -144,8 +160,7 @@ int increment_counter(int len) {
 }
 
 /***main functions, reads files and processes contents***/
-int main(int argc, char** argv)  {   
-
+int main(int argc, char** argv) {   
     FILE *fp;
     char *filename = argv[1];
 

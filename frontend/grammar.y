@@ -1,7 +1,8 @@
 /* PROLOGUE */
 %{
     #include <stdlib.h>
-
+    extern int yylex(void);
+    void yyerror(char const*);
 %}
 
 /* DECLARATIONS */
@@ -13,15 +14,16 @@
 %token T_COMMA
 %token T_ASSIGN
 %token ';'
-%left  '|' '&'
 %left  '+' '-'
 %left  '*' '/'
+%left  '<' '>'
+%right '!'
 
 /* DOUBLE CHARACTER TOKENS */
 %token T_IF
 %token T_ARROW
 %token T_OR T_AND
-%left  T_LESS_EQ T_GREATER_EQ T_EQUALS
+%left  T_LESS_EQ T_GREATER_EQ T_EQUALS T_NEQUALS
 
 /* LONGER TOKENS */
 %token T_RETURN
@@ -58,6 +60,7 @@ type:
     T_INT_TYPE
 |   T_CHAR_TYPE
 |   T_BOOL_TYPE
+|   T_VOID
 ;
 
 funcDefinition:
@@ -72,16 +75,10 @@ parameters:
 |   parameters T_COMMA type T_IDENTIFIER
 ;
 
-functionCall:
-    T_IDENTIFIER T_LEFT_PAREN args T_RIGHT_PAREN
-;
-
 args:
     %empty
-|   primary
-|   binaryExpression
-|   args T_COMMA primary
-|   args T_COMMA binaryExpression
+|   assignExpression
+|   args T_COMMA assignExpression
 ;
 
 statement:
@@ -117,28 +114,67 @@ expressionStatement:
 ;
 
 expression:
-    primary
-|   T_IDENTIFIER T_ASSIGN expression
-|   functionCall
-|   binaryExpression
-|   unaryExpression
+    assignExpression
 ;
 
-binaryExpression:
-    binaryExpression '+' primary
-|   binaryExpression '-' primary
-|   binaryExpression '*' primary
-|   binaryExpression '/' primary
-|   expression T_LESS_EQ primary
-|   expression T_GREATER_EQ primary
-|   expression T_EQUALS primary
-|   expression T_AND primary
-|   expression T_OR primary
+assignExpression:
+    conditionalExpression
+|   T_IDENTIFIER T_ASSIGN expression
+;
+
+conditionalExpression:
+    logicalOR
+;
+
+logicalOR:
+    logicalAND
+|   logicalOR T_OR logicalAND
+;
+
+logicalAND:
+    equalityExpression
+|   logicalAND T_AND equalityExpression
+;
+
+equalityExpression:
+    relationalExpression
+|   equalityExpression T_EQUALS relationalExpression
+|   equalityExpression T_NEQUALS relationalExpression
+;
+
+relationalExpression:
+    additiveExpression
+|   relationalExpression '<' additiveExpression
+|   relationalExpression '>' additiveExpression
+|   relationalExpression T_LESS_EQ additiveExpression
+|   relationalExpression T_GREATER_EQ additiveExpression
+;
+
+additiveExpression:
+    multiplicativeExpression
+|   additiveExpression '+' multiplicativeExpression
+|   additiveExpression '-' multiplicativeExpression
+;
+
+multiplicativeExpression:
+    castExpression
+|   multiplicativeExpression '*' castExpression
+|   multiplicativeExpression '/' castExpression
+;
+
+castExpression:
+    unaryExpression
 ;
 
 unaryExpression:
-    '-' T_INT
-|   '-' T_BOOL
+    postfixExpression
+|   '-' postfixExpression
+|   '!' postfixExpression
+;
+
+postfixExpression:
+    primary
+|   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
 ;
 
 primary:
@@ -146,6 +182,7 @@ primary:
 |   T_CHAR
 |   T_BOOL
 |   T_IDENTIFIER
+|   T_LEFT_PAREN expression T_RIGHT_PAREN
 ;
 
 %%
