@@ -60,32 +60,43 @@ extern int yydebug;
     T_LEFT_PAREN = 261,            /* T_LEFT_PAREN  */
     T_COMMA = 262,                 /* T_COMMA  */
     T_ASSIGN = 263,                /* T_ASSIGN  */
-    T_IF = 264,                    /* T_IF  */
-    T_ARROW = 265,                 /* T_ARROW  */
-    T_OR = 266,                    /* T_OR  */
-    T_AND = 267,                   /* T_AND  */
-    T_LESS_EQ = 268,               /* T_LESS_EQ  */
-    T_GREATER_EQ = 269,            /* T_GREATER_EQ  */
-    T_EQUALS = 270,                /* T_EQUALS  */
-    T_NEQUALS = 271,               /* T_NEQUALS  */
-    T_RETURN = 272,                /* T_RETURN  */
-    T_ELSE = 273,                  /* T_ELSE  */
-    T_INT = 274,                   /* T_INT  */
-    T_CHAR = 275,                  /* T_CHAR  */
-    T_BOOL = 276,                  /* T_BOOL  */
-    T_VOID = 277,                  /* T_VOID  */
+    T_ARROW = 264,                 /* T_ARROW  */
+    T_OR = 265,                    /* T_OR  */
+    T_AND = 266,                   /* T_AND  */
+    T_LESS_EQ = 267,               /* T_LESS_EQ  */
+    T_GREATER_EQ = 268,            /* T_GREATER_EQ  */
+    T_EQUALS = 269,                /* T_EQUALS  */
+    T_NEQUALS = 270,               /* T_NEQUALS  */
+    T_IF = 271,                    /* T_IF  */
+    T_ELSE = 272,                  /* T_ELSE  */
+    T_RETURN = 273,                /* T_RETURN  */
+    T_FUNC = 274,                  /* T_FUNC  */
+    T_INT = 275,                   /* T_INT  */
+    T_CHAR = 276,                  /* T_CHAR  */
+    T_BOOL = 277,                  /* T_BOOL  */
     T_INT_TYPE = 278,              /* T_INT_TYPE  */
     T_BOOL_TYPE = 279,             /* T_BOOL_TYPE  */
     T_CHAR_TYPE = 280,             /* T_CHAR_TYPE  */
-    T_IDENTIFIER = 281,            /* T_IDENTIFIER  */
-    T_FUNCTION = 282               /* T_FUNCTION  */
+    T_VOID_TYPE = 281,             /* T_VOID_TYPE  */
+    T_IDENTIFIER = 282             /* T_IDENTIFIER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
-typedef int YYSTYPE;
+union YYSTYPE
+{
+#line 11 "grammar.y"
+
+    double fval;
+    int ival;
+    char* sval;
+
+#line 97 "grammar.tab.h"
+
+};
+typedef union YYSTYPE YYSTYPE;
 # define YYSTYPE_IS_TRIVIAL 1
 # define YYSTYPE_IS_DECLARED 1
 #endif

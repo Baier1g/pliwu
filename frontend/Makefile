@@ -11,4 +11,4 @@ parse: lex.yy.c grammar.tab.c grammar.tab.h
 
 .PHONY: clean
 clean:
-	rm grammar.tab.* lex.yy.c *.o
+	rm grammar.tab.* grammar.output lex.yy.c *.o

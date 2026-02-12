@@ -16,9 +16,9 @@ Grammar
     8 type: T_INT_TYPE
     9     | T_CHAR_TYPE
    10     | T_BOOL_TYPE
-   11     | T_VOID
+   11     | T_VOID_TYPE
 
-   12 funcDefinition: T_FUNCTION function
+   12 funcDefinition: T_FUNC function
 
    13 function: T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW type block
 
@@ -113,25 +113,25 @@ Terminals, with rules where they appear
     T_LEFT_PAREN (261) 13 23 25 58 63
     T_COMMA (262) 16 19
     T_ASSIGN (263) 7 33
-    T_IF (264) 23
-    T_ARROW (265) 13
-    T_OR (266) 36
-    T_AND (267) 38
-    T_LESS_EQ (268) 45
-    T_GREATER_EQ (269) 46
-    T_EQUALS (270) 40
-    T_NEQUALS (271) 41
-    T_RETURN (272) 26
-    T_ELSE (273) 25
-    T_INT (274) 59
-    T_CHAR (275) 60
-    T_BOOL (276) 61
-    T_VOID (277) 11
+    T_ARROW (264) 13
+    T_OR (265) 36
+    T_AND (266) 38
+    T_LESS_EQ (267) 45
+    T_GREATER_EQ (268) 46
+    T_EQUALS (269) 40
+    T_NEQUALS (270) 41
+    T_IF (271) 23
+    T_ELSE (272) 25
+    T_RETURN (273) 26
+    T_FUNC (274) 12
+    T_INT (275) 59
+    T_CHAR (276) 60
+    T_BOOL (277) 61
     T_INT_TYPE (278) 8
     T_BOOL_TYPE (279) 10
     T_CHAR_TYPE (280) 9
-    T_IDENTIFIER (281) 7 13 15 16 33 62
-    T_FUNCTION (282) 12
+    T_VOID_TYPE (281) 11
+    T_IDENTIFIER (282) 7 13 15 16 33 62
 
 
 Nonterminals, with rules where they appear
@@ -247,15 +247,15 @@ State 1
     '!'           shift, and go to state 5
     T_IF          shift, and go to state 6
     T_RETURN      shift, and go to state 7
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_VOID        shift, and go to state 11
+    T_FUNC        shift, and go to state 8
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_INT_TYPE    shift, and go to state 12
     T_BOOL_TYPE   shift, and go to state 13
     T_CHAR_TYPE   shift, and go to state 14
-    T_IDENTIFIER  shift, and go to state 15
-    T_FUNCTION    shift, and go to state 16
+    T_VOID_TYPE   shift, and go to state 15
+    T_IDENTIFIER  shift, and go to state 16
 
     module                    go to state 17
     declaration               go to state 18
@@ -295,10 +295,10 @@ State 3
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     expression                go to state 39
     assignExpression          go to state 27
@@ -320,9 +320,9 @@ State 4
    55 unaryExpression: '-' • postfixExpression
 
     T_LEFT_PAREN  shift, and go to state 3
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     postfixExpression  go to state 41
@@ -334,9 +334,9 @@ State 5
    56 unaryExpression: '!' • postfixExpression
 
     T_LEFT_PAREN  shift, and go to state 3
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     postfixExpression  go to state 42
@@ -357,10 +357,10 @@ State 7
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     expressionStatement       go to state 44
     expression                go to state 26
@@ -380,30 +380,32 @@ State 7
 
 State 8
 
+   12 funcDefinition: T_FUNC • function
+
+    T_IDENTIFIER  shift, and go to state 45
+
+    function  go to state 46
+
+
+State 9
+
    59 primary: T_INT •
 
     $default  reduce using rule 59 (primary)
 
 
-State 9
+State 10
 
    60 primary: T_CHAR •
 
     $default  reduce using rule 60 (primary)
 
 
-State 10
+State 11
 
    61 primary: T_BOOL •
 
     $default  reduce using rule 61 (primary)
-
-
-State 11
-
-   11 type: T_VOID •
-
-    $default  reduce using rule 11 (type)
 
 
 State 12
@@ -429,21 +431,19 @@ State 14
 
 State 15
 
-   33 assignExpression: T_IDENTIFIER • T_ASSIGN expression
-   62 primary: T_IDENTIFIER •
+   11 type: T_VOID_TYPE •
 
-    T_ASSIGN  shift, and go to state 45
-
-    $default  reduce using rule 62 (primary)
+    $default  reduce using rule 11 (type)
 
 
 State 16
 
-   12 funcDefinition: T_FUNCTION • function
+   33 assignExpression: T_IDENTIFIER • T_ASSIGN expression
+   62 primary: T_IDENTIFIER •
 
-    T_IDENTIFIER  shift, and go to state 46
+    T_ASSIGN  shift, and go to state 47
 
-    function  go to state 47
+    $default  reduce using rule 62 (primary)
 
 
 State 17
@@ -674,10 +674,10 @@ State 43
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     expression                go to state 64
     assignExpression          go to state 27
@@ -703,17 +703,31 @@ State 44
 
 State 45
 
+   13 function: T_IDENTIFIER • T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW type block
+
+    T_LEFT_PAREN  shift, and go to state 65
+
+
+State 46
+
+   12 funcDefinition: T_FUNC function •
+
+    $default  reduce using rule 12 (funcDefinition)
+
+
+State 47
+
    33 assignExpression: T_IDENTIFIER T_ASSIGN • expression
 
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
-    expression                go to state 65
+    expression                go to state 66
     assignExpression          go to state 27
     conditionalExpression     go to state 28
     logicalOR                 go to state 29
@@ -726,20 +740,6 @@ State 45
     unaryExpression           go to state 36
     postfixExpression         go to state 37
     primary                   go to state 38
-
-
-State 46
-
-   13 function: T_IDENTIFIER • T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW type block
-
-    T_LEFT_PAREN  shift, and go to state 66
-
-
-State 47
-
-   12 funcDefinition: T_FUNCTION function •
-
-    $default  reduce using rule 12 (funcDefinition)
 
 
 State 48
@@ -763,9 +763,9 @@ State 50
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     logicalAND                go to state 68
@@ -786,9 +786,9 @@ State 51
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     equalityExpression        go to state 69
@@ -808,9 +808,9 @@ State 52
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     relationalExpression      go to state 70
@@ -829,9 +829,9 @@ State 53
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     relationalExpression      go to state 71
@@ -850,9 +850,9 @@ State 54
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     additiveExpression        go to state 72
@@ -870,9 +870,9 @@ State 55
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     additiveExpression        go to state 73
@@ -890,9 +890,9 @@ State 56
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     additiveExpression        go to state 74
@@ -910,9 +910,9 @@ State 57
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     additiveExpression        go to state 75
@@ -930,9 +930,9 @@ State 58
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     multiplicativeExpression  go to state 76
@@ -949,9 +949,9 @@ State 59
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     multiplicativeExpression  go to state 77
@@ -968,9 +968,9 @@ State 60
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     castExpression     go to state 78
@@ -986,9 +986,9 @@ State 61
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
     T_IDENTIFIER  shift, and go to state 40
 
     castExpression     go to state 79
@@ -1004,10 +1004,10 @@ State 62
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     $default  reduce using rule 17 (args)
 
@@ -1042,24 +1042,24 @@ State 64
 
 State 65
 
-   33 assignExpression: T_IDENTIFIER T_ASSIGN expression •
-
-    $default  reduce using rule 33 (assignExpression)
-
-
-State 66
-
    13 function: T_IDENTIFIER T_LEFT_PAREN • parameters T_RIGHT_PAREN T_ARROW type block
 
-    T_VOID       shift, and go to state 11
     T_INT_TYPE   shift, and go to state 12
     T_BOOL_TYPE  shift, and go to state 13
     T_CHAR_TYPE  shift, and go to state 14
+    T_VOID_TYPE  shift, and go to state 15
 
     $default  reduce using rule 14 (parameters)
 
     type        go to state 83
     parameters  go to state 84
+
+
+State 66
+
+   33 assignExpression: T_IDENTIFIER T_ASSIGN expression •
+
+    $default  reduce using rule 33 (assignExpression)
 
 
 State 67
@@ -1069,10 +1069,10 @@ State 67
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     expression                go to state 85
     assignExpression          go to state 27
@@ -1291,10 +1291,10 @@ State 87
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     assignExpression          go to state 94
     conditionalExpression     go to state 28
@@ -1348,10 +1348,10 @@ State 92
 
    16 parameters: parameters T_COMMA • type T_IDENTIFIER
 
-    T_VOID       shift, and go to state 11
     T_INT_TYPE   shift, and go to state 12
     T_BOOL_TYPE  shift, and go to state 13
     T_CHAR_TYPE  shift, and go to state 14
+    T_VOID_TYPE  shift, and go to state 15
 
     type  go to state 99
 
@@ -1381,14 +1381,14 @@ State 95
     '!'            shift, and go to state 5
     T_IF           shift, and go to state 6
     T_RETURN       shift, and go to state 7
-    T_INT          shift, and go to state 8
-    T_CHAR         shift, and go to state 9
-    T_BOOL         shift, and go to state 10
-    T_VOID         shift, and go to state 11
+    T_INT          shift, and go to state 9
+    T_CHAR         shift, and go to state 10
+    T_BOOL         shift, and go to state 11
     T_INT_TYPE     shift, and go to state 12
     T_BOOL_TYPE    shift, and go to state 13
     T_CHAR_TYPE    shift, and go to state 14
-    T_IDENTIFIER   shift, and go to state 15
+    T_VOID_TYPE    shift, and go to state 15
+    T_IDENTIFIER   shift, and go to state 16
 
     declaration               go to state 101
     varDeclaration            go to state 19
@@ -1430,10 +1430,10 @@ State 98
 
    13 function: T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW • type block
 
-    T_VOID       shift, and go to state 11
     T_INT_TYPE   shift, and go to state 12
     T_BOOL_TYPE  shift, and go to state 13
     T_CHAR_TYPE  shift, and go to state 14
+    T_VOID_TYPE  shift, and go to state 15
 
     type  go to state 103
 
@@ -1466,10 +1466,10 @@ State 102
     T_LEFT_PAREN  shift, and go to state 3
     '-'           shift, and go to state 4
     '!'           shift, and go to state 5
-    T_INT         shift, and go to state 8
-    T_CHAR        shift, and go to state 9
-    T_BOOL        shift, and go to state 10
-    T_IDENTIFIER  shift, and go to state 15
+    T_INT         shift, and go to state 9
+    T_CHAR        shift, and go to state 10
+    T_BOOL        shift, and go to state 11
+    T_IDENTIFIER  shift, and go to state 16
 
     expression                go to state 105
     assignExpression          go to state 27

@@ -1,11 +1,18 @@
+
 /* PROLOGUE */
 %{
+    int yylex(void);
     #include <stdlib.h>
     extern int yylex(void);
     void yyerror(char const*);
 %}
 
 /* DECLARATIONS */
+%union {
+    double fval;
+    int ival;
+    char* sval;
+} 
 /* SINGLE CHARACTER TOKENS */
 %token T_RIGHT_BRACE
 %token T_LEFT_BRACE
@@ -20,20 +27,23 @@
 %right '!'
 
 /* DOUBLE CHARACTER TOKENS */
-%token T_IF
 %token T_ARROW
 %token T_OR T_AND
 %left  T_LESS_EQ T_GREATER_EQ T_EQUALS T_NEQUALS
 
 /* LONGER TOKENS */
-%token T_RETURN
+%token T_IF
 %token T_ELSE
-%token T_INT T_CHAR T_BOOL T_VOID
+%token T_RETURN
+%token T_FUNC
+
+%token T_INT T_CHAR T_BOOL
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
+%token T_VOID_TYPE
 %token T_IDENTIFIER
-%token T_FUNCTION
+
 
 /* GRAMMAR RULES */
 %%
@@ -60,11 +70,11 @@ type:
     T_INT_TYPE
 |   T_CHAR_TYPE
 |   T_BOOL_TYPE
-|   T_VOID
+|   T_VOID_TYPE
 ;
 
 funcDefinition:
-    T_FUNCTION function;
+    T_FUNC function;
 
 function:
     T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW type block;

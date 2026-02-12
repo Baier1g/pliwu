@@ -1,3 +1,7 @@
 IDEAS:
 1. include <func> (, <func>)*  from <module>
 2. compression of machinecode
+
+RETARDISMS:
+1. find_keyword() (and find_type()) must be mapped or perfectly hashed
+2. Restrict length of identifiers

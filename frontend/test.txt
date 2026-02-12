@@ -5,6 +5,10 @@ func grum_func(int a, int b) -> int {
     return c;
 }
 
+func print_stuff(char c) -> void {
+    print(c);
+}
+
 /*
 This is a multi line comment :O
 It just works
@@ -21,4 +25,3 @@ if (a == b) {
 int a = 10;
 int b = 30;
 int c = grum(a, b);
-char car = "c";
