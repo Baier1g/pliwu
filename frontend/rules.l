@@ -1,9 +1,10 @@
 /***DEFINITIONS***/
 %{
-    #include <string.h>
-    #include "grammar.tab.h"
+    //#include <string.h>
+    #include "y.tab.h"
     #define NUM_KEYWORDS 4
     #define NUM_TYPES    3
+    #define NUM_DIGRAPHS 7
 
     unsigned short line_number = 1;
     long current_character = 1;
@@ -15,9 +16,13 @@
     const char types[NUM_TYPES][10]   = {"int", "char", "bool"};
     const int  token_types[NUM_TYPES] = {T_INT_TYPE, T_CHAR_TYPE, T_BOOL_TYPE};
 
+    const char digraphs[NUM_DIGRAPHS][3] = {"->", "&&", "||", "<=", ">=", "==", "!="};
+    const int  digraph_tokens[NUM_DIGRAPHS] = {T_ARROW, T_AND, T_OR, T_LESS_EQ, T_GREATER_EQ, T_EQUALS, T_NEQUALS};
+
     int increment_counter(int);
     int find_keyword(char* keywrd);
     int find_type(char* type);
+    int find_digraph(char* digraph);
 %}
 
 COMMENT_START       \/\*
@@ -33,9 +38,10 @@ INTEGER             {DIGIT}+
 FLOAT               {INTEGER}\.{INTEGER}
 IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
 KEYWORD             if|else|func|return
-TYPE                int|char|bool
-SINGLE_OPERATOR     [\+\-\*\/\!\<\>\&\|]
-OPERATOR            (\-\>|==|\!=|\|\||\&\&)
+BOOL_VALUE          true|false
+TYPE                int|char|bool|void
+SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
+OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
 CHARACTER           (.|\n)
 WHITESPACES         [\t\r ]+
 
@@ -49,6 +55,7 @@ WHITESPACES         [\t\r ]+
 }
 
 <COMMENT>{COMMENT_END} {
+    printf("multi line comment\n");
     increment_counter(yyleng);
     BEGIN(INITIAL);
 }
@@ -64,94 +71,111 @@ WHITESPACES         [\t\r ]+
 }
 
 <STR>{CHARACTER} {
-    printf("%s character\n", yytext);
+    printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
+    yylval.cval = yytext[0];
+    return T_CHAR;
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
-    printf("%s single line comment\n", yytext);
+    printf("%s \tsingle line comment\n", yytext);
     increment_counter(yyleng);
 }
 
 <COMMENT>.* {
-    printf("%s multi line comment\n", yytext);
+    printf("%s\n", yytext);
     increment_counter(yyleng);
 }
 
 <INITIAL>{LEFT_PAR} {
-    printf("%s left parentheses\n", yytext);
+    printf("%s \tleft parentheses\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_PAREN;
 }
 
 <INITIAL>{RIGHT_PAR} {
-    printf("%s right parentheses\n", yytext);
+    printf("%s \tright parentheses\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_PAREN;
 }
 
 <INITIAL>{LEFT_BRACE} {
-    printf("%s left brace\n", yytext);
+    printf("%s \tleft brace\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_BRACE;
 }
 
 <INITIAL>{RIGHT_BRACE} {
-    printf("%s right brace\n", yytext);
+    printf("%s \tright brace\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_BRACE;
 }
 
 <INITIAL>{COMMA} {
-    printf("%s comma\n", yytext);
+    printf("%s \tcomma\n", yytext);
     increment_counter(yyleng);
     return T_COMMA;
 }
 
 <INITIAL>{INTEGER} {
-    printf("%s integer\n", yytext);
+    printf("%s \tinteger\n", yytext);
     increment_counter(yyleng);
     yylval.ival = atoi(yytext);
     return T_INT;
 }
 
+<INITIAL>{BOOL_VALUE} {
+    printf("%s \tboolean value\n", yytext);
+    increment_counter(yyleng);
+    if (!strcmp("true", yytext)) {
+        yylval.ival = 1;
+    } else {
+        yylval.ival = 0;
+    }
+    return T_BOOL;
+}
+
 <INITIAL>{KEYWORD} {
-    printf("%s keyword\n", yytext);
+    printf("%s \tkeyword\n", yytext);
     increment_counter(yyleng);
     return find_keyword(yytext);
 }
 
 
 <INITIAL>{TYPE} {
-    printf("%s type\n", yytext);
+    printf("%s \ttype\n", yytext);
     increment_counter(yyleng);
     return find_type(yytext);
 }
 
 <INITIAL>{IDENTIFIER} {
-    printf("%s identifier\n", yytext);
+    printf("%s \tidentifier\n", yytext);
     increment_counter(yyleng);
+    yylval.sval = malloc(sizeof(char) * yyleng);
     strncpy(yylval.sval, yytext, yyleng);
     return T_IDENTIFIER;
 }
 
 <INITIAL>= {
-    printf("%s assign\n", yytext);
+    printf("%s \tassign\n", yytext);
     increment_counter(yyleng);
     return T_ASSIGN;
 }
 
 <INITIAL>{SINGLE_OPERATOR} {
+    printf("%s \tsingle operator\n", yytext);
+    increment_counter(yyleng);
     return yytext[0];
 }
 
 <INITIAL>{OPERATOR} {
-    printf("%s operator\n", yytext);
+    printf("%s \tdigraph operator\n", yytext);
     increment_counter(yyleng);
+    return find_digraph(yytext);
 }
 
 <INITIAL>";" {
-    printf("%s semicolon\n", yytext);
+    printf("%s \tsemicolon\n", yytext);
     increment_counter(yyleng);
     return ';';
 }
@@ -162,12 +186,12 @@ WHITESPACES         [\t\r ]+
 }
 
 <INITIAL>{WHITESPACES} {
-    printf("%s whitespace\n", yytext); 
+    printf("%s \twhitespace\n", yytext); 
     increment_counter(yyleng);
 }
 
 <<EOF>> {
-    printf("%s EOF\n", yytext);
+    printf("%s \tEOF\n", yytext);
     return 0; 
 }
 
@@ -178,7 +202,7 @@ WHITESPACES         [\t\r ]+
 /***CODE***/
 
 /***yywrap idk bro***/
-int yywrap(void) {}
+int yywrap(void) {return 1;}
 
 int increment_counter(int len) {
     current_character += len;
@@ -201,6 +225,14 @@ int find_type(char* type) {
         }
     }
     return T_VOID_TYPE;
+}
+
+int find_digraph(char* digraph) {
+    for (int i = 0; i < NUM_DIGRAPHS; i++) {
+        if (!strcmp(digraphs[i], digraph)) {
+            return digraph_tokens[i];
+        }
+    }
 }
 
 /***main functions, reads files and processes contents***/

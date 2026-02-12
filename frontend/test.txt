@@ -1,7 +1,7 @@
 // This function does complicated arithmetic :O
 func grum_func(int a, int b) -> int {
     int c = a + b;
-    int d = c + 30.25;
+    int d = c + 30;
     return c;
 }
 
@@ -14,13 +14,15 @@ This is a multi line comment :O
 It just works
 */
 
-int c = 0;
+//int c = 0;
 if (a == b) {
-    c = a | b;
+    c = a + b;
 } else {
-    c = a & b;
+    c = a - b;
 }
 
+bool gg = false;
+char charac = "f";
 
 int a = 10;
 int b = 30;

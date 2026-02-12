@@ -2,15 +2,19 @@
 /* PROLOGUE */
 %{
     int yylex(void);
+    #include <stdio.h>
     #include <stdlib.h>
+    #include <string.h>
     extern int yylex(void);
     void yyerror(char const*);
+    extern FILE *yyin;
 %}
 
 /* DECLARATIONS */
 %union {
     double fval;
     int ival;
+    char cval;
     char* sval;
 } 
 /* SINGLE CHARACTER TOKENS */
@@ -48,7 +52,7 @@
 /* GRAMMAR RULES */
 %%
 program:
-    %empty
+    /*%empty*/
 |   program module
 ;
 
@@ -77,22 +81,27 @@ funcDefinition:
     T_FUNC function;
 
 function:
-    T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN T_ARROW type block;
+    T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block;
+
+returnType:
+    /*%empty*/ 
+|   T_ARROW type
+;
 
 parameters:
-    %empty
+    /*%empty*/
 |   type T_IDENTIFIER
 |   parameters T_COMMA type T_IDENTIFIER
 ;
 
 args:
-    %empty
+    /*%empty*/
 |   assignExpression
 |   args T_COMMA assignExpression
 ;
 
 statement:
-    ifStatement
+    ifStatement             
 |   returnStatement
 |   expressionStatement
 ;
@@ -102,12 +111,12 @@ ifStatement:
 ;
 
 else:
-    %empty
-|   T_ELSE T_LEFT_PAREN expression T_RIGHT_PAREN block
+    /*%empty*/
+|   T_ELSE block
 ;
 
 returnStatement:
-    T_RETURN expressionStatement
+    T_RETURN expression ';'
 ;
 
 block:
@@ -115,7 +124,7 @@ block:
 ;
 
 blockBody:
-    %empty
+    /*%empty*/
 |   blockBody declaration
 ;
 
@@ -188,13 +197,30 @@ postfixExpression:
 ;
 
 primary:
-    T_INT
-|   T_CHAR
-|   T_BOOL
-|   T_IDENTIFIER
+    T_INT           {printf("%d int value returned to bison\n", yylval.ival);}
+|   T_CHAR          {printf("%c character returned to bison\n", yylval.cval);}
+|   T_BOOL          {yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
+|   T_IDENTIFIER    {printf("%s identifier returned to bison\n", yylval.sval);}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN
 ;
 
 %%
+
+void yyerror(char const* err) {
+    printf("Shit fucked at %s\n", err);
+}
+
+int main(int argc, char* argv[]) {
+    FILE *fp;
+    char *filename = argv[1];
+
+    yyin = fopen(filename,"r");
+    if (!yyin) {
+        return -2;
+    }
+
+    yyparse();
+    return 0;
+}
 
 /* EPILOGUE */
