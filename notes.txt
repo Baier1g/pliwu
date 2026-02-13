@@ -12,5 +12,5 @@ TODOS:
 1. find_keyword() (and find_type()) must be mapped or perfectly hashed
 2. Restrict length of identifiers
 3. Debug print for all modules during test
-4. 
+4. Proper error synchronization in parser
 

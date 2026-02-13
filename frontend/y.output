@@ -1,0 +1,1628 @@
+Grammar
+
+    0 $accept: program $end
+
+    1 program: ε
+    2        | program module
+
+    3 module: funcDefinition
+    4       | declaration
+
+    5 declaration: varDeclaration
+    6            | statement
+
+    7 varDeclaration: type identifier ';'
+    8               | type identifier T_ASSIGN expression ';'
+
+    9 type: T_INT_TYPE
+   10     | T_CHAR_TYPE
+   11     | T_BOOL_TYPE
+   12     | T_VOID_TYPE
+
+   13 funcDefinition: T_FUNC function
+
+   14 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+
+   15 returnType: ε
+   16           | T_ARROW type
+
+   17 parameters: ε
+   18           | type identifier
+   19           | parameters T_COMMA type identifier
+
+   20 args: ε
+   21     | assignExpression
+   22     | args T_COMMA assignExpression
+
+   23 statement: ifStatement
+   24          | returnStatement
+   25          | expressionStatement
+   26          | error statement
+
+   27 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
+
+   28 else: ε
+   29     | T_ELSE block
+
+   30 returnStatement: T_RETURN expression ';'
+
+   31 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE
+
+   32 blockBody: ε
+   33          | blockBody declaration
+
+   34 expressionStatement: expression ';'
+
+   35 expression: assignExpression
+   36           | error
+
+   37 assignExpression: conditionalExpression
+   38                 | identifier T_ASSIGN expression
+
+   39 conditionalExpression: logicalOR
+
+   40 logicalOR: logicalAND
+   41          | logicalOR T_OR logicalAND
+
+   42 logicalAND: equalityExpression
+   43           | logicalAND T_AND equalityExpression
+
+   44 equalityExpression: relationalExpression
+   45                   | equalityExpression T_EQUALS relationalExpression
+   46                   | equalityExpression T_NEQUALS relationalExpression
+
+   47 relationalExpression: additiveExpression
+   48                     | relationalExpression '<' additiveExpression
+   49                     | relationalExpression '>' additiveExpression
+   50                     | relationalExpression T_LESS_EQ additiveExpression
+   51                     | relationalExpression T_GREATER_EQ additiveExpression
+
+   52 additiveExpression: multiplicativeExpression
+   53                   | additiveExpression '+' multiplicativeExpression
+   54                   | additiveExpression '-' multiplicativeExpression
+
+   55 multiplicativeExpression: castExpression
+   56                         | multiplicativeExpression '*' castExpression
+   57                         | multiplicativeExpression '/' castExpression
+
+   58 castExpression: unaryExpression
+
+   59 unaryExpression: postfixExpression
+   60                | '-' postfixExpression
+   61                | '!' postfixExpression
+
+   62 postfixExpression: primary
+   63                  | postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
+
+   64 identifier: T_IDENTIFIER
+
+   65 primary: T_INT
+   66        | T_CHAR
+   67        | T_BOOL
+   68        | T_LEFT_PAREN expression T_RIGHT_PAREN
+   69        | identifier
+
+
+Terminals, with rules where they appear
+
+    $end (0) 0
+    '!' (33) 61
+    '*' (42) 56
+    '+' (43) 53
+    '-' (45) 54 60
+    '/' (47) 57
+    ';' (59) 7 8 30 34
+    '<' (60) 48
+    '>' (62) 49
+    error (256) 26 36
+    T_RIGHT_BRACE (258) 31
+    T_LEFT_BRACE (259) 31
+    T_RIGHT_PAREN (260) 14 27 63 68
+    T_LEFT_PAREN (261) 14 27 63 68
+    T_COMMA (262) 19 22
+    T_ASSIGN (263) 8 38
+    T_ARROW (264) 16
+    T_OR (265) 41
+    T_AND (266) 43
+    T_LESS_EQ (267) 50
+    T_GREATER_EQ (268) 51
+    T_EQUALS (269) 45
+    T_NEQUALS (270) 46
+    T_IF (271) 27
+    T_ELSE (272) 29
+    T_RETURN (273) 30
+    T_FUNC (274) 13
+    T_INT (275) 65
+    T_CHAR (276) 66
+    T_BOOL (277) 67
+    T_INT_TYPE (278) 9
+    T_BOOL_TYPE (279) 11
+    T_CHAR_TYPE (280) 10
+    T_VOID_TYPE (281) 12
+    T_IDENTIFIER (282) 64
+
+
+Nonterminals, with rules where they appear
+
+    $accept (36)
+        on left: 0
+    program (37)
+        on left: 1 2
+        on right: 0 2
+    module (38)
+        on left: 3 4
+        on right: 2
+    declaration (39)
+        on left: 5 6
+        on right: 4 33
+    varDeclaration (40)
+        on left: 7 8
+        on right: 5
+    type (41)
+        on left: 9 10 11 12
+        on right: 7 8 16 18 19
+    funcDefinition (42)
+        on left: 13
+        on right: 3
+    function (43)
+        on left: 14
+        on right: 13
+    returnType (44)
+        on left: 15 16
+        on right: 14
+    parameters (45)
+        on left: 17 18 19
+        on right: 14 19
+    args (46)
+        on left: 20 21 22
+        on right: 22 63
+    statement (47)
+        on left: 23 24 25 26
+        on right: 6 26
+    ifStatement (48)
+        on left: 27
+        on right: 23
+    else (49)
+        on left: 28 29
+        on right: 27
+    returnStatement (50)
+        on left: 30
+        on right: 24
+    block (51)
+        on left: 31
+        on right: 14 27 29
+    blockBody (52)
+        on left: 32 33
+        on right: 31 33
+    expressionStatement (53)
+        on left: 34
+        on right: 25
+    expression (54)
+        on left: 35 36
+        on right: 8 27 30 34 38 68
+    assignExpression (55)
+        on left: 37 38
+        on right: 21 22 35
+    conditionalExpression (56)
+        on left: 39
+        on right: 37
+    logicalOR (57)
+        on left: 40 41
+        on right: 39 41
+    logicalAND (58)
+        on left: 42 43
+        on right: 40 41 43
+    equalityExpression (59)
+        on left: 44 45 46
+        on right: 42 43 45 46
+    relationalExpression (60)
+        on left: 47 48 49 50 51
+        on right: 44 45 46 48 49 50 51
+    additiveExpression (61)
+        on left: 52 53 54
+        on right: 47 48 49 50 51 53 54
+    multiplicativeExpression (62)
+        on left: 55 56 57
+        on right: 52 53 54 56 57
+    castExpression (63)
+        on left: 58
+        on right: 55 56 57
+    unaryExpression (64)
+        on left: 59 60 61
+        on right: 58
+    postfixExpression (65)
+        on left: 62 63
+        on right: 59 60 61 63
+    identifier (66)
+        on left: 64
+        on right: 7 8 14 18 19 38 69
+    primary (67)
+        on left: 65 66 67 68 69
+        on right: 62
+
+
+State 0
+
+    0 $accept: • program $end
+
+    $default  reduce using rule 1 (program)
+
+    program  go to state 1
+
+
+State 1
+
+    0 $accept: program • $end
+    2 program: program • module
+
+    $end          shift, and go to state 2
+    error         shift, and go to state 3
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_IF          shift, and go to state 7
+    T_RETURN      shift, and go to state 8
+    T_FUNC        shift, and go to state 9
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_INT_TYPE    shift, and go to state 13
+    T_BOOL_TYPE   shift, and go to state 14
+    T_CHAR_TYPE   shift, and go to state 15
+    T_VOID_TYPE   shift, and go to state 16
+    T_IDENTIFIER  shift, and go to state 17
+
+    module                    go to state 18
+    declaration               go to state 19
+    varDeclaration            go to state 20
+    type                      go to state 21
+    funcDefinition            go to state 22
+    statement                 go to state 23
+    ifStatement               go to state 24
+    returnStatement           go to state 25
+    expressionStatement       go to state 26
+    expression                go to state 27
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 2
+
+    0 $accept: program $end •
+
+    $default  accept
+
+
+State 3
+
+   26 statement: error • statement
+   36 expression: error •
+
+    error         shift, and go to state 3
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_IF          shift, and go to state 7
+    T_RETURN      shift, and go to state 8
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    ';'  reduce using rule 36 (expression)
+
+    statement                 go to state 41
+    ifStatement               go to state 24
+    returnStatement           go to state 25
+    expressionStatement       go to state 26
+    expression                go to state 27
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 4
+
+   68 primary: T_LEFT_PAREN • expression T_RIGHT_PAREN
+
+    error         shift, and go to state 42
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    expression                go to state 43
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 5
+
+   60 unaryExpression: '-' • postfixExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    postfixExpression  go to state 44
+    identifier         go to state 45
+    primary            go to state 40
+
+
+State 6
+
+   61 unaryExpression: '!' • postfixExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    postfixExpression  go to state 46
+    identifier         go to state 45
+    primary            go to state 40
+
+
+State 7
+
+   27 ifStatement: T_IF • T_LEFT_PAREN expression T_RIGHT_PAREN block else
+
+    T_LEFT_PAREN  shift, and go to state 47
+
+
+State 8
+
+   30 returnStatement: T_RETURN • expression ';'
+
+    error         shift, and go to state 42
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    expression                go to state 48
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 9
+
+   13 funcDefinition: T_FUNC • function
+
+    T_IDENTIFIER  shift, and go to state 17
+
+    function    go to state 49
+    identifier  go to state 50
+
+
+State 10
+
+   65 primary: T_INT •
+
+    $default  reduce using rule 65 (primary)
+
+
+State 11
+
+   66 primary: T_CHAR •
+
+    $default  reduce using rule 66 (primary)
+
+
+State 12
+
+   67 primary: T_BOOL •
+
+    $default  reduce using rule 67 (primary)
+
+
+State 13
+
+    9 type: T_INT_TYPE •
+
+    $default  reduce using rule 9 (type)
+
+
+State 14
+
+   11 type: T_BOOL_TYPE •
+
+    $default  reduce using rule 11 (type)
+
+
+State 15
+
+   10 type: T_CHAR_TYPE •
+
+    $default  reduce using rule 10 (type)
+
+
+State 16
+
+   12 type: T_VOID_TYPE •
+
+    $default  reduce using rule 12 (type)
+
+
+State 17
+
+   64 identifier: T_IDENTIFIER •
+
+    $default  reduce using rule 64 (identifier)
+
+
+State 18
+
+    2 program: program module •
+
+    $default  reduce using rule 2 (program)
+
+
+State 19
+
+    4 module: declaration •
+
+    $default  reduce using rule 4 (module)
+
+
+State 20
+
+    5 declaration: varDeclaration •
+
+    $default  reduce using rule 5 (declaration)
+
+
+State 21
+
+    7 varDeclaration: type • identifier ';'
+    8               | type • identifier T_ASSIGN expression ';'
+
+    T_IDENTIFIER  shift, and go to state 17
+
+    identifier  go to state 51
+
+
+State 22
+
+    3 module: funcDefinition •
+
+    $default  reduce using rule 3 (module)
+
+
+State 23
+
+    6 declaration: statement •
+
+    $default  reduce using rule 6 (declaration)
+
+
+State 24
+
+   23 statement: ifStatement •
+
+    $default  reduce using rule 23 (statement)
+
+
+State 25
+
+   24 statement: returnStatement •
+
+    $default  reduce using rule 24 (statement)
+
+
+State 26
+
+   25 statement: expressionStatement •
+
+    $default  reduce using rule 25 (statement)
+
+
+State 27
+
+   34 expressionStatement: expression • ';'
+
+    ';'  shift, and go to state 52
+
+
+State 28
+
+   35 expression: assignExpression •
+
+    $default  reduce using rule 35 (expression)
+
+
+State 29
+
+   37 assignExpression: conditionalExpression •
+
+    $default  reduce using rule 37 (assignExpression)
+
+
+State 30
+
+   39 conditionalExpression: logicalOR •
+   41 logicalOR: logicalOR • T_OR logicalAND
+
+    T_OR  shift, and go to state 53
+
+    $default  reduce using rule 39 (conditionalExpression)
+
+
+State 31
+
+   40 logicalOR: logicalAND •
+   43 logicalAND: logicalAND • T_AND equalityExpression
+
+    T_AND  shift, and go to state 54
+
+    $default  reduce using rule 40 (logicalOR)
+
+
+State 32
+
+   42 logicalAND: equalityExpression •
+   45 equalityExpression: equalityExpression • T_EQUALS relationalExpression
+   46                   | equalityExpression • T_NEQUALS relationalExpression
+
+    T_EQUALS   shift, and go to state 55
+    T_NEQUALS  shift, and go to state 56
+
+    $default  reduce using rule 42 (logicalAND)
+
+
+State 33
+
+   44 equalityExpression: relationalExpression •
+   48 relationalExpression: relationalExpression • '<' additiveExpression
+   49                     | relationalExpression • '>' additiveExpression
+   50                     | relationalExpression • T_LESS_EQ additiveExpression
+   51                     | relationalExpression • T_GREATER_EQ additiveExpression
+
+    '<'           shift, and go to state 57
+    '>'           shift, and go to state 58
+    T_LESS_EQ     shift, and go to state 59
+    T_GREATER_EQ  shift, and go to state 60
+
+    $default  reduce using rule 44 (equalityExpression)
+
+
+State 34
+
+   47 relationalExpression: additiveExpression •
+   53 additiveExpression: additiveExpression • '+' multiplicativeExpression
+   54                   | additiveExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 61
+    '-'  shift, and go to state 62
+
+    $default  reduce using rule 47 (relationalExpression)
+
+
+State 35
+
+   52 additiveExpression: multiplicativeExpression •
+   56 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   57                         | multiplicativeExpression • '/' castExpression
+
+    '*'  shift, and go to state 63
+    '/'  shift, and go to state 64
+
+    $default  reduce using rule 52 (additiveExpression)
+
+
+State 36
+
+   55 multiplicativeExpression: castExpression •
+
+    $default  reduce using rule 55 (multiplicativeExpression)
+
+
+State 37
+
+   58 castExpression: unaryExpression •
+
+    $default  reduce using rule 58 (castExpression)
+
+
+State 38
+
+   59 unaryExpression: postfixExpression •
+   63 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 65
+
+    $default  reduce using rule 59 (unaryExpression)
+
+
+State 39
+
+   38 assignExpression: identifier • T_ASSIGN expression
+   69 primary: identifier •
+
+    T_ASSIGN  shift, and go to state 66
+
+    $default  reduce using rule 69 (primary)
+
+
+State 40
+
+   62 postfixExpression: primary •
+
+    $default  reduce using rule 62 (postfixExpression)
+
+
+State 41
+
+   26 statement: error statement •
+
+    $default  reduce using rule 26 (statement)
+
+
+State 42
+
+   36 expression: error •
+
+    $default  reduce using rule 36 (expression)
+
+
+State 43
+
+   68 primary: T_LEFT_PAREN expression • T_RIGHT_PAREN
+
+    T_RIGHT_PAREN  shift, and go to state 67
+
+
+State 44
+
+   60 unaryExpression: '-' postfixExpression •
+   63 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 65
+
+    $default  reduce using rule 60 (unaryExpression)
+
+
+State 45
+
+   69 primary: identifier •
+
+    $default  reduce using rule 69 (primary)
+
+
+State 46
+
+   61 unaryExpression: '!' postfixExpression •
+   63 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 65
+
+    $default  reduce using rule 61 (unaryExpression)
+
+
+State 47
+
+   27 ifStatement: T_IF T_LEFT_PAREN • expression T_RIGHT_PAREN block else
+
+    error         shift, and go to state 42
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    expression                go to state 68
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 48
+
+   30 returnStatement: T_RETURN expression • ';'
+
+    ';'  shift, and go to state 69
+
+
+State 49
+
+   13 funcDefinition: T_FUNC function •
+
+    $default  reduce using rule 13 (funcDefinition)
+
+
+State 50
+
+   14 function: identifier • T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+
+    T_LEFT_PAREN  shift, and go to state 70
+
+
+State 51
+
+    7 varDeclaration: type identifier • ';'
+    8               | type identifier • T_ASSIGN expression ';'
+
+    T_ASSIGN  shift, and go to state 71
+    ';'       shift, and go to state 72
+
+
+State 52
+
+   34 expressionStatement: expression ';' •
+
+    $default  reduce using rule 34 (expressionStatement)
+
+
+State 53
+
+   41 logicalOR: logicalOR T_OR • logicalAND
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    logicalAND                go to state 73
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 54
+
+   43 logicalAND: logicalAND T_AND • equalityExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    equalityExpression        go to state 74
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 55
+
+   45 equalityExpression: equalityExpression T_EQUALS • relationalExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    relationalExpression      go to state 75
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 56
+
+   46 equalityExpression: equalityExpression T_NEQUALS • relationalExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    relationalExpression      go to state 76
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 57
+
+   48 relationalExpression: relationalExpression '<' • additiveExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    additiveExpression        go to state 77
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 58
+
+   49 relationalExpression: relationalExpression '>' • additiveExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    additiveExpression        go to state 78
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 59
+
+   50 relationalExpression: relationalExpression T_LESS_EQ • additiveExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    additiveExpression        go to state 79
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 60
+
+   51 relationalExpression: relationalExpression T_GREATER_EQ • additiveExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    additiveExpression        go to state 80
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 61
+
+   53 additiveExpression: additiveExpression '+' • multiplicativeExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    multiplicativeExpression  go to state 81
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 62
+
+   54 additiveExpression: additiveExpression '-' • multiplicativeExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    multiplicativeExpression  go to state 82
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 45
+    primary                   go to state 40
+
+
+State 63
+
+   56 multiplicativeExpression: multiplicativeExpression '*' • castExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    castExpression     go to state 83
+    unaryExpression    go to state 37
+    postfixExpression  go to state 38
+    identifier         go to state 45
+    primary            go to state 40
+
+
+State 64
+
+   57 multiplicativeExpression: multiplicativeExpression '/' • castExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    castExpression     go to state 84
+    unaryExpression    go to state 37
+    postfixExpression  go to state 38
+    identifier         go to state 45
+    primary            go to state 40
+
+
+State 65
+
+   63 postfixExpression: postfixExpression T_LEFT_PAREN • args T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    $default  reduce using rule 20 (args)
+
+    args                      go to state 85
+    assignExpression          go to state 86
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 66
+
+   38 assignExpression: identifier T_ASSIGN • expression
+
+    error         shift, and go to state 42
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    expression                go to state 87
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 67
+
+   68 primary: T_LEFT_PAREN expression T_RIGHT_PAREN •
+
+    $default  reduce using rule 68 (primary)
+
+
+State 68
+
+   27 ifStatement: T_IF T_LEFT_PAREN expression • T_RIGHT_PAREN block else
+
+    T_RIGHT_PAREN  shift, and go to state 88
+
+
+State 69
+
+   30 returnStatement: T_RETURN expression ';' •
+
+    $default  reduce using rule 30 (returnStatement)
+
+
+State 70
+
+   14 function: identifier T_LEFT_PAREN • parameters T_RIGHT_PAREN returnType block
+
+    T_INT_TYPE   shift, and go to state 13
+    T_BOOL_TYPE  shift, and go to state 14
+    T_CHAR_TYPE  shift, and go to state 15
+    T_VOID_TYPE  shift, and go to state 16
+
+    $default  reduce using rule 17 (parameters)
+
+    type        go to state 89
+    parameters  go to state 90
+
+
+State 71
+
+    8 varDeclaration: type identifier T_ASSIGN • expression ';'
+
+    error         shift, and go to state 42
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    expression                go to state 91
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 72
+
+    7 varDeclaration: type identifier ';' •
+
+    $default  reduce using rule 7 (varDeclaration)
+
+
+State 73
+
+   41 logicalOR: logicalOR T_OR logicalAND •
+   43 logicalAND: logicalAND • T_AND equalityExpression
+
+    T_AND  shift, and go to state 54
+
+    $default  reduce using rule 41 (logicalOR)
+
+
+State 74
+
+   43 logicalAND: logicalAND T_AND equalityExpression •
+   45 equalityExpression: equalityExpression • T_EQUALS relationalExpression
+   46                   | equalityExpression • T_NEQUALS relationalExpression
+
+    T_EQUALS   shift, and go to state 55
+    T_NEQUALS  shift, and go to state 56
+
+    $default  reduce using rule 43 (logicalAND)
+
+
+State 75
+
+   45 equalityExpression: equalityExpression T_EQUALS relationalExpression •
+   48 relationalExpression: relationalExpression • '<' additiveExpression
+   49                     | relationalExpression • '>' additiveExpression
+   50                     | relationalExpression • T_LESS_EQ additiveExpression
+   51                     | relationalExpression • T_GREATER_EQ additiveExpression
+
+    '<'           shift, and go to state 57
+    '>'           shift, and go to state 58
+    T_LESS_EQ     shift, and go to state 59
+    T_GREATER_EQ  shift, and go to state 60
+
+    $default  reduce using rule 45 (equalityExpression)
+
+
+State 76
+
+   46 equalityExpression: equalityExpression T_NEQUALS relationalExpression •
+   48 relationalExpression: relationalExpression • '<' additiveExpression
+   49                     | relationalExpression • '>' additiveExpression
+   50                     | relationalExpression • T_LESS_EQ additiveExpression
+   51                     | relationalExpression • T_GREATER_EQ additiveExpression
+
+    '<'           shift, and go to state 57
+    '>'           shift, and go to state 58
+    T_LESS_EQ     shift, and go to state 59
+    T_GREATER_EQ  shift, and go to state 60
+
+    $default  reduce using rule 46 (equalityExpression)
+
+
+State 77
+
+   48 relationalExpression: relationalExpression '<' additiveExpression •
+   53 additiveExpression: additiveExpression • '+' multiplicativeExpression
+   54                   | additiveExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 61
+    '-'  shift, and go to state 62
+
+    $default  reduce using rule 48 (relationalExpression)
+
+
+State 78
+
+   49 relationalExpression: relationalExpression '>' additiveExpression •
+   53 additiveExpression: additiveExpression • '+' multiplicativeExpression
+   54                   | additiveExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 61
+    '-'  shift, and go to state 62
+
+    $default  reduce using rule 49 (relationalExpression)
+
+
+State 79
+
+   50 relationalExpression: relationalExpression T_LESS_EQ additiveExpression •
+   53 additiveExpression: additiveExpression • '+' multiplicativeExpression
+   54                   | additiveExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 61
+    '-'  shift, and go to state 62
+
+    $default  reduce using rule 50 (relationalExpression)
+
+
+State 80
+
+   51 relationalExpression: relationalExpression T_GREATER_EQ additiveExpression •
+   53 additiveExpression: additiveExpression • '+' multiplicativeExpression
+   54                   | additiveExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 61
+    '-'  shift, and go to state 62
+
+    $default  reduce using rule 51 (relationalExpression)
+
+
+State 81
+
+   53 additiveExpression: additiveExpression '+' multiplicativeExpression •
+   56 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   57                         | multiplicativeExpression • '/' castExpression
+
+    '*'  shift, and go to state 63
+    '/'  shift, and go to state 64
+
+    $default  reduce using rule 53 (additiveExpression)
+
+
+State 82
+
+   54 additiveExpression: additiveExpression '-' multiplicativeExpression •
+   56 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   57                         | multiplicativeExpression • '/' castExpression
+
+    '*'  shift, and go to state 63
+    '/'  shift, and go to state 64
+
+    $default  reduce using rule 54 (additiveExpression)
+
+
+State 83
+
+   56 multiplicativeExpression: multiplicativeExpression '*' castExpression •
+
+    $default  reduce using rule 56 (multiplicativeExpression)
+
+
+State 84
+
+   57 multiplicativeExpression: multiplicativeExpression '/' castExpression •
+
+    $default  reduce using rule 57 (multiplicativeExpression)
+
+
+State 85
+
+   22 args: args • T_COMMA assignExpression
+   63 postfixExpression: postfixExpression T_LEFT_PAREN args • T_RIGHT_PAREN
+
+    T_RIGHT_PAREN  shift, and go to state 92
+    T_COMMA        shift, and go to state 93
+
+
+State 86
+
+   21 args: assignExpression •
+
+    $default  reduce using rule 21 (args)
+
+
+State 87
+
+   38 assignExpression: identifier T_ASSIGN expression •
+
+    $default  reduce using rule 38 (assignExpression)
+
+
+State 88
+
+   27 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN • block else
+
+    T_LEFT_BRACE  shift, and go to state 94
+
+    block  go to state 95
+
+
+State 89
+
+   18 parameters: type • identifier
+
+    T_IDENTIFIER  shift, and go to state 17
+
+    identifier  go to state 96
+
+
+State 90
+
+   14 function: identifier T_LEFT_PAREN parameters • T_RIGHT_PAREN returnType block
+   19 parameters: parameters • T_COMMA type identifier
+
+    T_RIGHT_PAREN  shift, and go to state 97
+    T_COMMA        shift, and go to state 98
+
+
+State 91
+
+    8 varDeclaration: type identifier T_ASSIGN expression • ';'
+
+    ';'  shift, and go to state 99
+
+
+State 92
+
+   63 postfixExpression: postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN •
+
+    $default  reduce using rule 63 (postfixExpression)
+
+
+State 93
+
+   22 args: args T_COMMA • assignExpression
+
+    T_LEFT_PAREN  shift, and go to state 4
+    '-'           shift, and go to state 5
+    '!'           shift, and go to state 6
+    T_INT         shift, and go to state 10
+    T_CHAR        shift, and go to state 11
+    T_BOOL        shift, and go to state 12
+    T_IDENTIFIER  shift, and go to state 17
+
+    assignExpression          go to state 100
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 94
+
+   31 block: T_LEFT_BRACE • blockBody T_RIGHT_BRACE
+
+    $default  reduce using rule 32 (blockBody)
+
+    blockBody  go to state 101
+
+
+State 95
+
+   27 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block • else
+
+    T_ELSE  shift, and go to state 102
+
+    $default  reduce using rule 28 (else)
+
+    else  go to state 103
+
+
+State 96
+
+   18 parameters: type identifier •
+
+    $default  reduce using rule 18 (parameters)
+
+
+State 97
+
+   14 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN • returnType block
+
+    T_ARROW  shift, and go to state 104
+
+    $default  reduce using rule 15 (returnType)
+
+    returnType  go to state 105
+
+
+State 98
+
+   19 parameters: parameters T_COMMA • type identifier
+
+    T_INT_TYPE   shift, and go to state 13
+    T_BOOL_TYPE  shift, and go to state 14
+    T_CHAR_TYPE  shift, and go to state 15
+    T_VOID_TYPE  shift, and go to state 16
+
+    type  go to state 106
+
+
+State 99
+
+    8 varDeclaration: type identifier T_ASSIGN expression ';' •
+
+    $default  reduce using rule 8 (varDeclaration)
+
+
+State 100
+
+   22 args: args T_COMMA assignExpression •
+
+    $default  reduce using rule 22 (args)
+
+
+State 101
+
+   31 block: T_LEFT_BRACE blockBody • T_RIGHT_BRACE
+   33 blockBody: blockBody • declaration
+
+    error          shift, and go to state 3
+    T_RIGHT_BRACE  shift, and go to state 107
+    T_LEFT_PAREN   shift, and go to state 4
+    '-'            shift, and go to state 5
+    '!'            shift, and go to state 6
+    T_IF           shift, and go to state 7
+    T_RETURN       shift, and go to state 8
+    T_INT          shift, and go to state 10
+    T_CHAR         shift, and go to state 11
+    T_BOOL         shift, and go to state 12
+    T_INT_TYPE     shift, and go to state 13
+    T_BOOL_TYPE    shift, and go to state 14
+    T_CHAR_TYPE    shift, and go to state 15
+    T_VOID_TYPE    shift, and go to state 16
+    T_IDENTIFIER   shift, and go to state 17
+
+    declaration               go to state 108
+    varDeclaration            go to state 20
+    type                      go to state 21
+    statement                 go to state 23
+    ifStatement               go to state 24
+    returnStatement           go to state 25
+    expressionStatement       go to state 26
+    expression                go to state 27
+    assignExpression          go to state 28
+    conditionalExpression     go to state 29
+    logicalOR                 go to state 30
+    logicalAND                go to state 31
+    equalityExpression        go to state 32
+    relationalExpression      go to state 33
+    additiveExpression        go to state 34
+    multiplicativeExpression  go to state 35
+    castExpression            go to state 36
+    unaryExpression           go to state 37
+    postfixExpression         go to state 38
+    identifier                go to state 39
+    primary                   go to state 40
+
+
+State 102
+
+   29 else: T_ELSE • block
+
+    T_LEFT_BRACE  shift, and go to state 94
+
+    block  go to state 109
+
+
+State 103
+
+   27 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else •
+
+    $default  reduce using rule 27 (ifStatement)
+
+
+State 104
+
+   16 returnType: T_ARROW • type
+
+    T_INT_TYPE   shift, and go to state 13
+    T_BOOL_TYPE  shift, and go to state 14
+    T_CHAR_TYPE  shift, and go to state 15
+    T_VOID_TYPE  shift, and go to state 16
+
+    type  go to state 110
+
+
+State 105
+
+   14 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType • block
+
+    T_LEFT_BRACE  shift, and go to state 94
+
+    block  go to state 111
+
+
+State 106
+
+   19 parameters: parameters T_COMMA type • identifier
+
+    T_IDENTIFIER  shift, and go to state 17
+
+    identifier  go to state 112
+
+
+State 107
+
+   31 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE •
+
+    $default  reduce using rule 31 (block)
+
+
+State 108
+
+   33 blockBody: blockBody declaration •
+
+    $default  reduce using rule 33 (blockBody)
+
+
+State 109
+
+   29 else: T_ELSE block •
+
+    $default  reduce using rule 29 (else)
+
+
+State 110
+
+   16 returnType: T_ARROW type •
+
+    $default  reduce using rule 16 (returnType)
+
+
+State 111
+
+   14 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block •
+
+    $default  reduce using rule 14 (function)
+
+
+State 112
+
+   19 parameters: parameters T_COMMA type identifier •
+
+    $default  reduce using rule 19 (parameters)

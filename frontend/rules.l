@@ -6,8 +6,9 @@
     #define NUM_TYPES    3
     #define NUM_DIGRAPHS 7
 
-    unsigned short line_number = 1;
-    long current_character = 1;
+    extern unsigned short line_number;
+    extern long current_character;
+    extern long start_current_character;
 
 
     const char keywords[NUM_KEYWORDS][10] = {"if", "else", "return", "func"};
@@ -44,11 +45,13 @@ SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
 OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
 CHARACTER           (.|\n)
 WHITESPACES         [\t\r ]+
+ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 
 
 %s STR COMMENT
 /***RULES***/
 %%
+
 <INITIAL>{COMMENT_START} {
     increment_counter(yyleng);
     BEGIN(COMMENT);
@@ -68,6 +71,10 @@ WHITESPACES         [\t\r ]+
 <STR>\" {
     increment_counter(yyleng);
     BEGIN(INITIAL);
+}
+
+<STR><<EOF>> {
+    return YYerror;
 }
 
 <STR>{CHARACTER} {
@@ -195,7 +202,10 @@ WHITESPACES         [\t\r ]+
     return 0; 
 }
 
-<INITIAL>.     { printf("%s report errors, bruv\n", yytext); increment_counter(yyleng); }
+<INITIAL>{ILLEGAL_IDENTIFIER} {
+    increment_counter(yyleng);
+    return YYUNDEF;
+}
 
 %%
 
@@ -205,7 +215,12 @@ WHITESPACES         [\t\r ]+
 int yywrap(void) {return 1;}
 
 int increment_counter(int len) {
-    current_character += len;
+    if (current_character == start_current_character) {
+        current_character += len;
+    } else {
+        start_current_character = current_character;
+        current_character += len;
+    }
 }
 
 /*  This function returns the specific keyword 

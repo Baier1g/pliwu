@@ -8,6 +8,9 @@
     extern int yylex(void);
     void yyerror(char const*);
     extern FILE *yyin;
+    unsigned short line_number = 1;
+    long current_character = 1;
+    long start_current_character = 1;
 %}
 
 /* DECLARATIONS */
@@ -67,7 +70,8 @@ declaration:
 ;
 
 varDeclaration:
-    type T_IDENTIFIER T_ASSIGN expression ';'
+    type identifier ';'
+|   type identifier T_ASSIGN expression ';'
 ;
 
 type:
@@ -81,7 +85,8 @@ funcDefinition:
     T_FUNC function;
 
 function:
-    T_IDENTIFIER T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block;
+    identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+; 
 
 returnType:
     /*%empty*/ 
@@ -90,8 +95,8 @@ returnType:
 
 parameters:
     /*%empty*/
-|   type T_IDENTIFIER
-|   parameters T_COMMA type T_IDENTIFIER
+|   type identifier
+|   parameters T_COMMA type identifier
 ;
 
 args:
@@ -104,10 +109,11 @@ statement:
     ifStatement             
 |   returnStatement
 |   expressionStatement
+|   error statement
 ;
 
 ifStatement:
-   T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
+    T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
 ;
 
 else:
@@ -134,11 +140,12 @@ expressionStatement:
 
 expression:
     assignExpression
+|   error             
 ;
 
 assignExpression:
     conditionalExpression
-|   T_IDENTIFIER T_ASSIGN expression
+|   identifier T_ASSIGN expression
 ;
 
 conditionalExpression:
@@ -196,18 +203,22 @@ postfixExpression:
 |   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
 ;
 
+identifier:
+    T_IDENTIFIER {printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.sval, line_number, start_current_character, current_character);}
+;
+
 primary:
-    T_INT           {printf("%d int value returned to bison\n", yylval.ival);}
-|   T_CHAR          {printf("%c character returned to bison\n", yylval.cval);}
+    T_INT           {printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);}
+|   T_CHAR          {printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);}
 |   T_BOOL          {yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
-|   T_IDENTIFIER    {printf("%s identifier returned to bison\n", yylval.sval);}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN
+|   identifier
 ;
 
 %%
 
 void yyerror(char const* err) {
-    printf("Shit fucked at %s\n", err);
+    printf("%s: line: %d, character: %ld, token: %s\n", err, line_number, start_current_character, "skill issue");
 }
 
 int main(int argc, char* argv[]) {
@@ -220,6 +231,8 @@ int main(int argc, char* argv[]) {
     }
 
     yyparse();
+    printf("\nNumber of lines in the file - %u\n", line_number);
+    printf("\nNumber of characters in the file - %ld\n", current_character);
     return 0;
 }
 
