@@ -12,11 +12,11 @@
     unsigned short line_number = 1;
     long current_character = 1;
     long start_current_character = 1;
-    
 %}
 
 /* DECLARATIONS */
 %union {
+    struct AST_node* nval;
     double fval;
     int ival;
     char cval;
@@ -54,6 +54,10 @@
 %token T_CHAR_TYPE
 %token T_VOID_TYPE
 %token <sval> T_IDENTIFIER
+
+%type <nval> identifier
+%type <nval> primary
+%type <nval> expression
 
 
 /* GRAMMAR RULES */
@@ -208,15 +212,16 @@ postfixExpression:
 ;
 
 identifier:
-    T_IDENTIFIER {printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.sval, line_number, start_current_character, current_character);}
+    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, (void *)TYPE_IDENTIFIER, yylval.sval);
+        printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.sval, line_number, start_current_character, current_character);}
 ;
 
 primary:
     T_INT           {printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);}
 |   T_CHAR          {printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);}
 |   T_BOOL          {yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
-|   T_LEFT_PAREN expression T_RIGHT_PAREN
-|   identifier
+|   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
+|   identifier      {$$ = $1;}
 ;
 
 %%

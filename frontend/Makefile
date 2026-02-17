@@ -4,7 +4,7 @@ OUT = grammar.out
 all:
 	flex rules.l
 	bison -vdy grammar.y
-	$(CC) -o $(OUT) lex.yy.c y.tab.c
+	$(CC) -o $(OUT) lex.yy.c y.tab.c ast.c
 
 .PHONY: clean
 clean:
