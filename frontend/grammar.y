@@ -1,13 +1,16 @@
 
 /* PROLOGUE */
 %{
-    int yylex(void);
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
+
     extern int yylex(void);
     void yyerror(char const*);
+    struct AST_node *binexp(void *, int, void *);
+    struct AST_node *relexp(void *, int, void *);
+
     extern FILE *yyin;
     unsigned short line_number = 1;
     long current_character = 1;
@@ -21,8 +24,9 @@
     int ival;
     char cval;
     char* sval;
-} 
-/* SINGLE CHARACTER TOKENS */
+}
+
+/* TOKENS */
 %token T_RIGHT_BRACE
 %token T_LEFT_BRACE
 %token T_RIGHT_PAREN
@@ -30,15 +34,14 @@
 %token T_COMMA
 %token T_ASSIGN
 %token ';'
+%left  '<' '>' T_LESS_EQ T_GREATER_EQ T_EQUALS T_NEQUALS
 %left  '+' '-'
 %left  '*' '/'
-%left  '<' '>'
 %right '!'
 
 /* DOUBLE CHARACTER TOKENS */
 %token T_ARROW
 %token T_OR T_AND
-%left  T_LESS_EQ T_GREATER_EQ T_EQUALS T_NEQUALS
 
 /* LONGER TOKENS */
 %token T_IF
@@ -46,47 +49,50 @@
 %token T_RETURN
 %token T_FUNC
 
-%token <ival> T_INT 
+%token <ival> T_INT T_BOOL
 %token <cval> T_CHAR
-%token <ival> T_BOOL
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
 %token T_VOID_TYPE
 %token <sval> T_IDENTIFIER
 
-%type <nval> identifier
-%type <nval> primary
-%type <nval> expression
+%type <nval> identifier primary postfixExpression unaryExpression castExpression
+%type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
+%type <nval> conditionalExpression assignExpression expression expressionStatement
+%type <nval> blockBody block returnStatement else ifStatement statement
+%type <nval> args parameters function funcDefinition varDeclaration declaration
+%type <nval> module program
+%type <ival> type returnType
 
 
 /* GRAMMAR RULES */
 %%
 program:
     /*%empty*/
-|   program module
+|   program module {AST_printer($2);}
 ;
 
 module:
     funcDefinition
-|   declaration
+|   declaration     {$$ = $1;}
 ;
 
 declaration:
-    varDeclaration
-|   statement
+    varDeclaration  {$$ = $1;}
+|   statement       {$$ = $1;}
 ;
 
 varDeclaration:
-    type identifier ';'
-|   type identifier T_ASSIGN expression ';'
+    type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
+|   type identifier T_ASSIGN expression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
 ;
 
 type:
-    T_INT_TYPE
-|   T_CHAR_TYPE
-|   T_BOOL_TYPE
-|   T_VOID_TYPE
+    T_INT_TYPE      {$$ = (int) TYPE_INT;}
+|   T_CHAR_TYPE     {$$ = (int) TYPE_CHAR;}
+|   T_BOOL_TYPE     {$$ = (int) TYPE_BOOL;}
+|   T_VOID_TYPE     {$$ = (int) TYPE_VOID;}
 ;
 
 funcDefinition:
@@ -116,7 +122,7 @@ args:
 statement:
     ifStatement             
 |   returnStatement
-|   expressionStatement
+|   expressionStatement {$$ = $1;}
 |   error statement
 ;
 
@@ -143,83 +149,75 @@ blockBody:
 ;
 
 expressionStatement:
-    expression ';'
+    expression ';' {$$ = $1;}
 ;
 
 expression:
-    assignExpression
+    assignExpression {$$ = $1;}
 |   error             
 ;
 
 assignExpression:
-    conditionalExpression
-|   identifier T_ASSIGN expression
+    conditionalExpression           {$$ = $1;}
+|   identifier T_ASSIGN expression  {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, $1, $3);}
 ;
 
 conditionalExpression:
-    logicalOR
+    logicalOR {$$ = $1;}
 ;
 
 logicalOR:
-    logicalAND
-|   logicalOR T_OR logicalAND
+    logicalAND                  {$$ = $1;}
+|   logicalOR T_OR logicalAND   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void *) A_OR, $3);}
 ;
 
 logicalAND:
-    equalityExpression
-|   logicalAND T_AND equalityExpression
-;
-
-equalityExpression:
-    relationalExpression
-|   equalityExpression T_EQUALS relationalExpression
-|   equalityExpression T_NEQUALS relationalExpression
+    relationalExpression                    {$$ = $1;}
+|   logicalAND T_AND relationalExpression   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void*) A_AND, $3);}
 ;
 
 relationalExpression:
-    additiveExpression
-|   relationalExpression '<' additiveExpression
-|   relationalExpression '>' additiveExpression
-|   relationalExpression T_LESS_EQ additiveExpression
-|   relationalExpression T_GREATER_EQ additiveExpression
+    arithmeticExpression {$$ = $1;}
+|   relationalExpression T_EQUALS arithmeticExpression      {$$ = relexp($1, A_EQUALS, $3);}
+|   relationalExpression T_NEQUALS arithmeticExpression     {$$ = relexp($1, A_NEQUALS, $3);}
+|   relationalExpression '<' arithmeticExpression           {$$ = relexp($1, A_LESS, $3);}
+|   relationalExpression '>' arithmeticExpression           {$$ = relexp($1, A_GREATER, $3);}
+|   relationalExpression T_LESS_EQ arithmeticExpression     {$$ = relexp($1, A_LESS_EQ, $3);}
+|   relationalExpression T_GREATER_EQ arithmeticExpression  {$$ = relexp($1, A_GREATER_EQ, $3);}
 ;
 
-additiveExpression:
-    multiplicativeExpression
-|   additiveExpression '+' multiplicativeExpression
-|   additiveExpression '-' multiplicativeExpression
-;
-
-multiplicativeExpression:
-    castExpression
-|   multiplicativeExpression '*' castExpression
-|   multiplicativeExpression '/' castExpression
+arithmeticExpression:
+    castExpression                          {$$ = $1;}
+|   arithmeticExpression '+' castExpression {$$ = binexp($1, A_ADD, $3);}
+|   arithmeticExpression '-' castExpression {$$ = binexp($1, A_SUB, $3);}
+|   arithmeticExpression '*' castExpression {$$ = binexp($1, A_MULT, $3);}
+|   arithmeticExpression '/' castExpression {$$ = binexp($1, A_DIV, $3);}
 ;
 
 castExpression:
-    unaryExpression
+    unaryExpression {$$ = $1;}
 ;
 
 unaryExpression:
-    postfixExpression
-|   '-' postfixExpression
-|   '!' postfixExpression
+    postfixExpression       {$$ = $1;}
+|   '-' postfixExpression   {$$ = create_binary_node(start_current_character, line_number, A_UNARY_EXPR, A_MINUS, $2);}
+|   '!' postfixExpression   {$$ = create_binary_node(start_current_character, line_number, A_UNARY_EXPR, A_NEG, $2);}
 ;
 
 postfixExpression:
-    primary
+    primary {$$ = $1;}
 |   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
 ;
 
 identifier:
-    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, (void *)TYPE_IDENTIFIER, yylval.sval);
-        printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.sval, line_number, start_current_character, current_character);}
+    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_IDENTIFIER, yylval.sval);
+                    printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", $$->primary_expr.identifier_name, line_number, start_current_character, current_character);}
 ;
 
 primary:
-    T_INT           {printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);}
-|   T_CHAR          {printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);}
-|   T_BOOL          {yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
+    T_INT           {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_INT, (void *) yylval.ival); printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);}
+|   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);}
+|   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
 |   identifier      {$$ = $1;}
 ;
@@ -228,6 +226,14 @@ primary:
 
 void yyerror(char const* err) {
     printf("%s: line: %d, character: %ld, token: %s\n", err, line_number, start_current_character, "skill issue");
+}
+
+struct AST_node* binexp(void* left, int op, void* right) {
+    return create_ternary_node(start_current_character, line_number, A_ARITHMETIC_EXPR, left, (void*) op, right);
+}
+
+struct AST_node* relexp(void* left, int op, void* right) {
+    return create_ternary_node(start_current_character, line_number, A_RELATIONAL_EXPR, left, (void*) op, right);
 }
 
 int main(int argc, char* argv[]) {

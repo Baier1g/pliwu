@@ -1,0 +1,7 @@
+int ID = 50000;
+char character = "k";
+int b = 50;
+
+int sum = ID + b * 200;
+
+bool boo = 50 + 10 > 70 || 10 / 10 + 2 >= 3;

@@ -3,6 +3,10 @@
 #include <stdio.h>
 #include <string.h>
 
+int indents = 0;
+
+void print_indents(void);
+
 pos create_pos(int start, int line) {
     pos pos;
     pos.startchar = start;
@@ -48,14 +52,24 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
                     node->primary_expr.bool_value = (short) b;
                     break;
                 case TYPE_IDENTIFIER:
-                    node->primary_expr.identifier_name = malloc(sizeof(char) * strlen((char*) b));
-                    strcpy(node->primary_expr.identifier_name, b);
+                    size_t len = strlen((char*) b);
+                    node->primary_expr.identifier_name = malloc(sizeof(char) * len);
+                    memset(node->primary_expr.identifier_name, 0, len);
+                    strncpy(node->primary_expr.identifier_name, b, len);
                     break;
             }
             break;
         case A_RETURN_STMT:
             node->return_stmt.return_type = (data_type) a;
             node->return_stmt.expression = b;
+            break;
+        case A_UNARY_EXPR:
+            node->unary_expr.op = (unary_op) a;
+            node->unary_expr.expression = b;
+            break;
+        case A_ASSIGN_EXPR:
+            node->assign_expr.identifier = a;
+            node->assign_expr.expression = b;
             break;
     }
     return node;
@@ -76,10 +90,15 @@ struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, vo
             break;
         case A_ARITHMETIC_EXPR:
         case A_LOGICAL_EXPR:
-        case A_EQUALITY_EXPR:
+        case A_RELATIONAL_EXPR:
             node->binary_expr.left = a;
             node->binary_expr.op = (binary_op) b;
             node->binary_expr.right = c;
+            break;
+        case A_VAR_DECL:
+            node->var_decl.type = (data_type) a;
+            node->var_decl.identifier = b;
+            node->var_decl.expr_stmt = c;
             break;
     }
     return node;
@@ -115,8 +134,8 @@ char *kind_enum_to_string(kind type) {
         case A_LOGICAL_EXPR:
             strcpy(kind, "Logical expression");
             break;
-        case A_EQUALITY_EXPR:
-            strcpy(kind, "Equality expression");
+        case A_RELATIONAL_EXPR:
+            strcpy(kind, "Relational expression");
             break;
         case A_ARITHMETIC_EXPR:
             strcpy(kind, "Arithmetic expression");
@@ -135,7 +154,7 @@ char *kind_enum_to_string(kind type) {
 }
 
 char *binary_op_enum_to_string(binary_op operand) {
-    char* op = malloc(sizeof(char) * 3);
+    char* op = malloc(sizeof(char) * 4);
     switch(operand) {
         case A_LESS:
             strcpy(op, "<");
@@ -170,8 +189,103 @@ char *binary_op_enum_to_string(binary_op operand) {
         case A_DIV:
             strcpy(op, "/");
             break;
+        case A_AND:
+            strcpy(op, "AND");
+            break;
+        case A_OR:
+            strcpy(op, "OR");
+            break;
     }
     return op;
+}
+
+void AST_printer(struct AST_node *node) {
+    char* c;
+    print_indents();
+    printf("%s:\n", (c = kind_enum_to_string(node->kind)));
+    free(c);
+    switch(node->kind) {
+        case A_FUNC_DEF:
+            break;
+        case A_VAR_DECL:
+            indents++;
+            print_indents();
+            printf("type: %d\n", node->var_decl.type);
+            AST_printer(node->var_decl.identifier);
+            AST_printer(node->var_decl.expr_stmt);
+            indents--;
+            break;
+        case A_BLOCK_STMT:
+            break;
+        case A_IF_STMT:
+            break;
+        case A_PRINT_STMT:
+            break;
+        case A_EXPR_STMT:
+            break;
+        case A_RETURN_STMT:
+            break;
+        case A_ASSIGN_EXPR:
+            indents++;
+            AST_printer(node->assign_expr.identifier);
+            AST_printer(node->assign_expr.expression);
+            indents--;
+            break;
+        case A_LOGICAL_EXPR:
+        case A_RELATIONAL_EXPR:
+        case A_ARITHMETIC_EXPR:
+            indents++;
+            AST_printer(node->binary_expr.left);
+            char* d;
+            print_indents();
+            printf("Operator: %s\n", (d = binary_op_enum_to_string(node->binary_expr.op)));
+            free(d);
+            AST_printer(node->binary_expr.right);
+            indents--;
+            break;
+        case A_UNARY_EXPR:
+            indents++;
+            print_indents();
+            printf("Operator: %c\n", node->unary_expr.op == A_NEG ? '!' : '-');
+            AST_printer(node->unary_expr.expression);
+            indents--;
+            break;
+        case A_PRIMARY_EXPR:
+            indents++;
+            print_indents();
+            printf("Type: %d\n", node->primary_expr.type);
+            print_indents();
+            switch (node->primary_expr.type) {
+                case TYPE_INT:
+                    printf("Literal: %d\n", node->primary_expr.integer_value);
+                    break;
+                case TYPE_CHAR:
+                    printf("Literal: %c\n", node->primary_expr.char_value);
+                    break;
+                case TYPE_BOOL:
+                    printf("Literal: %s\n", node->primary_expr.bool_value ? "True" : "False");
+                    break;
+                case TYPE_IDENTIFIER:
+                    printf("Literal: %s\n", node->primary_expr.identifier_name);
+                    break;
+                case TYPE_VOID:
+                    printf("Literal: None\n");
+                    break;
+                default:
+                    printf("Someting went wong UwU");
+                    break;
+            }
+            indents--;
+            break;
+        case A_CALL_EXPR:
+            break;
+    }
+}
+
+void print_indents() {
+    for (int i = 0; i < indents; i++) {
+        printf("    ");
+    }
 }
 
 /*int main() {

@@ -13,7 +13,7 @@ typedef enum {
 
     A_ASSIGN_EXPR,     // identifier, expression
     A_LOGICAL_EXPR,    // expression, operator, expression
-    A_EQUALITY_EXPR,   // expression, operator, expression
+    A_RELATIONAL_EXPR,   // expression, operator, expression
     A_ARITHMETIC_EXPR, // expression, operator, expression
     A_UNARY_EXPR,      // operator, expression
     A_PRIMARY_EXPR,    // type, literal
@@ -21,6 +21,8 @@ typedef enum {
 } kind;
 
 typedef enum {
+    A_AND,
+    A_OR,
     A_LESS,
     A_GREATER,
     A_LESS_EQ,
@@ -44,6 +46,7 @@ typedef enum {
     TYPE_CHAR,
     TYPE_BOOL,
     TYPE_IDENTIFIER,
+    TYPE_VOID
 } data_type;
 
 typedef struct {
@@ -69,6 +72,7 @@ void add_node(struct linked_list *, struct linked_list *);
 struct AST_node *create_unary_node(int, int, kind, void *);
 struct AST_node *create_binary_node(int, int, kind, void *, void *);
 struct AST_node *create_ternary_node(int, int, kind, void *, void *, void *);
+void AST_printer(struct AST_node*);
 
 struct AST_node {
     kind kind;
@@ -83,6 +87,7 @@ struct AST_node {
 
         // Variable declaration
         struct {
+            data_type type;
             struct AST_node *identifier;
             struct AST_node *expr_stmt;
         } var_decl;
