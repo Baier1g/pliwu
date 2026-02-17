@@ -24,6 +24,8 @@ struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void
         case A_PRINT_STMT:
             node->print_stmt.expression = a;
             break;
+        case A_BLOCK_STMT:
+            node->block.expr_stmt = a;
     }
     return node;
 }
@@ -36,14 +38,18 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
         case A_PRIMARY_EXPR:
             node->primary_expr.type = (data_type) a;
             switch (node->primary_expr.type) {
-                case T_INT:
+                case TYPE_INT:
                     node->primary_expr.integer_value = (int) b;
                     break;
-                case T_CHAR:
+                case TYPE_CHAR:
                     node->primary_expr.char_value = (char) b;
                     break;
-                case T_BOOL:
+                case TYPE_BOOL:
                     node->primary_expr.bool_value = (short) b;
+                    break;
+                case TYPE_IDENTIFIER:
+                    node->primary_expr.identifier_name = malloc(sizeof(char) * strlen((char*) b));
+                    strcpy(node->primary_expr.identifier_name, b);
                     break;
             }
             break;
@@ -168,21 +174,25 @@ char *binary_op_enum_to_string(binary_op operand) {
     return op;
 }
 
-int main() {
-    struct AST_node *node = create_binary_node(10, 2, A_PRIMARY_EXPR, T_INT,  (void *) 50);
+/*int main() {
+    char *id = malloc(sizeof(char) * 10);
+    strncpy(id, "hello", 10);
+    struct AST_node *node = create_binary_node(10, 2, A_PRIMARY_EXPR, TYPE_INT,  (void *) 50);
     struct AST_node *unary_node = create_unary_node(10, 2, A_EXPR_STMT, node);
-    struct AST_node *node_2 = create_binary_node(10, 2, A_PRIMARY_EXPR, T_INT, (void *) 100);
+    struct AST_node *node_2 = create_binary_node(10, 2, A_PRIMARY_EXPR, (void *) TYPE_IDENTIFIER, id);
     struct AST_node *ternary_node = create_ternary_node(30, 10, A_ARITHMETIC_EXPR, node, (void *) A_ADD, node_2);
 
     char *c;
     printf("Digit in node: %d\n", node->primary_expr.integer_value);
     printf("Pos value in unary_node: %d, %d\n", unary_node->pos.line, unary_node->pos.startchar);
     printf("Value in nested nodes: %d\n", unary_node->expr_stmt.expression->primary_expr.integer_value);
-    printf("Value in left child: %d, value in right child: %d, operation: %s\n", ternary_node->binary_expr.left->primary_expr.integer_value, ternary_node->binary_expr.right->primary_expr.integer_value, (c = binary_op_enum_to_string(ternary_node->binary_expr.op)));
+    printf("Value in left child: %d, value in right child: %s, operation: %s\n", ternary_node->binary_expr.left->primary_expr.integer_value, ternary_node->binary_expr.right->primary_expr.identifier_name, (c = binary_op_enum_to_string(ternary_node->binary_expr.op)));
 
     free(c);
+    free(id);
     free(unary_node->expr_stmt.expression);
     free(unary_node);
+    free(ternary_node->binary_expr.right->primary_expr.identifier_name);
     free(ternary_node->binary_expr.right);
     free(ternary_node);
-}
+}*/

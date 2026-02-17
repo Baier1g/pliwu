@@ -5,12 +5,14 @@
     #include <stdio.h>
     #include <stdlib.h>
     #include <string.h>
+    #include "ast.h"
     extern int yylex(void);
     void yyerror(char const*);
     extern FILE *yyin;
     unsigned short line_number = 1;
     long current_character = 1;
     long start_current_character = 1;
+    
 %}
 
 /* DECLARATIONS */
@@ -44,12 +46,14 @@
 %token T_RETURN
 %token T_FUNC
 
-%token T_INT T_CHAR T_BOOL
+%token <ival> T_INT 
+%token <cval> T_CHAR
+%token <ival> T_BOOL
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
 %token T_VOID_TYPE
-%token T_IDENTIFIER
+%token <sval> T_IDENTIFIER
 
 
 /* GRAMMAR RULES */

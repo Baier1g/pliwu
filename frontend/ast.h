@@ -40,15 +40,31 @@ typedef enum {
 } unary_op;
 
 typedef enum {
-    T_INT,
-    T_CHAR,
-    T_BOOL
+    TYPE_INT,
+    TYPE_CHAR,
+    TYPE_BOOL,
+    TYPE_IDENTIFIER,
 } data_type;
 
 typedef struct {
     int startchar;
     int line;
 } pos;
+
+struct linked_list {
+    struct linked_list_node *head;
+    struct linked_list_node *tail;
+};
+
+struct linked_list_node {
+    struct linked_list_node *next;
+    void *content;
+};
+
+struct linked_list *create_linked_list(void *);
+struct linked_list_node *create_node(void *);
+void add_node(struct linked_list *, struct linked_list *);
+
 
 struct AST_node *create_unary_node(int, int, kind, void *);
 struct AST_node *create_binary_node(int, int, kind, void *, void *);
@@ -73,7 +89,8 @@ struct AST_node {
 
         // Block statement
         struct {
-            struct AST_node **expr_stmt;
+            int num_nodes;
+            struct AST_node *expr_stmt;
         } block;
 
         // If statement
@@ -131,6 +148,7 @@ struct AST_node {
                 int integer_value;
                 char char_value;
                 short bool_value;
+                char* identifier_name;
             };
         } primary_expr;
     };
