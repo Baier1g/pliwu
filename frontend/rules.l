@@ -2,7 +2,7 @@
 %{
     //#include <string.h>
     #include "y.tab.h"
-    #define NUM_KEYWORDS 4
+    #define NUM_KEYWORDS 5
     #define NUM_TYPES    3
     #define NUM_DIGRAPHS 7
 
@@ -11,8 +11,8 @@
     extern long start_current_character;
 
 
-    const char keywords[NUM_KEYWORDS][10] = {"if", "else", "return", "func"};
-    const int  key_tokens[NUM_KEYWORDS]   = {T_IF, T_ELSE, T_RETURN, T_FUNC};
+    const char keywords[NUM_KEYWORDS][10] = {"if", "else", "return", "func", "print"};
+    const int  key_tokens[NUM_KEYWORDS]   = {T_IF, T_ELSE, T_RETURN, T_FUNC, T_PRINT};
 
     const char types[NUM_TYPES][10]   = {"int", "char", "bool"};
     const int  token_types[NUM_TYPES] = {T_INT_TYPE, T_CHAR_TYPE, T_BOOL_TYPE};
@@ -158,7 +158,8 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 <INITIAL>{IDENTIFIER} {
     printf("%s \tidentifier\n", yytext);
     increment_counter(yyleng);
-    yylval.sval = malloc(sizeof(char) * yyleng);
+    yylval.sval = malloc(sizeof(char) * yyleng + 1);
+    memset(yylval.sval, '\0', yyleng + 1);
     strncpy(yylval.sval, yytext, yyleng);
     return T_IDENTIFIER;
 }

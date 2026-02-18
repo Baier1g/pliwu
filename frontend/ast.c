@@ -22,6 +22,12 @@ struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
     switch (node_kind) {
+        case A_PROGRAM:
+            node->program.modules = a;
+            break;
+        case A_MODULE:
+            node->module.module_declarations = a;
+            break;
         case A_EXPR_STMT:
             node->expr_stmt.expression = a;
             break;
@@ -29,8 +35,14 @@ struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void
             node->print_stmt.expression = a;
             break;
         case A_BLOCK_STMT:
-            node->block.expr_stmt = a;
-    }
+            node->block.stmt_list = a;
+        case A_RETURN_STMT:
+            node->return_stmt.expression = a;
+            break;
+        default:
+            printf("Unexpected kind in create_unary_node: %d\n", node_kind);
+            break;
+        }
     return node;
 }
 
@@ -59,10 +71,6 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
                     break;
             }
             break;
-        case A_RETURN_STMT:
-            node->return_stmt.return_type = (data_type) a;
-            node->return_stmt.expression = b;
-            break;
         case A_UNARY_EXPR:
             node->unary_expr.op = (unary_op) a;
             node->unary_expr.expression = b;
@@ -70,6 +78,17 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
         case A_ASSIGN_EXPR:
             node->assign_expr.identifier = a;
             node->assign_expr.expression = b;
+            break;
+        case A_PARAMETER_EXPR:
+            node->parameter.type = (data_type) a;
+            node->parameter.identifier = b;
+            break;
+        case A_CALL_EXPR:
+            node->call_expr.identifier = a;
+            node->call_expr.arguments = b;
+            break;
+        default:
+            printf("Unexpected kind in create_binary_node: %d\n", node_kind);
             break;
     }
     return node;
@@ -86,7 +105,7 @@ struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, vo
         case A_IF_STMT:
             node->if_stmt.condition = a;
             node->if_stmt.if_branch = b;
-            node->if_stmt.if_branch = c;
+            node->if_stmt.else_branch = c;
             break;
         case A_ARITHMETIC_EXPR:
         case A_LOGICAL_EXPR:
@@ -100,13 +119,43 @@ struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, vo
             node->var_decl.identifier = b;
             node->var_decl.expr_stmt = c;
             break;
+        default:
+            printf("Unexpected kind in create_ternary_node: %d\n", node_kind);
+            break;
+        }
+    return node;
+}
+
+struct AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *a, void *b, void *c, void *d) {
+    struct AST_node *node = malloc(sizeof(struct AST_node));
+    if (!node) {
+        return NULL;
     }
+    node->pos = create_pos(startchar, line);
+    node->kind = node_kind;
+    switch (node_kind) {
+        case A_FUNC_DEF:
+            node->func_def.return_type = (data_type) a;
+            node->func_def.identifier = b;
+            node->func_def.parameters = c;
+            node->func_def.function_block = d;
+            break;
+        default:
+            printf("Unexpected kind in create_quaternary_node: %d\n", node_kind);
+            break;
+        }
     return node;
 }
 
 char *kind_enum_to_string(kind type) {
     char* kind = malloc(sizeof(char) * 30);
     switch(type) {
+        case A_PROGRAM:
+            strcpy(kind, "PROGRAM");
+            break;
+        case A_MODULE:
+            strcpy(kind, "MODULE");
+            break;
         case A_FUNC_DEF:
             strcpy(kind, "Function definition");
             break;
@@ -148,6 +197,12 @@ char *kind_enum_to_string(kind type) {
             break;
         case A_CALL_EXPR:
             strcpy(kind, "Call expression");
+            break;
+        case A_PARAMETER_EXPR:
+            strcpy(kind, "Parameter expression");
+            break;
+        default:
+            strcpy(kind, "Unknown kind");
             break;
     }
     return kind;
@@ -200,12 +255,55 @@ char *binary_op_enum_to_string(binary_op operand) {
 }
 
 void AST_printer(struct AST_node *node) {
+    if (!node) {
+        return;
+    }
     char* c;
     print_indents();
     printf("%s:\n", (c = kind_enum_to_string(node->kind)));
     free(c);
     switch(node->kind) {
+        case A_PROGRAM:
+            {
+                indents++;
+                linked_list_node *ptr = node->program.modules->head;
+                while (ptr) {
+                    AST_printer(ptr->data);
+                    ptr = ptr->next;
+                }
+                indents--;
+            }
+            break;
+        case A_MODULE:
+            {
+                indents++;
+                linked_list_node *ptr = node->module.module_declarations->head;
+                while (ptr) {
+                    AST_printer(ptr->data);
+                    ptr = ptr->next;
+                }
+                indents--;
+            }
+            break;
         case A_FUNC_DEF:
+            indents++;
+            print_indents();
+            printf("return type: %d\n", node->func_def.return_type);
+            AST_printer(node->func_def.identifier);
+            linked_list_node *ptrs = node->func_def.parameters->head;
+            while (ptrs) {
+                AST_printer(ptrs->data);
+                ptrs = ptrs->next;
+            }
+            AST_printer(node->func_def.function_block);
+            indents--;
+            break;
+        case A_PARAMETER_EXPR:
+            indents++;
+            print_indents();
+            printf("type: %d\n", node->parameter.type);
+            AST_printer(node->parameter.identifier);
+            indents--;
             break;
         case A_VAR_DECL:
             indents++;
@@ -216,14 +314,32 @@ void AST_printer(struct AST_node *node) {
             indents--;
             break;
         case A_BLOCK_STMT:
+            linked_list_node *ptr = node->block.stmt_list->head;
+            indents++;
+            while (ptr) {
+                AST_printer(ptr->data);
+                ptr = ptr->next;
+            }
+            indents--;
             break;
         case A_IF_STMT:
+            indents++;
+            AST_printer(node->if_stmt.condition);
+            AST_printer(node->if_stmt.if_branch);
+            AST_printer(node->if_stmt.else_branch);
+            indents--;
             break;
         case A_PRINT_STMT:
+            indents++;
+            AST_printer(node->print_stmt.expression);
+            indents--;
             break;
         case A_EXPR_STMT:
             break;
         case A_RETURN_STMT:
+            indents++;
+            AST_printer(node->return_stmt.expression);
+            indents--;
             break;
         case A_ASSIGN_EXPR:
             indents++;
@@ -278,13 +394,23 @@ void AST_printer(struct AST_node *node) {
             indents--;
             break;
         case A_CALL_EXPR:
+            indents++;
+            AST_printer(node->call_expr.identifier);
+            linked_list_node *llpeter = node->call_expr.arguments->head;
+            while (llpeter) {
+                AST_printer(llpeter->data);
+                llpeter = llpeter->next;
+            }
+            indents--;
+            break;
+        default:
             break;
     }
 }
 
 void print_indents() {
     for (int i = 0; i < indents; i++) {
-        printf("    ");
+        printf("|   ");
     }
 }
 

@@ -5,11 +5,14 @@
     #include <stdlib.h>
     #include <string.h>
     #include "ast.h"
+    #include "linked_list.h"
 
     extern int yylex(void);
     void yyerror(char const*);
     struct AST_node *binexp(void *, int, void *);
     struct AST_node *relexp(void *, int, void *);
+
+    struct AST_node *prog;
 
     extern FILE *yyin;
     unsigned short line_number = 1;
@@ -20,6 +23,7 @@
 /* DECLARATIONS */
 %union {
     struct AST_node* nval;
+    struct linked_list *llval;
     double fval;
     int ival;
     char cval;
@@ -48,6 +52,7 @@
 %token T_ELSE
 %token T_RETURN
 %token T_FUNC
+%token T_PRINT
 
 %token <ival> T_INT T_BOOL
 %token <cval> T_CHAR
@@ -60,22 +65,23 @@
 %type <nval> identifier primary postfixExpression unaryExpression castExpression
 %type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
 %type <nval> conditionalExpression assignExpression expression expressionStatement
-%type <nval> blockBody block returnStatement else ifStatement statement
-%type <nval> args parameters function funcDefinition varDeclaration declaration
+%type <nval> block returnStatement else ifStatement printStatement statement
+%type <nval> function funcDefinition varDeclaration declaration
 %type <nval> module program
+%type <llval> blockBody args parameters
 %type <ival> type returnType
 
 
 /* GRAMMAR RULES */
 %%
 program:
-    /*%empty*/
-|   program module {AST_printer($2);}
+    /*%empty*/     {prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());}
+|   program module {linked_list_append(prog->program.modules, $2);}
 ;
 
-module:
-    funcDefinition
-|   declaration     {$$ = $1;}
+module:              
+    funcDefinition   {$$ = $1;}
+|   declaration      {$$ = $1;}
 ;
 
 declaration:
@@ -96,56 +102,62 @@ type:
 ;
 
 funcDefinition:
-    T_FUNC function;
+    T_FUNC function {$$ = $2;};
 
 function:
-    identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+    identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block {$$ = create_quaternary_node(start_current_character, line_number, A_FUNC_DEF, $5, $1, $3, $6);}
 ; 
 
 returnType:
-    /*%empty*/ 
-|   T_ARROW type
+    /*%empty*/      {$$ = (int) TYPE_VOID;}
+|   T_ARROW type    {$$ = $2;}
 ;
 
 parameters:
-    /*%empty*/
-|   type identifier
-|   parameters T_COMMA type identifier
+    /*%empty*/                          {$$ = linked_list_new();}
+|   type identifier                     {$$ = linked_list_new(); linked_list_append($$, create_binary_node(start_current_character, line_number, A_PARAMETER_EXPR, $1, $2));}
+|   parameters T_COMMA type identifier  {linked_list_append($1, create_binary_node(start_current_character, line_number, A_PARAMETER_EXPR, $3, $4)); $$ = $1;}
 ;
 
 args:
-    /*%empty*/
-|   assignExpression
-|   args T_COMMA assignExpression
+    /*%empty*/                      {$$ = linked_list_new();}
+|   assignExpression                {$$ = linked_list_new(); linked_list_append($$, $1);}
+|   args T_COMMA assignExpression   {linked_list_append($1, $3); $$ = $1;}
 ;
 
 statement:
-    ifStatement             
-|   returnStatement
+    ifStatement         {$$ = $1;}             
+|   returnStatement     {$$ = $1;}
+|   printStatement      {$$ = $1;}
 |   expressionStatement {$$ = $1;}
 |   error statement
 ;
 
 ifStatement:
-    T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
+    T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else {$$ = create_ternary_node(start_current_character, line_number, A_IF_STMT, $3, $5, $6);}
 ;
 
 else:
-    /*%empty*/
-|   T_ELSE block
+    /*%empty*/      {$$ = NULL;}
+|   T_ELSE block    {$$ = $2;}
 ;
 
 returnStatement:
-    T_RETURN expression ';'
+    T_RETURN expression ';' {$$ = create_unary_node(start_current_character, line_number, A_RETURN_STMT, $2);}
+|   T_RETURN ';'            {$$ = create_unary_node(start_current_character, line_number, A_RETURN_STMT, NULL);}
+;
+
+printStatement:
+    T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN ';' {$$ = create_unary_node(start_current_character, line_number, A_PRINT_STMT, $3);}
 ;
 
 block:
-    T_LEFT_BRACE blockBody T_RIGHT_BRACE
+    T_LEFT_BRACE blockBody T_RIGHT_BRACE {$$ = create_unary_node(start_current_character, line_number, A_BLOCK_STMT, $2);}
 ;
 
 blockBody:
-    /*%empty*/
-|   blockBody declaration
+    /*%empty*/              {$$ = linked_list_new();}
+|   blockBody declaration   {linked_list_append($1, $2); $$ = $1;}
 ;
 
 expressionStatement:
@@ -206,7 +218,7 @@ unaryExpression:
 
 postfixExpression:
     primary {$$ = $1;}
-|   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
+|   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
 ;
 
 identifier:
@@ -248,6 +260,7 @@ int main(int argc, char* argv[]) {
     yyparse();
     printf("\nNumber of lines in the file - %u\n", line_number);
     printf("\nNumber of characters in the file - %ld\n", current_character);
+    AST_printer(prog);
     return 0;
 }
 

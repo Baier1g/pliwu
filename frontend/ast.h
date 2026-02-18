@@ -1,7 +1,12 @@
 #ifndef AST_H
 #define AST_H
 
+#include "linked_list.h"
+
 typedef enum {
+    A_PROGRAM,
+    A_MODULE,
+
     A_FUNC_DEF, // return_type, parameter*, function_block
     A_VAR_DECL, // type, identifier, expression+
 
@@ -13,6 +18,7 @@ typedef enum {
 
     A_ASSIGN_EXPR,     // identifier, expression
     A_LOGICAL_EXPR,    // expression, operator, expression
+    A_PARAMETER_EXPR,
     A_RELATIONAL_EXPR,   // expression, operator, expression
     A_ARITHMETIC_EXPR, // expression, operator, expression
     A_UNARY_EXPR,      // operator, expression
@@ -54,34 +60,89 @@ typedef struct {
     int line;
 } pos;
 
-struct linked_list {
-    struct linked_list_node *head;
-    struct linked_list_node *tail;
-};
-
-struct linked_list_node {
-    struct linked_list_node *next;
-    void *content;
-};
-
-struct linked_list *create_linked_list(void *);
-struct linked_list_node *create_node(void *);
-void add_node(struct linked_list *, struct linked_list *);
-
-
+/*
+ * Creates a unary AST node.
+ * int startchar: The starting character of this node.
+ * int line: The line this node is found on.
+ * kind node_kind: The type of AST_node to be created.
+ * void *a: The content of this node.
+ *
+ * The kinds of unary node:
+ * Expression Statement
+ * Return statement (a: *AST_node)
+ * Print Statement
+ * Block Statement
+ * Module
+ * Program
+ */
 struct AST_node *create_unary_node(int, int, kind, void *);
+
+/*
+ * Creates a binary AST node.
+ * int startchar: The starting character of this node.
+ * int line: The line this node is found on.
+ * kind node_kind: The type of AST_node to be created.
+ * void *a: The first content of this node.
+ * void *b: The second content of this node.
+ * 
+ * The kinds of binary node:
+ * Primary expression (a: data_type, b: literal value)
+ * Unary expression (a: unary_op, b: *AST_node)
+ * Assignment expression (a: *AST_node identifier, b: *AST_node)
+ * Parameter expression (a: data_type type, b: AST_node* identifier)
+ */
 struct AST_node *create_binary_node(int, int, kind, void *, void *);
+
+/*
+ * Creates a ternary AST node.
+ * int startchar: The starting character of this node.
+ * int line: The line this node is found on.
+ * kind node_kind: The type of AST_node to be created.
+ * void *a: The first content of this node.
+ * void *b: The second content of this node.
+ * void *c: The third content of this node.
+ *
+ * The kinds of ternary node:
+ * If statement (a: condition, b: thenbranch, c: (optional) elsebranch)
+ * Arithmetic expression (a: left operand, b: operator, c: right operand)
+ * Logical expression (a: left operand, b: operator, c: right operand)
+ * Relational expression (a: left operand, b: operator, c: right operand)
+ * Variable declaration (a : datatype, b: identifier, c: (optional) expression)
+ */
 struct AST_node *create_ternary_node(int, int, kind, void *, void *, void *);
+
+struct AST_node *create_quaternary_node(int, int, kind, void *, void *, void *, void *);
+
+/*
+ * Recursively frees all memory associated with the node
+ */
+void kill_tree(struct AST_node*);
+
+/*
+ * Recursively prints the abstract syntax tree
+ */
 void AST_printer(struct AST_node*);
 
+// AST_node
 struct AST_node {
     kind kind;
     pos pos;
     union {
+        // Program node
+        struct {
+            linked_list *modules;
+        } program;
+
+        // Module node
+        struct {
+            linked_list *module_declarations;
+        } module;
+
         // Function definition
         struct {
             data_type return_type;
-            struct AST_node **parameters;
+            struct AST_node *identifier;
+            linked_list *parameters;
             struct AST_node *function_block;
         } func_def;
 
@@ -94,8 +155,7 @@ struct AST_node {
 
         // Block statement
         struct {
-            int num_nodes;
-            struct AST_node *expr_stmt;
+            linked_list *stmt_list;
         } block;
 
         // If statement
@@ -117,7 +177,6 @@ struct AST_node {
 
         // Return statement
         struct {
-            data_type return_type;
             struct AST_node *expression;
         } return_stmt;
 
@@ -143,7 +202,7 @@ struct AST_node {
         // Call expression
         struct {
             struct AST_node *identifier;
-            struct AST_node **arguments;
+            struct linked_list *arguments;
         } call_expr;
 
         // Primary expression
@@ -156,6 +215,12 @@ struct AST_node {
                 char* identifier_name;
             };
         } primary_expr;
+
+        // Parameter expression
+        struct {
+            data_type type;
+            struct AST_node *identifier;
+        } parameter;
     };
 };
 

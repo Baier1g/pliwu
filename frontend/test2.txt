@@ -1,7 +1,25 @@
-int ID = 50000;
-char character = "k";
-int b = 50;
+func id(int a, int b, char c) -> bool {
+    bool boo;
+    if (a == b) {
+        boo = false;
+    } else {
+        boo = true;
+    }
+    return boo;
+}
 
-int sum = ID + b * 200;
+func main(int argv, char argc) {
+    int habibi = 30;
+    bool sheesh = id(habibi, 30, "f");
+    
+    int ID = 50000;
+    if (sheesh) {
+        char character = "k";
+        int b = 50;
+    } else {
+        int sum = ID + b * 200;
+        bool boo = 50 + 10 > 70 || 10 / 10 + 2 >= 3;
+    }
+    return;
 
-bool boo = 50 + 10 > 70 || 10 / 10 + 2 >= 3;
+}
