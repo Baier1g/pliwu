@@ -9,6 +9,8 @@
 
     extern int yylex(void);
     void yyerror(char const*);
+    extern void yyrestart(FILE*);
+    struct AST_node *run_bison(const char*);
     struct AST_node *binexp(void *, int, void *);
     struct AST_node *relexp(void *, int, void *);
 
@@ -67,26 +69,22 @@
 %type <nval> conditionalExpression assignExpression expression expressionStatement
 %type <nval> block returnStatement else ifStatement printStatement statement
 %type <nval> function funcDefinition varDeclaration declaration
-%type <nval> module program
+%type <nval> module 
 %type <llval> blockBody args parameters
 %type <ival> type returnType
 
 
 /* GRAMMAR RULES */
 %%
-program:
-    /*%empty*/     {prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());}
-|   program module {linked_list_append(prog->program.modules, $2);}
-;
-
-module:              
-    funcDefinition   {$$ = $1;}
-|   declaration      {$$ = $1;}
+module:
+    /*%empty*/          {prog = create_unary_node(0, 0, A_MODULE, linked_list_new());}
+|   module declaration  {linked_list_append(prog->module.module_declarations, $2);}
 ;
 
 declaration:
     varDeclaration  {$$ = $1;}
 |   statement       {$$ = $1;}
+|   funcDefinition  {$$ = $1;}
 ;
 
 varDeclaration:
@@ -222,7 +220,7 @@ postfixExpression:
 ;
 
 identifier:
-    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_IDENTIFIER, yylval.sval);
+    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_IDENTIFIER, yylval.sval); free(yylval.sval);
                     printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", $$->primary_expr.identifier_name, line_number, start_current_character, current_character);}
 ;
 
@@ -248,7 +246,21 @@ struct AST_node* relexp(void* left, int op, void* right) {
     return create_ternary_node(start_current_character, line_number, A_RELATIONAL_EXPR, left, (void*) op, right);
 }
 
-int main(int argc, char* argv[]) {
+struct AST_node *run_bison(const char* filename) {
+    yyin = fopen(filename,"r");
+    if (!yyin) {
+        return NULL;
+    }
+
+    yyparse();
+    printf("\nNumber of lines in the file - %u\n", line_number);
+    printf("\nNumber of characters in the file - %ld\n", current_character);
+    yyrestart(yyin);
+    fclose(yyin);
+    return prog;
+}
+
+/*int main(int argc, char* argv[]) {
     FILE *fp;
     char *filename = argv[1];
 
@@ -262,6 +274,6 @@ int main(int argc, char* argv[]) {
     printf("\nNumber of characters in the file - %ld\n", current_character);
     AST_printer(prog);
     return 0;
-}
+}*/
 
 /* EPILOGUE */

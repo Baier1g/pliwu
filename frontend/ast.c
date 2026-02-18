@@ -6,6 +6,7 @@
 int indents = 0;
 
 void print_indents(void);
+void kill_ll(linked_list*);
 
 pos create_pos(int start, int line) {
     pos pos;
@@ -65,8 +66,9 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
                     break;
                 case TYPE_IDENTIFIER:
                     size_t len = strlen((char*) b);
-                    node->primary_expr.identifier_name = malloc(sizeof(char) * len);
-                    memset(node->primary_expr.identifier_name, 0, len);
+                    printf("%ld length\n", len);
+                    node->primary_expr.identifier_name = malloc(sizeof(char) * len + 1);
+                    memset(node->primary_expr.identifier_name, 0, len + 1);
                     strncpy(node->primary_expr.identifier_name, b, len);
                     break;
             }
@@ -254,6 +256,92 @@ char *binary_op_enum_to_string(binary_op operand) {
     return op;
 }
 
+void kill_tree(struct AST_node* node) {
+    if (!node) {
+        return;
+    }
+    kind type = node->kind;
+    linked_list_node *tmp;
+    switch (type) {
+        case A_PROGRAM:
+            kill_ll(node->program.modules);
+            free(node);
+            break;
+        case A_MODULE:
+            kill_ll(node->module.module_declarations);
+            free(node);
+            break;
+        case A_FUNC_DEF:
+            kill_tree(node->func_def.identifier);
+            kill_ll(node->func_def.parameters);
+            kill_tree(node->func_def.function_block);
+            free(node);
+            break;
+        case A_VAR_DECL:
+            kill_tree(node->var_decl.identifier);
+            kill_tree(node->var_decl.expr_stmt);
+            free(node);
+            break;
+        case A_BLOCK_STMT:
+            kill_ll(node->block.stmt_list);
+            free(node);
+            break;
+        case A_IF_STMT:
+            kill_tree(node->if_stmt.condition);
+            kill_tree(node->if_stmt.if_branch);
+            kill_tree(node->if_stmt.else_branch);
+            free(node);
+            break;
+        case A_PRINT_STMT:
+            kill_tree(node->print_stmt.expression);
+            free(node);
+            break;
+        case A_EXPR_STMT:
+            kill_tree(node->expr_stmt.expression);
+            free(node);
+            break;
+        case A_RETURN_STMT:
+            kill_tree(node->return_stmt.expression);
+            free(node);
+            break;
+        case A_ASSIGN_EXPR:
+            kill_tree(node->assign_expr.identifier);
+            kill_tree(node->assign_expr.expression);
+            free(node);
+            break;
+        case A_LOGICAL_EXPR:
+        case A_RELATIONAL_EXPR:
+        case A_ARITHMETIC_EXPR:
+            kill_tree(node->binary_expr.left);
+            kill_tree(node->binary_expr.right);
+            free(node);
+            break;
+        case A_UNARY_EXPR:
+            kill_tree(node->unary_expr.expression);
+            free(node);
+            break;
+        case A_PRIMARY_EXPR:
+            if (node->primary_expr.type == TYPE_IDENTIFIER) {
+                free(node->primary_expr.identifier_name);
+            }
+            free(node);
+            break;
+        case A_CALL_EXPR:
+            kill_tree(node->call_expr.identifier);
+            kill_ll(node->call_expr.arguments);
+            free(node);
+            break;
+        case A_PARAMETER_EXPR:
+            kill_tree(node->parameter.identifier);
+            free(node);
+            break;
+        default:
+            printf("This should not happen :thinking:");
+            break;
+    }
+    return;
+}
+
 void AST_printer(struct AST_node *node) {
     if (!node) {
         return;
@@ -412,6 +500,18 @@ void print_indents() {
     for (int i = 0; i < indents; i++) {
         printf("|   ");
     }
+}
+
+void kill_ll(linked_list *ll) {
+    linked_list_node *curr, *next;
+    curr = ll->head;
+    while (curr) {
+        next = curr->next;
+        kill_tree(curr->data);
+        free(curr);
+        curr = next;
+    }
+    free(ll);
 }
 
 /*int main() {
