@@ -158,8 +158,8 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 <INITIAL>{IDENTIFIER} {
     printf("%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
-    yylval.sval = malloc(sizeof(char) * (yyleng + 1));
-    memset(yylval.sval, 0, (yyleng + 1) *sizeof(char));
+    yylval.sval = calloc(yyleng + 1, sizeof(char));
+    //memset(yylval.sval, 0, (yyleng + 1) *sizeof(char));
     printf("%s \tyylval post memset, length: %ld\n", yylval.sval, strlen(yylval.sval) + 1);
     strncpy(yylval.sval, yytext, yyleng);
     printf("%s \tyylval efter copying, length: %ld\n", yylval.sval, strlen(yylval.sval));

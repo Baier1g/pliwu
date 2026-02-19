@@ -1,6 +1,7 @@
 CC = gcc
 OUT = grammar.out
 WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion
+MEMFLAG = -fsanitize=address,leak,undefined
 
 all:
 	flex rules.l

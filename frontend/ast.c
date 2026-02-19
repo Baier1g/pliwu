@@ -67,8 +67,8 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
                 case TYPE_IDENTIFIER:
                     size_t len = strlen((char*) b);
                     printf("%ld length\n", len);
-                    node->primary_expr.identifier_name = malloc(sizeof(char) * len + 1);
-                    memset(node->primary_expr.identifier_name, 0, len + 1);
+                    node->primary_expr.identifier_name = calloc(len + 1, sizeof(char));
+                    //memset(node->primary_expr.identifier_name, 0, len + 1);
                     strncpy(node->primary_expr.identifier_name, b, len);
                     break;
             }
@@ -150,110 +150,77 @@ struct AST_node *create_quaternary_node(int startchar, int line, kind node_kind,
 }
 
 char *kind_enum_to_string(kind type) {
-    char* kind = malloc(sizeof(char) * 30);
     switch(type) {
         case A_PROGRAM:
-            strcpy(kind, "PROGRAM");
-            break;
+            return "PROGRAM";
         case A_MODULE:
-            strcpy(kind, "MODULE");
-            break;
+            return "MODULE";
         case A_FUNC_DEF:
-            strcpy(kind, "Function definition");
-            break;
+            return "Function definition";
         case A_VAR_DECL:
-            strcpy(kind, "Variable declaration");
-            break;
+            return "Variable declaration";
         case A_BLOCK_STMT:
-            strcpy(kind, "Block statement");
-            break;
+            return "Block statement";
         case A_IF_STMT:
-            strcpy(kind, "If statement");
-            break;
+            return "If statement";
         case A_PRINT_STMT:
-            strcpy(kind, "Print statement");
-            break;
+            return "Print statement";
         case A_EXPR_STMT:
-            strcpy(kind, "Expression statement");
-            break;
+            return "Expression statement";
         case A_RETURN_STMT:
-            strcpy(kind, "Return statement");
-            break;
+            return "Return statement";
         case A_ASSIGN_EXPR:
-            strcpy(kind, "Assignment expression");
-            break;
+            return "Assignment expression";
         case A_LOGICAL_EXPR:
-            strcpy(kind, "Logical expression");
-            break;
+            return "Logical expression";
         case A_RELATIONAL_EXPR:
-            strcpy(kind, "Relational expression");
-            break;
+            return "Relational expression";
         case A_ARITHMETIC_EXPR:
-            strcpy(kind, "Arithmetic expression");
-            break;
+            return "Arithmetic expression";
         case A_UNARY_EXPR:
-            strcpy(kind, "Unary expression");
-            break;
+            return "Unary expression";
         case A_PRIMARY_EXPR:
-            strcpy(kind, "Primary expression");
-            break;
+            return "Primary expression";
         case A_CALL_EXPR:
-            strcpy(kind, "Call expression");
-            break;
+            return "Call expression";
         case A_PARAMETER_EXPR:
-            strcpy(kind, "Parameter expression");
-            break;
+            return "Parameter expression";
         default:
-            strcpy(kind, "Unknown kind");
-            break;
+            return "Unknown kind";
     }
-    return kind;
 }
 
 char *binary_op_enum_to_string(binary_op operand) {
-    char* op = malloc(sizeof(char) * 4);
     switch(operand) {
         case A_LESS:
-            strcpy(op, "<");
-            break;
+            return "<";
         case A_GREATER:
-            strcpy(op, ">");
-            break;
+            return ">";
         case A_LESS_EQ:
-            strcpy(op, "<=");
-            break;
+            return "<=";
         case A_GREATER_EQ:
-            strcpy(op, ">=");
-            break;
+            return ">=";
         case A_EQUALS:
-            strcpy(op, "==");
-            break;
+            return "==";
         case A_NEQUALS:
-            strcpy(op, "!=");
-            break;
+            return "!=";
         case A_ASSIGN:
-            strcpy(op, "=");
-            break;
+            return "=";
         case A_ADD:
-            strcpy(op, "+");
-            break;
+            return "+";
         case A_SUB:
-            strcpy(op, "-");
-            break;
+            return "-";
         case A_MULT:
-            strcpy(op, "*");
-            break;
+            return "*";
         case A_DIV:
-            strcpy(op, "/");
-            break;
+            return "/";
         case A_AND:
-            strcpy(op, "AND");
-            break;
+            return "AND";
         case A_OR:
-            strcpy(op, "OR");
-            break;
+            return "OR";
+        default:
+            return "Unkown operator";
     }
-    return op;
 }
 
 void kill_tree(struct AST_node* node) {
@@ -346,10 +313,8 @@ void AST_printer(struct AST_node *node) {
     if (!node) {
         return;
     }
-    char* c;
     print_indents();
-    printf("%s:\n", (c = kind_enum_to_string(node->kind)));
-    free(c);
+    printf("%s:\n", kind_enum_to_string(node->kind));
     switch(node->kind) {
         case A_PROGRAM:
             {
@@ -440,10 +405,8 @@ void AST_printer(struct AST_node *node) {
         case A_ARITHMETIC_EXPR:
             indents++;
             AST_printer(node->binary_expr.left);
-            char* d;
             print_indents();
-            printf("Operator: %s\n", (d = binary_op_enum_to_string(node->binary_expr.op)));
-            free(d);
+            printf("Operator: %s\n", binary_op_enum_to_string(node->binary_expr.op));
             AST_printer(node->binary_expr.right);
             indents--;
             break;

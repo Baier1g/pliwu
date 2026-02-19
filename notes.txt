@@ -14,4 +14,4 @@ TODOS:
 3. Debug print for all modules during test
 4. Proper error synchronization in parser
 5. Find out how to properly import enums to grammar.y
-6. Clean inputs on identifiers in rules.l (done??)
+6. Clean inputs on identifiers in rules.l (done??) (possibly better solution: Manually set '\0' character on strings)
