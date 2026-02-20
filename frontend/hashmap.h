@@ -40,6 +40,12 @@ void add_entry(table_entry *, table_entry *);
 int contains_key(table_entry *, const char *);
 
 /*
+ * Check if key exists in the given hashmap
+ * Returns 1 if the key is found, 0 otherwise.
+ */
+int *hash_map_contains(hash_map *, const char *);
+
+/*
  * Recursively destroys a table_entry and all entries that it might point to.
  */
 void destroy_entry(table_entry *);

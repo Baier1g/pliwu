@@ -132,6 +132,18 @@ void destroy_hash_map(hash_map *map) {
     free(map);
 }
 
+int *hash_map_contains(hash_map *map, const char *key) {
+    int index = hash_function(map, key);
+    table_entry *node = map->buckets[index];
+    while (node) {
+        if (!strcmp(node->key, key)) {
+            return 1;
+        }
+        node = node->next;
+    }
+    return 0;
+}
+
 int main() {
     hash_map *map = create_hash_map(128);
     if (!map) {

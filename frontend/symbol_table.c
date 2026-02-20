@@ -31,3 +31,12 @@ void *symbol_table_get(symbol_table *table, char* key) {
     return tmp;
 }
 
+int symbol_table_contains(symbol_table *table, char *key) {
+    if (!table){
+        return 0;
+    }
+    if (hash_map_contains(table->map, key)){
+        return 1;
+    }
+    return symbol_table_contains(table->outer, key);
+}
