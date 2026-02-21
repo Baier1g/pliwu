@@ -11,6 +11,6 @@ static linked_list *errors;
  * Scopechecks the given AST node
  * returns 0 if an errors was discovered.
  */
-int scopecheck (AST_node*);
+int scopecheck (struct AST_node*);
 
 #endif
