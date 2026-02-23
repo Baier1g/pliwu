@@ -6,7 +6,7 @@ func grum_func(int a, int b) -> int {
 }
 
 func print_stuff(char c) -> void {
-    print(c);
+    grum_func(c,c);
 }
 
 /*
@@ -26,4 +26,4 @@ char charac = "f";
 
 int a = 10;
 int b = 30;
-int c = grum(a, b);
+int c = grum_func(a, b);

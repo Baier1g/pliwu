@@ -29,7 +29,7 @@ void visit_module (struct AST_node* node){
     }
 }
 void visit_func_def(struct AST_node* node){
-    printf("Function %s returns %s", 
+    printf("Function %s returns %d", 
         node->func_def.identifier->primary_expr.identifier_name,
         node->func_def.return_type);
         

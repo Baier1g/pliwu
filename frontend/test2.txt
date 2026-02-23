@@ -13,6 +13,7 @@ func main(int argv, char argc) {
     bool sheesh = id(habibi, 30, "f");
     
     int ID = 50000;
+    int b;
     if (sheesh) {
         char character = "k";
         int b = 50;

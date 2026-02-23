@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "ast.h"
 #include "y.tab.h"
+#include "scope.h"
+
 
 extern struct AST_node *run_bison(const char*);
 
@@ -19,6 +21,18 @@ int main(int argc, char* argv[]) {
         linked_list_append(prog->program.modules, module);
     }
     AST_printer(prog);
+
+    
+    linked_list *errors = linked_list_new();
+    printf("scope checking: \n");
+    if (scopecheck(prog, errors)) {
+        for (linked_list_node *lln = errors->head; lln != NULL; lln = lln->next) {
+            printf("scope_error: %s\n", (char *) lln->data);
+            
+        }
+    }
+
+    linked_list_delete(errors);
     kill_tree(prog);
     return 0;
 }

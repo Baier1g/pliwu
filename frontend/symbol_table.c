@@ -14,9 +14,6 @@ void destroy_symbol_table(symbol_table *table) {
 }
 
 int symbol_table_insert(symbol_table *table, char *key, void *value) {
-    if (symbol_table_contains(table->global, key)) {
-        return -1;
-    }
     return hash_map_insert(table->map, key, value);
 }
 

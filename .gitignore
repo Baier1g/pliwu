@@ -1,0 +1,5 @@
+*.out
+*.tab.c 
+y.output 
+grammar.out 
+lex.yy.c

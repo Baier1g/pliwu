@@ -89,7 +89,7 @@ declaration:
 
 varDeclaration:
     type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
-|   type identifier T_ASSIGN expression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
+|   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
 ;
 
 type:
