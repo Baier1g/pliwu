@@ -3,7 +3,7 @@ OUT = grammar.out
 WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion
 MEMFLAG = -fsanitize=address,leak,undefined
 
-FILES = lex.yy.c y.tab.c ast.c linked_list.c frontend.c hashmap.c symbol_table.c scope.c
+FILES = lex.yy.c y.tab.c ast.c linked_list.c frontend.c hashmap.c symbol_table.c scope.c codegen.c
 
 all:
 	flex rules.l
