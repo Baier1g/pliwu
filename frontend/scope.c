@@ -86,6 +86,7 @@ void recurse_scope(struct AST_node *node) {
             break;
         case A_PRINT_STMT:
             recurse_scope(node->print_stmt.expression);
+            break;
         case A_EXPR_STMT:
             printf("error -> scope: entered with kind A_EXPR_STMT");
             break;
@@ -106,6 +107,7 @@ void recurse_scope(struct AST_node *node) {
             break;
         case A_UNARY_EXPR:
             recurse_scope(node->unary_expr.expression);
+            break;
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type == TYPE_IDENTIFIER){
                 if (!symbol_table_contains(current_scope, node->primary_expr.identifier_name)){
@@ -133,6 +135,7 @@ void recurse_scope(struct AST_node *node) {
             break;
         default:
             printf("error -> scope: Unknown ast kind");
+            break;
     }    
     return;
 }

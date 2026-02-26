@@ -38,7 +38,7 @@ DIGIT               [0-9]
 INTEGER             {DIGIT}+
 FLOAT               {INTEGER}\.{INTEGER}
 IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
-KEYWORD             if|else|func|return
+KEYWORD             if|else|func|return|print
 BOOL_VALUE          true|false
 TYPE                int|char|bool|void
 SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
