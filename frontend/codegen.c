@@ -5,7 +5,6 @@ symbol_table *stack_offset;
 int label_counter = 0;
 int offset_counter = 1;
 
-
 char *op_code_to_string(op_code op) {
     switch (op) {
         case MOV:
@@ -41,17 +40,51 @@ char *op_code_to_string(op_code op) {
     }
 }
 
+void create_print_macro(void) {
+    linked_list_append(generated_code, \
+    "\%macro sys_write 3\n\tmov rdi, \%1\n\tmov rsi, \%2\n\tmov rdx, \%3\n\tmov rax,1\n\tsyscall\n\%endmacro\n\n");
+}
+
+void create_print_int(void) {
+    // Print prelude
+    linked_list_append(generated_code, \
+    "print_int:\n\tpush rbp\n\tmov rbp, rsp\n\tpush rdi\n\tmov rdi, output\n\tlea r10, [rsp-1]\n\txor rcx, rcx\n");
+    // prelude p2: newline and setup
+    linked_list_append(generated_code, \
+    "\tmov byte[r10], 0xa\n\tdec r10\n\tinc rcx\n\tmov rax, qword[rbp-8]\n\tmov r8, 10\n");
+    // Processing the integer
+    linked_list_append(generated_code, \
+    "L1:\n\txor rdx, rdx\n\tdiv r8\n\tmov r9b, [table+rdx]\n\tmov [r10], r9b\n\tdec r10\n\tinc rcx\n\ttest rax, rax\n\tjnz L1\n");
+    // Printing the integer
+    linked_list_append(generated_code, \
+    "\tlea rsi, [r10+1]\n\tcld\n_L1:\n\tmovsb\n\tcmp rsi, rsp\n\tjne _L1\n\tpop rdi\n\tsys_write 1, output, rcx\n");
+    // Epilogue
+    linked_list_append(generated_code, \
+    "\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
+}
+
 void generate_code(linked_list *ll, struct AST_node *node) {
     generated_code = ll;
+    create_print_macro();
     stack_offset = create_symbol_table(NULL, NULL);
     generate_code_helper(node);
+    // finish shit ig
+    linked_list_append(generated_code, \
+    "\tmov rsp, rbp\n\tpop rbp\n\tmov rax, 1\n\tint 0x80\n\n");
 }
 
 void generate_code_helper(struct AST_node *node) {
+    char *operations = NULL;
+    char *op = NULL;
     switch(node->kind) {
         case A_PROGRAM:
             linked_list_append(generated_code, \
-                "section .data\nsection .text\nglobal _start\n_start:\n");
+                "section .bss\n\toutput resb 256\n");
+            linked_list_append(generated_code, \
+                "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\nsection .text\n\n");
+            create_print_int();
+            linked_list_append(generated_code, \
+                "global _start\n_start:\n\tpush rbp\n\tmov rbp, rsp\n");
             for (linked_list_node *n = node->module.module_declarations->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
             }
@@ -81,9 +114,9 @@ void generate_code_helper(struct AST_node *node) {
         case A_IF_STMT:
             int i = label_counter++;
             generate_code_helper(node->if_stmt.condition);
-            linked_list_append(generated_code, "jge else\n");
+            linked_list_append(generated_code, "\tjge else\n");
             generate_code_helper(node->if_stmt.if_branch);
-            linked_list_append(generated_code, "jmp end_if\n");
+            linked_list_append(generated_code, "\tjmp end_if\n");
             if (node->if_stmt.else_branch) {
                 linked_list_append(generated_code, "else:\n");
                 generate_code_helper(node->if_stmt.else_branch);
@@ -92,32 +125,34 @@ void generate_code_helper(struct AST_node *node) {
             "end_if:\n");
             break;
         case A_PRINT_STMT:
-            return;
+            generate_code_helper(node->print_stmt.expression);
+            linked_list_append(generated_code, \
+            "\tmov rdi, rax\n\tpush rax\n\tcall print_int\n\tpop rax\n");
+            break;
         case A_EXPR_STMT:
             return;
         case A_RETURN_STMT:
             return;
         case A_ASSIGN_EXPR:
-            char *operations = calloc(64, sizeof(char));
             switch (node->assign_expr.expression->kind) {
                 case A_ARITHMETIC_EXPR:
+                    operations = calloc(64, sizeof(char));
                     int offset = (int) symbol_table_get(stack_offset, node->assign_expr.identifier->primary_expr.identifier_name);
                     if (offset) {
                         generate_code_helper(node->assign_expr.expression);
-                        sprintf(operations, "\tmov QWORD PTR [rbp-%d], rax\n", offset);
+                        sprintf(operations, "\tmov qword[rbp-%d], rax\n", offset);
                         linked_list_append(generated_code, operations);
                     } else {
                         generate_code_helper(node->assign_expr.expression);
                         char *name = node->var_decl.identifier->primary_expr.identifier_name;
-                        symbol_table_insert(stack_offset, name, offset_counter);
-                        offset_counter++;
+                        symbol_table_insert(stack_offset, name, offset_counter * 8);
                         printf("offset_counter is at: %d = %d\n", offset_counter, offset_counter * 8);
                         printf("offset_counter is at: %d\n", offset_counter);
                         linked_list_append(generated_code, "\tpush rax");
+                        offset_counter++;
                     }
                     break;
             }
-            free(operations);
             break;
         case A_LOGICAL_EXPR:
             return;
@@ -138,21 +173,21 @@ void generate_code_helper(struct AST_node *node) {
         case A_UNARY_EXPR:
             return;
         case A_PRIMARY_EXPR:
-            char *operation = calloc(30, sizeof(char));
+            op = calloc(30, sizeof(char));
             switch (node->primary_expr.type) {
                 case TYPE_INT:
-                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(operation, "\tmov rax, %d\n", node->primary_expr.integer_value));
-                    linked_list_append(generated_code, operation);
+                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value));
+                    linked_list_append(generated_code, op);
                     break;
                 case TYPE_CHAR:
-                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(operation, "\tmov rax, %c\n", node->primary_expr.char_value));
-                    linked_list_append(generated_code, operation);
+                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %c\n", node->primary_expr.char_value));
+                    linked_list_append(generated_code, op);
                     break;
                 case TYPE_IDENTIFIER:
                     int offset = (int) symbol_table_get(stack_offset, node->primary_expr.identifier_name);
-                    printf("offset is at: %d = %d\n", offset, offset * 8);
-                    printf("identifer yo num bytes printed: %d\n", sprintf(operation, "\tmov rax, QWORD PTR [rbp-%d]\n", offset));
-                    linked_list_append(generated_code, operation);
+                    printf("offset is at: %d\n", offset);
+                    printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
+                    linked_list_append(generated_code, op);
                     break;
             }       
             break;

@@ -15,6 +15,8 @@ typedef struct operand* operand;
 char *op_code_to_string(op_code);
 void generate_code(linked_list *, struct AST_node *);
 void generate_code_helper(struct AST_node *);
+void create_print_macro(void);
+void create_print_int(void);
 
 /*
  * VERY RUDIMENTARY

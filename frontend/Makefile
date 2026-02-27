@@ -17,4 +17,4 @@ mem:
 
 .PHONY: clean
 clean:
-	rm *.tab.c y.output grammar.out lex.yy.c
+	rm *.tab.c y.output grammar.out lex.yy.c *.o

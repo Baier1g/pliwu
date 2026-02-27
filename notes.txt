@@ -16,3 +16,4 @@ TODOS:
 5. Find out how to properly import enums to grammar.y
 6. Clean inputs on identifiers in rules.l (done??) (possibly better solution: Manually set '\0' character on strings)
 7. Add filename to module in AST_node, to improve error handling clarity.
+8. Hella memory leaks in codegen when writing lines with specific offsets (too bad!)

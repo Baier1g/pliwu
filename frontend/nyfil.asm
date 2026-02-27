@@ -1,50 +1,90 @@
 %macro sys_write 3
-    mov rdi, %1
-    mov rsi, %2
-    mov rdx, %3
-    mov eax,1
-    syscall
+        mov rdi, %1
+        mov rsi, %2
+        mov rdx, %3
+        mov rax,1
+        syscall
 %endmacro
 
-section     .text
-
-extern printf
-global _start                              ; Entry point for the program
-_start: 
-    mov rdi, output
-    lea r10, [rsp-1]
-    mov byte[r10], 0xa
-    dec r10
-    mov rax, 5
-    mov r9b, [table+rax]
-    mov [r10], r9b
-    dec r10
-    mov rax, 4
-    mov r9b, [table+rax]
-    mov [r10], r9b
-    dec r10
-    lea rsi, [r10+1]
-    cld
-_L1:
-    movsb
-    cmp rsi,rsp
-    jne _L1
-    sys_write 1,output,3                                      ; Start of the program
-    
-    mov     rdx,len                            ; Calculate message length
-    mov     rcx,msg                           ; Load address of message
-    mov     rbx,1                               ; File descriptor (stdout)
-    mov     rax,4                               ; System call number (sys_write)
-    int     0x80                                ; Call kernel to display message
-
-    mov     eax,1                               ; System call number (sys_exit)
-    int     0x80                                ; Call kernel to exit program
-
 section .bss
-    output resb 256
+        output resb 256
+section .data
+        table db '0123456789'
+        newline db 0xa
+section .text
 
-section     .data
-    table db '0123456789'
+print_int:
+        push rbp
+        mov rbp, rsp
+        push rdi
+        mov rdi, output
+        lea r10, [rsp-1]
+        xor rcx, rcx
+        mov byte[r10], 0xa
+        dec r10
+        inc rcx
+        mov rax, qword[rbp-8]
+        mov r8, 10
+L1:
+        xor rdx, rdx
+        div r8
+        mov r9b, [table+rdx]
+        mov [r10], r9b
+        dec r10
+        inc rcx
+        test rax, rax
+        jnz L1
+        lea rsi, [r10+1]
+        cld
+_L1:
+        movsb
+        cmp rsi, rsp
+        jne _L1
+        pop rdi
+        sys_write 1, output, rcx
+        mov rsp, rbp
+        pop rbp
+        ret
 
-msg     db  'H',10                    ; Our message with a newline
-len     equ $ - msg                             ; Calculate length of message
+global _start
+_start:
+        push rbp
+        mov rbp, rsp
+        mov rax, 1
+        push rax
+        mov rax, 3
+        pop rbx
+        add rax, rbx
+        push rax
+        mov rax, 2
+        push rax
+        mov rax, qword[rbp-8]
+        push rax
+        mov rax, qword[rbp-16]
+        pop rbx
+        cmp rax, rbx
+        jge else
+        mov rax, 48
+        push rax
+        mov rax, 2
+        pop rbx
+        add rax, rbx
+        mov qword[rbp-24], rax
+        jmp end_if
+else:
+        mov rax, 48
+        push rax
+        mov rax, 3
+        pop rbx
+        add rax, rbx
+        mov qword[rbp-24], rax
+end_if:
+        mov rax, qword[rbp-24]
+        mov rdi, rax
+        push rax
+        call print_int
+        pop rax
+        mov rsp, rbp
+        pop rbp
+        mov rax, 1
+        int 0x80
