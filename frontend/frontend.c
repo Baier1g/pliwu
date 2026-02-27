@@ -34,9 +34,12 @@ int main(int argc, char* argv[]) {
     }
     linked_list *ass = linked_list_new();
     generate_code(ass, prog);
+    fp = fopen("gen_asm.asm", "w");
     for (linked_list_node *n = ass->head; n != NULL; n = n->next) {
-        printf("%s", n->data);
+        char *tmp = (char*) n->data;
+        fwrite(tmp, strlen(tmp), 1, fp);
     }
+    fclose(fp);
     linked_list_delete(ass);
     linked_list_delete(errors);
     kill_tree(prog);

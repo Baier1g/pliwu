@@ -40,9 +40,35 @@ char *op_code_to_string(op_code op) {
     }
 }
 
+char *decide_branching(struct AST_node *node) {
+    // JUMPS for if statements, returns the opposite instruction since we jump to the else label
+    switch(node->binary_expr.op) {
+        case A_LESS:
+            return "\tjge ";
+        case A_GREATER:
+            return "\tjle ";
+        case A_EQUALS:
+            return "\tjne ";
+        case A_NEQUALS:
+            return "\tje ";
+        case A_GREATER_EQ:
+            return "\tjl ";
+        case A_LESS_EQ:
+            return "\tjg ";
+        default:
+            return;
+    }
+}
+
+char *generate_label(char* string, int i) {
+    char *tmp = calloc(strlen(string) + 5, sizeof(char));
+    sprintf(tmp, "%s%d", string, i);
+    return tmp;
+}
+
 void create_print_macro(void) {
     linked_list_append(generated_code, \
-    "\%macro sys_write 3\n\tmov rdi, \%1\n\tmov rsi, \%2\n\tmov rdx, \%3\n\tmov rax,1\n\tsyscall\n\%endmacro\n\n");
+    "%macro sys_write 3\n\tmov rdi, %1\n\tmov rsi, %2\n\tmov rdx, %3\n\tmov rax,1\n\tsyscall\n%endmacro\n\n");
 }
 
 void create_print_int(void) {
@@ -98,10 +124,10 @@ void generate_code_helper(struct AST_node *node) {
             return;
         case A_VAR_DECL:
             char* name = node->var_decl.identifier->primary_expr.identifier_name;
-            symbol_table_insert(stack_offset, name, offset_counter * 8);
-            offset_counter++;
             printf("offset_counter is at: %d = %d\n", offset_counter, offset_counter * 8);
             if (node->var_decl.expr_stmt) {
+                symbol_table_insert(stack_offset, name, offset_counter * 8);
+                offset_counter++;
                 generate_code_helper(node->var_decl.expr_stmt);
                 linked_list_append(generated_code, "\tpush rax\n");
             }
@@ -113,16 +139,29 @@ void generate_code_helper(struct AST_node *node) {
             break;
         case A_IF_STMT:
             int i = label_counter++;
+            char *else_label = generate_label("else", i);
+            char *end_if_label = generate_label("end_if", i);
             generate_code_helper(node->if_stmt.condition);
-            linked_list_append(generated_code, "\tjge else\n");
-            generate_code_helper(node->if_stmt.if_branch);
-            linked_list_append(generated_code, "\tjmp end_if\n");
+            linked_list_append(generated_code, decide_branching(node->if_stmt.condition));
             if (node->if_stmt.else_branch) {
-                linked_list_append(generated_code, "else:\n");
+                linked_list_append(generated_code, else_label);
+                linked_list_append(generated_code, "\n");
+            } else {
+                linked_list_append(generated_code, end_if_label);
+                linked_list_append(generated_code, "\n");
+            }
+            generate_code_helper(node->if_stmt.if_branch);
+            linked_list_append(generated_code, "\tjmp ");
+            linked_list_append(generated_code, end_if_label);
+            linked_list_append(generated_code, "\n");
+            if (node->if_stmt.else_branch) {
+                linked_list_append(generated_code, else_label);
+                linked_list_append(generated_code, ":\n");
                 generate_code_helper(node->if_stmt.else_branch);
             }
-            linked_list_append(generated_code, \
-            "end_if:\n");
+            linked_list_append(generated_code, generate_label("end_if", i));
+            linked_list_append(generated_code, ":\n");
+            label_counter++;
             break;
         case A_PRINT_STMT:
             generate_code_helper(node->print_stmt.expression);
@@ -176,17 +215,20 @@ void generate_code_helper(struct AST_node *node) {
             op = calloc(30, sizeof(char));
             switch (node->primary_expr.type) {
                 case TYPE_INT:
-                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value));
+                    //printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value));
+                    sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value);
                     linked_list_append(generated_code, op);
                     break;
                 case TYPE_CHAR:
-                    printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %c\n", node->primary_expr.char_value));
+                    //printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %c\n", node->primary_expr.char_value));
+                    sprintf(op, "\tmov rax, %c\n", node->primary_expr.char_value);
                     linked_list_append(generated_code, op);
                     break;
                 case TYPE_IDENTIFIER:
                     int offset = (int) symbol_table_get(stack_offset, node->primary_expr.identifier_name);
-                    printf("offset is at: %d\n", offset);
-                    printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
+                    //printf("offset is at: %d\n", offset);
+                    //printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
+                    sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset);
                     linked_list_append(generated_code, op);
                     break;
             }       
