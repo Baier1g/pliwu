@@ -251,12 +251,22 @@ void generate_code_helper(struct AST_node *node) {
             }
             break;
         case A_LOGICAL_EXPR:
-            return;
+            generate_code_helper(node->binary_expr.right);
+            linked_list_append(generated_code, "\tpush rax\n");
+            generate_code_helper(node->binary_expr.left);
+            switch (node->binary_expr.op) {
+                case A_AND:
+                    linked_list_append(generated_code,\
+                        "\tpop rbx\n\tcmp rax, rbx\n");
+            }
+            linked_list_append(generated_code,\
+                "\tpop rbx\n\tcmp rax, rbx\n");
+            break;
         case A_RELATIONAL_EXPR:
             generate_code_helper(node->binary_expr.right);
             linked_list_append(generated_code, "\tpush rax\n");
             generate_code_helper(node->binary_expr.left);
-            linked_list_append(generated_code, \
+            linked_list_append(generated_code,\
                 "\tpop rbx\n\tcmp rax, rbx\n");
             break;
         case A_ARITHMETIC_EXPR:
