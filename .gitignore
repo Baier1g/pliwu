@@ -3,3 +3,4 @@
 y.output 
 grammar.out 
 lex.yy.c
+.gdb_history

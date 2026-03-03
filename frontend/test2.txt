@@ -1,5 +1,7 @@
+main(5, "c");
+
 func id(int a, int b, char c) -> bool {
-    bool boo;
+    bool boo = true;
     if (a == b) {
         boo = false;
     } else {
@@ -10,16 +12,18 @@ func id(int a, int b, char c) -> bool {
 
 func main(int argv, char argc) {
     int habibi = 30;
-    bool sheesh = id(habibi, 30, "f");
+    bool sheeesh = id(habibi, 30, "f");
     
     int ID = 50000;
-    int b;
-    if (sheesh) {
+    int b = 10;
+    int sum = 0;
+    if (b > 1000) {
         char character = "k";
-        int b = 50;
+        sum = 50;
     } else {
-        int sum = ID + b * 200;
-        bool boo = 50 + 10 > 70 || 10 / 10 + 2 >= 3;
+        sum = 200;
+        bool boo = 50 + 10 > 70 || 10 + 10 + 2 >= 3;
     }
+    print(sum);
     return;
 }

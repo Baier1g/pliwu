@@ -7,15 +7,13 @@
 typedef struct linked_list linked_list;
 typedef struct linked_list_node linked_list_node;
 
-struct linked_list
-{
+struct linked_list {
     linked_list_node *head;
     linked_list_node *tail;
     int size;
 };
 
-struct linked_list_node
-{
+struct linked_list_node {
     linked_list_node *next;
     linked_list_node *prev;
     void *data;

@@ -68,7 +68,7 @@
 %type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
 %type <nval> conditionalExpression assignExpression expression expressionStatement
 %type <nval> block returnStatement else ifStatement printStatement statement
-%type <nval> function funcDefinition varDeclaration declaration
+%type <nval> function funcDefinition varDeclaration declaration multiplicativeExpression
 %type <nval> module 
 %type <llval> blockBody args parameters
 %type <ival> type returnType
@@ -197,12 +197,15 @@ relationalExpression:
 ;
 
 arithmeticExpression:
-    castExpression                          {$$ = $1;}
-|   arithmeticExpression '+' castExpression {$$ = binexp($1, A_ADD, $3);}
-|   arithmeticExpression '-' castExpression {$$ = binexp($1, A_SUB, $3);}
-|   arithmeticExpression '*' castExpression {$$ = binexp($1, A_MULT, $3);}
-|   arithmeticExpression '/' castExpression {$$ = binexp($1, A_DIV, $3);}
+    multiplicativeExpression                          {$$ = $1;}
+|   arithmeticExpression '+' multiplicativeExpression {$$ = binexp($1, A_ADD, $3);}
+|   arithmeticExpression '-' multiplicativeExpression {$$ = binexp($1, A_SUB, $3);}
 ;
+
+multiplicativeExpression:
+    castExpression
+|   multiplicativeExpression '*' castExpression {$$ = binexp($1, A_MULT, $3);}
+|   multiplicativeExpression '/' castExpression {$$ = binexp($1, A_DIV, $3);}
 
 castExpression:
     unaryExpression {$$ = $1;}

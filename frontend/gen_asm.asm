@@ -50,68 +50,82 @@ global _start
 _start:
 	push rbp
 	mov rbp, rsp
+	mov rax, 99
+	push rax
+	mov rax, 5
+	push rax
+	call main0
+	add rsp, 16
+	mov rsp, rbp
+	pop rbp
+	mov rax, 1
+	int 0x80
+
+id0:
+	push rbp
+	mov rbp, rsp
 	mov rax, 1
 	push rax
-	mov rax, 3
-	pop rbx
-	add rax, rbx
+	mov rax, qword[rbp-0]
 	push rax
-	mov rax, 2
+	mov rax, qword[rbp-0]
+	pop rbx
+	cmp rax, rbx
+	jne else0
+	mov rax, 0
+	mov qword[rbp-8], rax
+	jmp end_if0
+else0:
+	mov rax, 1
+	mov qword[rbp-8], rax
+end_if0:
+	mov rax, qword[rbp-8]
+	mov rsp, rbp
+	pop rbp
+	ret
+
+main0:
+	push rbp
+	mov rbp, rsp
+	mov rax, 30
+	push rax
+	mov rax, 102
+	push rax
+	mov rax, 30
 	push rax
 	mov rax, qword[rbp-8]
 	push rax
-	mov rax, qword[rbp-16]
-	pop rbx
-	add rax, rbx
+	call id0
+	add rsp, 24
+	push rax
+	mov rax, 50000
+	push rax
+	mov rax, 10
 	push rax
 	mov rax, 0
 	push rax
-	mov rax, qword[rbp-8]
+	mov rax, 1000
 	push rax
-	mov rax, qword[rbp-16]
+	mov rax, qword[rbp-32]
 	pop rbx
 	cmp rax, rbx
-	je else0
-	mov rax, 48
+	jle else2
+	mov rax, 107
 	push rax
-	mov rax, 2
-	pop rbx
-	add rax, rbx
-	mov qword[rbp-32], rax
-	mov rax, qword[rbp-24]
+	mov rax, 50
+	mov qword[rbp-40], rax
+	jmp end_if2
+else2:
+	mov rax, 200
+	mov qword[rbp-40], rax
 	push rax
-	mov rax, qword[rbp-8]
-	push rax
-	mov rax, qword[rbp-16]
-	pop rbx
-	add rax, rbx
-	pop rbx
-	cmp rax, rbx
-	jne end_if1
-	mov rax, qword[rbp-32]
-	push rax
-	mov rax, 3
-	pop rbx
-	add rax, rbx
-	mov qword[rbp-32], rax
-	jmp end_if1
-end_if1:
-	jmp end_if0
-else0:
-	mov rax, 48
-	push rax
-	mov rax, 3
-	pop rbx
-	add rax, rbx
-	mov qword[rbp-32], rax
-end_if0:
-	mov rax, qword[rbp-32]
+end_if2:
+	mov rax, qword[rbp-40]
 	mov rdi, rax
 	push rax
 	call print_int
 	pop rax
 	mov rsp, rbp
 	pop rbp
-	mov rax, 1
-	int 0x80
+	ret
 

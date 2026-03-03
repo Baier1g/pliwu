@@ -29,8 +29,8 @@ int main(int argc, char* argv[]) {
     if (scopecheck(prog, errors)) {
         for (linked_list_node *lln = errors->head; lln != NULL; lln = lln->next) {
             printf("scope_error: %s\n", (char *) lln->data);
-            
         }
+        exit(-1);
     }
     linked_list *ass = linked_list_new();
     generate_code(ass, prog);

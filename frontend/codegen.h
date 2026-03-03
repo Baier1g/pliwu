@@ -12,6 +12,8 @@ typedef struct operation* operation;
 typedef enum op_code op_code;
 typedef struct operand* operand;
 
+//char* arg_registers[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+
 char *op_code_to_string(op_code);
 void generate_code(linked_list *, struct AST_node *);
 void generate_code_helper(struct AST_node *);
