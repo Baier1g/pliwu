@@ -1,0 +1,23 @@
+main(1, "l");
+
+func factorial(int n) -> int {
+    if (n <= 1) {
+        return 1;
+    }
+    return (n * factorial(n - 1));
+}
+
+func main(int argv, char argc) {
+    factorial_helper(24);
+    return;
+}
+
+func factorial_helper(int n) {
+    if (n == 0) {
+        return;
+    }
+    print(n);
+    print(factorial(n));
+    factorial_helper(n-1);
+    return;
+}

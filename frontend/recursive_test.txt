@@ -1,0 +1,19 @@
+main(3, "f");
+
+func recursive_function(int a, int b) {
+    if (a == 0) {
+        return;
+    }
+    if (b == 20) {
+        return;
+    }
+    print(a);
+    print(b);
+    recursive_function(a-1, b+1);
+    return;
+}
+
+func main(int argc, char argv) {
+    recursive_function(10, 10);
+    return;
+}
