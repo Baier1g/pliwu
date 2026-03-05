@@ -19,9 +19,10 @@ func main(int argv, char argc) {
     
     int ID = 50000;
     int b = 10;
-    int sum = 0;
+    int sum = 20;
     if (b < 1000) {
         char character = "k";
+        print(sum);
         int sum = 5;
         print(sum);
         sum = ID - b * 300;

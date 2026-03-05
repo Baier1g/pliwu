@@ -2,6 +2,7 @@
 #define AST_H
 
 #include "linked_list.h"
+#include "symbol_table.h"
 
 typedef enum {
     A_PROGRAM,
@@ -127,6 +128,7 @@ void AST_printer(struct AST_node*);
 struct AST_node {
     kind kind;
     pos pos;
+    symbol_table *table;
     union {
         // Program node
         struct {

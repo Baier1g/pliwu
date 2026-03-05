@@ -229,6 +229,9 @@ void kill_tree(struct AST_node* node) {
     }
     kind type = node->kind;
     linked_list_node *tmp;
+    if (node->table) {
+        destroy_symbol_table(node->table);
+    }
     switch (type) {
         case A_PROGRAM:
             kill_ll(node->program.modules);
