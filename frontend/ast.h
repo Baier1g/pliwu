@@ -4,6 +4,8 @@
 #include "linked_list.h"
 #include "symbol_table.h"
 
+typedef struct var_info var_info;
+
 typedef enum {
     A_PROGRAM,
     A_MODULE,
@@ -60,6 +62,14 @@ typedef struct {
     int startchar;
     int line;
 } pos;
+
+struct var_info {
+    data_type type;
+    int nesting_depth;
+    int offset;
+};
+
+var_info *create_var_info(int);
 
 /*
  * Creates a unary AST node.
@@ -128,6 +138,9 @@ void AST_printer(struct AST_node*);
 struct AST_node {
     kind kind;
     pos pos;
+    /* This table will hold information about variables.
+     * It will be added to by the semantic analysis and codegen phases and the codegen phase will use this information as well
+     */
     symbol_table *table;
     union {
         // Program node

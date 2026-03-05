@@ -50,9 +50,9 @@ global _start
 _start:
 	push rbp
 	mov rbp, rsp
-	mov rax, 99
+	mov rax, 108
 	push rax
-	mov rax, 5
+	mov rax, 1
 	push rax
 	call main0
 	add rsp, 16
@@ -61,37 +61,60 @@ _start:
 	mov rax, 1
 	int 0x80
 
-id0:
+factorial0:
 	push rbp					; Save the old base pointer
 	mov rbp, rsp				; Set up base pointer for new stack frame
-	mov rax, 10
+	mov rax, 1
 	push rax
-	mov rax, 5
+	mov rax, qword[rbp+16]		; Load function argument from above base pointer
 	pop rbx
 	cmp rax, rbx
-	jle false0
+	jg false0
 	mov rax, 1
 	jmp end_rel0
 false0:
 	mov rax, 0
 end_rel0:
+	jg end_if0
+	mov rax, 1
+	jmp epilogue0
+	jmp end_if0
+end_if0:
+	mov rax, 1
 	push rax
-	mov rax, qword[rbp-8]		; Load the value of a variable into rax
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
 	mov rax, qword[rbp+16]		; Load function argument from above base pointer
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
+	pop rbx
+	sub rax, rbx
+	push rax
+	call factorial0
+	add rsp, 8
+	push rax
+	mov rax, qword[rbp+16]		; Load function argument from above base pointer
+	pop rbx
+	imul rax, rbx
+	jmp epilogue0
+epilogue0:
+	mov rsp, rbp				; Restore the old stack pointer before exit
+	pop rbp						; Restore the base pointer of the previous stack
+	ret
+
+main0:
+	push rbp					; Save the old base pointer
+	mov rbp, rsp				; Set up base pointer for new stack frame
+	mov rax, 24
+	push rax
+	call factorial_helper0
+	add rsp, 8
+	jmp epilogue1
+epilogue1:
+	mov rsp, rbp				; Restore the old stack pointer before exit
+	pop rbp						; Restore the base pointer of the previous stack
+	ret
+
+factorial_helper0:
+	push rbp					; Save the old base pointer
+	mov rbp, rsp				; Set up base pointer for new stack frame
+	mov rax, 0
 	push rax
 	mov rax, qword[rbp+16]		; Load function argument from above base pointer
 	pop rbx
@@ -102,163 +125,33 @@ end_rel0:
 false1:
 	mov rax, 0
 end_rel1:
-	jne else0
-	mov rax, 0
-	mov qword[rbp-8], rax
-	jmp end_if0
-else0:
-	mov rax, 1
-	mov qword[rbp-8], rax
-end_if0:
-	mov rax, qword[rbp-8]		; Load the value of a variable into rax
-	jmp epilogue0
-epilogue0:
-	mov rsp, rbp				; Restore the old stack pointer before exit
-	pop rbp						; Restore the base pointer of the previous stack
-	ret
-
-main0:
-	push rbp					; Save the old base pointer
-	mov rbp, rsp				; Set up base pointer for new stack frame
-	mov rax, 30
-	push rax
-	mov rax, 102
-	push rax
-	mov rax, 50
-	push rax
-	mov rax, qword[rbp-8]		; Load the value of a variable into rax
-	push rax
-	call id0
-	add rsp, 24
-	push rax
-	mov rax, 50000
-	push rax
-	mov rax, 10
-	push rax
-	mov rax, 0
-	push rax
-	mov rax, 1000
-	push rax
-	mov rax, qword[rbp-32]		; Load the value of a variable into rax
-	pop rbx
-	cmp rax, rbx
-	jge false2
-	mov rax, 1
-	jmp end_rel2
-false2:
-	mov rax, 0
-end_rel2:
-	jge else2
-	mov rax, 107
-	push rax
-	mov rax, 5
-	push rax
-	mov rax, qword[rbp-56]		; Load the value of a variable into rax
+	jne end_if2
+	jmp epilogue2
+	jmp end_if2
+end_if2:
+	mov rax, qword[rbp+16]		; Load function argument from above base pointer
 	mov rdi, rax				; Move argument to be printed from rax to rdi
 	push rax					; Save value to be printed to the stack
 	call print_int				; Call the print function
 	pop rax						; Restore the printed value
-	mov rax, 300
+	mov rax, qword[rbp+16]		; Load function argument from above base pointer
 	push rax
-	mov rax, qword[rbp-32]		; Load the value of a variable into rax
-	pop rbx
-	imul rax, rbx
+	call factorial0
+	add rsp, 8
+	mov rdi, rax				; Move argument to be printed from rax to rdi
+	push rax					; Save value to be printed to the stack
+	call print_int				; Call the print function
+	pop rax						; Restore the printed value
+	mov rax, 1
 	push rax
-	mov rax, qword[rbp-24]		; Load the value of a variable into rax
+	mov rax, qword[rbp+16]		; Load function argument from above base pointer
 	pop rbx
 	sub rax, rbx
-	mov qword[rbp-56], rax
-	mov rax, qword[rbp-56]		; Load the value of a variable into rax
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	jmp end_if2
-else2:
-	mov rax, 200
 	push rax
-	mov rax, qword[rbp-32]		; Load the value of a variable into rax
-	pop rbx
-	imul rax, rbx
-	push rax
-	mov rax, qword[rbp-24]		; Load the value of a variable into rax
-	pop rbx
-	add rax, rbx
-	mov qword[rbp-40], rax
-	mov rax, 70
-	push rax
-	mov rax, 10
-	push rax
-	mov rax, 50
-	pop rbx
-	add rax, rbx
-	pop rbx
-	cmp rax, rbx
-	jle false4
-	mov rax, 1
-	jmp end_rel4
-false4:
-	mov rax, 0
-end_rel4:
-	cmp rax, 0
-	jne false3
-	mov rax, 3
-	push rax
-	mov rax, 4
-	push rax
-	mov rax, 10
-	push rax
-	mov rax, 10
-	pop rbx
-	add rax, rbx
-	pop rbx
-	add rax, rbx
-	pop rbx
-	cmp rax, rbx
-	jl false5
-	mov rax, 1
-	jmp end_rel5
-false5:
-	mov rax, 0
-end_rel5:
-	cmp rax, 0
-	jne false3
-	mov rax, 0
-	jmp end_logical3
-false3:
-	mov rax, 1
-end_logical3:
-	push rax
-	mov rax, qword[rbp-48]		; Load the value of a variable into rax
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	mov rax, qword[rbp-48]		; Load the value of a variable into rax
-	cmp rax, 0
-	je false6
-	mov rax, 0
-	cmp rax, 0
-	je false6
-	mov rax, 1
-	jmp end_logical6
-false6:
-	mov rax, 0
-end_logical6:
-	push rax
-	mov rax, qword[rbp-56]		; Load the value of a variable into rax
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-end_if2:
-	mov rax, qword[rbp-40]		; Load the value of a variable into rax
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	jmp epilogue1
-epilogue1:
+	call factorial_helper0
+	add rsp, 8
+	jmp epilogue2
+epilogue2:
 	mov rsp, rbp				; Restore the old stack pointer before exit
 	pop rbp						; Restore the base pointer of the previous stack
 	ret

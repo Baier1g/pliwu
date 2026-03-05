@@ -15,6 +15,16 @@ pos create_pos(int start, int line) {
     return pos;
 }
 
+var_info *create_var_info(int nesting_depth) {
+    var_info *tmp = calloc(1, sizeof(var_info));
+    if (!tmp) {
+        printf("malloc FAILED\n");
+        return NULL;
+    }
+    tmp->nesting_depth = nesting_depth;
+    return tmp;
+}
+
 struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void *a) {
     struct AST_node *node = malloc(sizeof(struct AST_node));
     if (!node) {
@@ -22,6 +32,7 @@ struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void
     }
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
+    node->table = NULL;
     switch (node_kind) {
         case A_PROGRAM:
             node->program.modules = a;
@@ -51,6 +62,7 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
     struct AST_node *node = malloc(sizeof(struct AST_node));
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
+    node->table = NULL;
     switch (node_kind) {
         case A_PRIMARY_EXPR:
             node->primary_expr.type = (data_type) a;
@@ -103,6 +115,7 @@ struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, vo
     }
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
+    node->table = NULL;
     switch (node_kind) {
         case A_IF_STMT:
             node->if_stmt.condition = a;
@@ -135,6 +148,7 @@ struct AST_node *create_quaternary_node(int startchar, int line, kind node_kind,
     }
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
+    node->table = NULL;
     switch (node_kind) {
         case A_FUNC_DEF:
             node->func_def.return_type = (data_type) a;
