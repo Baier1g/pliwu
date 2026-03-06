@@ -55,7 +55,7 @@ typedef enum {
     TYPE_CHAR,
     TYPE_BOOL,
     TYPE_IDENTIFIER,
-    TYPE_VOID
+    TYPE_VOID,
 } data_type;
 
 typedef struct {
@@ -63,12 +63,28 @@ typedef struct {
     int line;
 } pos;
 
+typedef enum {
+    ID_FUNCTION,
+    ID_VARIABLE,
+    ID_FUNC_PARAM,
+} id_type;
+
+/*
+ * This struct holds information about a variable like nesting depth, typing and offset.
+ * These are used for typechecking and code emission.
+ */
 struct var_info {
+    id_type kind;
     data_type type;
     int nesting_depth;
     int offset;
+    // For functions
+    short num_params;
 };
 
+/*
+ * Creates a var_info struct with a provided nesting depth.
+ */
 var_info *create_var_info(int);
 
 /*

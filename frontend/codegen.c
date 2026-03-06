@@ -4,6 +4,7 @@ linked_list *generated_code, *functions;
 symbol_table *stack_offset;
 int label_counter = 0;
 int offset_counter = 1;
+int frame_depth = 0;
 int epilogue_counter = 0;
 int bool_counter = 0;
 int in_function = 0;
@@ -100,7 +101,7 @@ void generate_code(linked_list *ll, struct AST_node *node) {
     generated_code = ll;
     functions = linked_list_new();
     create_print_macro();
-    stack_offset = create_symbol_table(NULL, NULL);
+    stack_offset = node->table;
     generate_code_helper(node);
     // finish shit ig
     linked_list_append(generated_code, \
@@ -114,7 +115,12 @@ void generate_code(linked_list *ll, struct AST_node *node) {
 void generate_code_helper(struct AST_node *node) {
     char *operations = NULL;
     char *op = NULL;
+    char *name = NULL;
     int i;
+
+    var_info *var, *func;
+    symbol_table *old_table;
+
     switch(node->kind) {
         case A_PROGRAM:
             linked_list_append(generated_code, \
@@ -129,21 +135,28 @@ void generate_code_helper(struct AST_node *node) {
             }
             break;
         case A_MODULE:
+            frame_depth++;
             for (linked_list_node *n = node->module.module_declarations->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
             }
+            frame_depth--;
             break;
         case A_FUNC_DEF:
             //printf("entering function\n");
             int old_offset = offset_counter;
-            offset_counter = -(node->func_def.parameters->size + 1);
-            symbol_table *old = stack_offset;
-            stack_offset = create_symbol_table(stack_offset, NULL);
+            offset_counter = -(node->func_def.parameters->size + 2);
+            old_table = stack_offset;
+            stack_offset = node->table;
             linked_list *old_ll = generated_code;
             generated_code = functions;
             //prologue
             i = 0;
             char* function_name = generate_label(node->func_def.identifier->primary_expr.identifier_name, 0);
+            if (in_function) {
+                linked_list_append(generated_code, "\tjmp end_");
+                linked_list_append(generated_code, function_name);
+                linked_list_append(generated_code, "\n");
+            }
             linked_list_append(generated_code, function_name);
             linked_list_append(generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n");
 
@@ -162,30 +175,40 @@ void generate_code_helper(struct AST_node *node) {
             } DOGSHIT END*/
 
             for (linked_list_node *lln = node->func_def.parameters->tail; lln != NULL; lln = lln->prev) {
-                symbol_table_insert(stack_offset, (char *) ((struct AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name, offset_counter * 8);
-                printf("offset for %s is: %d\n", (char *)((struct AST_node *)lln->data)->parameter.identifier->primary_expr.identifier_name, (int)symbol_table_get(stack_offset, (char *)((struct AST_node *)lln->data)->parameter.identifier->primary_expr.identifier_name));
+                char *name = (char *) ((struct AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name;
+                ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
+
+                printf("offset for %s is: %d\n", name, ((var_info *) symbol_table_get(stack_offset, name))->offset);
                 offset_counter++;
             }
-            offset_counter += 2;
+            offset_counter += 3;
 
+            short was_in = in_function;
             in_function = 1;
+            frame_depth++;
             generate_code_helper(node->func_def.function_block);
-            in_function = 0;
+            frame_depth--;
+            in_function = was_in;
 
             op = generate_label("epilogue", epilogue_counter++);
             linked_list_append(generated_code, op);
             linked_list_append(generated_code, ":\n\tmov rsp, rbp\t\t\t\t; Restore the old stack pointer before exit\n\tpop rbp\t\t\t\t\t\t; Restore the base pointer of the previous stack\n\tret\n\n");
-            destroy_symbol_table(stack_offset);
-            stack_offset = old;
+            if (in_function) {
+                linked_list_append(generated_code, "end_");
+                linked_list_append(generated_code, function_name);
+                linked_list_append(generated_code, ":\n");
+            }
+            stack_offset = old_table;
             offset_counter = old_offset;
             generated_code = old_ll;
             //printf("exiting function\n");
             break;
         case A_VAR_DECL:
-            char* name = node->var_decl.identifier->primary_expr.identifier_name;
+            name = node->var_decl.identifier->primary_expr.identifier_name;
             //printf("offset_counter is at: %d = %d\n", offset_counter, offset_counter * 8);
             if (node->var_decl.expr_stmt) {
-                symbol_table_insert(stack_offset, name, offset_counter * 8);
+                var = symbol_table_get(stack_offset, name);
+                var->offset = offset_counter * 8;
                 printf("offset is %d for var %s in var_decl\n", offset_counter * 8, name);
                 offset_counter++;
                 generate_code_helper(node->var_decl.expr_stmt);
@@ -193,11 +216,10 @@ void generate_code_helper(struct AST_node *node) {
             }
             break;
         case A_BLOCK_STMT:
-            symbol_table *old_table;
             int old_c;
             if (in_function) {
                 old_table = stack_offset;
-                stack_offset = create_symbol_table(stack_offset, NULL);
+                stack_offset = node->table;
                 old_c = offset_counter;
                 printf("offset counter is %d in block\n", offset_counter * 8);
             }
@@ -206,7 +228,6 @@ void generate_code_helper(struct AST_node *node) {
             }
             if (in_function) {
                 printf("offset counter is %d in post-block\n", offset_counter * 8);
-                destroy_symbol_table(stack_offset);
                 stack_offset = old_table;
                 offset_counter = old_c;
             }
@@ -265,16 +286,17 @@ void generate_code_helper(struct AST_node *node) {
             if (!operations) {
                 exit(-2);
             }
-            int offset = symbol_table_get(stack_offset, node->assign_expr.identifier->primary_expr.identifier_name);
+            name = node->assign_expr.identifier->primary_expr.identifier_name;
+            int offset = ((var_info *) symbol_table_get(stack_offset, name))->offset;
             if (offset) {
-                printf("got offset, it is: %d for var %s\n", offset, node->assign_expr.identifier->primary_expr.identifier_name);
+                printf("got offset, it is: %d for var %s\n", offset, name);
                 generate_code_helper(node->assign_expr.expression);
                 sprintf(operations, "\tmov qword[rbp-%d], rax\n", offset);
                 linked_list_append(generated_code, operations);
             } else {
                 generate_code_helper(node->assign_expr.expression);
-                char *name = node->var_decl.identifier->primary_expr.identifier_name;
-                symbol_table_insert(stack_offset, name, offset_counter * 8);
+                //char *name = node->var_decl.identifier->primary_expr.identifier_name;
+                ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
                 printf("offset_counter is at: %d for var %s in assign\n", offset_counter, name);
                 //printf("offset_counter is at: %d\n", offset_counter);
                 linked_list_append(generated_code, "\tpush rax");
@@ -366,11 +388,25 @@ void generate_code_helper(struct AST_node *node) {
                     linked_list_append(generated_code, op);
                     break;
                 case TYPE_IDENTIFIER:
-                    int offset = (int) symbol_table_get(stack_offset, node->primary_expr.identifier_name);
-                    printf("offset is at: %d for var %s in primary\n", offset, node->primary_expr.identifier_name);
+                    var = (var_info *) symbol_table_get(stack_offset, node->primary_expr.identifier_name);
+                    int offset = var->offset;
+                    int depth = var->nesting_depth;
+
+                    printf("offset is at: %d for var %s in primary. We are at depth %d and var depth is %d\n", offset, node->primary_expr.identifier_name, frame_depth, depth);
                     //printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
                     if (offset > 0) {
-                        sprintf(op, "\tmov rax, qword[rbp-%d]\t\t; Load the value of a variable into rax\n", offset);
+                        if (var->nesting_depth == frame_depth) {
+                            linked_list_append(generated_code, "\tlea rax, [rbp]\n");
+                        } else {
+                            int depth_diff = frame_depth - var->nesting_depth;
+                            linked_list_append(generated_code, "\tlea rax, [rbp+16]\n");
+                            while (depth_diff >= 0) {                    //rax + 16
+                                linked_list_append(generated_code, "\tlea rax, qword[rax+16]\n");
+                                depth_diff--;
+                            }
+                            linked_list_append(generated_code, "\tsub qword[rax], 16\n");
+                        }
+                        sprintf(op, "\tmov rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", offset);
                     } else {
                         offset = -(offset);
                         sprintf(op, "\tmov rax, qword[rbp+%d]\t\t; Load function argument from above base pointer\n", offset);
@@ -411,13 +447,28 @@ void generate_code_helper(struct AST_node *node) {
                 linked_list_append(generated_code, "\tpush rax\n");
                 i++;
             }
+            // STATIC LINK
+            var = symbol_table_get(stack_offset, node->call_expr.identifier->primary_expr.identifier_name);
+            if (var->nesting_depth == frame_depth - 1) {
+                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tpush rax\n");
+            } else {
+                int depth_diff = (frame_depth - 1) - var->nesting_depth;
+                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n");
+                depth_diff--;
+                while (depth_diff > 0) {                    //rax + 16
+                    linked_list_append(generated_code, "\tlea rax, [rax+16]\n");
+                    depth_diff--;
+                }
+                linked_list_append(generated_code, "\tpush rax\n");
+            }
+
             linked_list_append(generated_code, "\tcall ");
             linked_list_append(generated_code, node->call_expr.identifier->primary_expr.identifier_name);
             linked_list_append(generated_code, "0\n");
             linked_list_append(generated_code, "\tadd rsp, ");
             char *number = calloc(100, sizeof(char));
             int j = 0;
-            i = params->size * 8;
+            i = (params->size + 1) * 8;
             int k = i;
             while (k != 0) {
                 k = k /10;
