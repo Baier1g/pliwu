@@ -58,7 +58,7 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 }
 
 <COMMENT>{COMMENT_END} {
-    printf("multi line comment\n");
+    //printf("multi line comment\n");
     increment_counter(yyleng);
     BEGIN(INITIAL);
 }
@@ -78,61 +78,61 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 }
 
 <STR>{CHARACTER} {
-    printf("%s \tcharacter\n", yytext);
+    //printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
     yylval.cval = yytext[0];
     return T_CHAR;
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
-    printf("%s \tsingle line comment\n", yytext);
+    //printf("%s \tsingle line comment\n", yytext);
     increment_counter(yyleng);
 }
 
 <COMMENT>.* {
-    printf("%s\n", yytext);
+    //printf("%s\n", yytext);
     increment_counter(yyleng);
 }
 
 <INITIAL>{LEFT_PAR} {
-    printf("%s \tleft parentheses\n", yytext);
+    //printf("%s \tleft parentheses\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_PAREN;
 }
 
 <INITIAL>{RIGHT_PAR} {
-    printf("%s \tright parentheses\n", yytext);
+    //printf("%s \tright parentheses\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_PAREN;
 }
 
 <INITIAL>{LEFT_BRACE} {
-    printf("%s \tleft brace\n", yytext);
+    //printf("%s \tleft brace\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_BRACE;
 }
 
 <INITIAL>{RIGHT_BRACE} {
-    printf("%s \tright brace\n", yytext);
+    //printf("%s \tright brace\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_BRACE;
 }
 
 <INITIAL>{COMMA} {
-    printf("%s \tcomma\n", yytext);
+    //printf("%s \tcomma\n", yytext);
     increment_counter(yyleng);
     return T_COMMA;
 }
 
 <INITIAL>{INTEGER} {
-    printf("%s \tinteger\n", yytext);
+    //printf("%s \tinteger\n", yytext);
     increment_counter(yyleng);
     yylval.ival = atoi(yytext);
     return T_INT;
 }
 
 <INITIAL>{BOOL_VALUE} {
-    printf("%s \tboolean value\n", yytext);
+    //printf("%s \tboolean value\n", yytext);
     increment_counter(yyleng);
     if (!strcmp("true", yytext)) {
         yylval.ival = 1;
@@ -143,49 +143,49 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 }
 
 <INITIAL>{KEYWORD} {
-    printf("%s \tkeyword\n", yytext);
+    //printf("%s \tkeyword\n", yytext);
     increment_counter(yyleng);
     return find_keyword(yytext);
 }
 
 
 <INITIAL>{TYPE} {
-    printf("%s \ttype\n", yytext);
+    //printf("%s \ttype\n", yytext);
     increment_counter(yyleng);
     return find_type(yytext);
 }
 
 <INITIAL>{IDENTIFIER} {
-    printf("%s \tidentifier, length: %d\n", yytext, yyleng);
+    //printf("%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
     yylval.sval = calloc(yyleng + 1, sizeof(char));
     //memset(yylval.sval, 0, (yyleng + 1) *sizeof(char));
-    printf("%s \tyylval post memset, length: %ld\n", yylval.sval, strlen(yylval.sval) + 1);
+    //printf("%s \tyylval post memset, length: %ld\n", yylval.sval, strlen(yylval.sval) + 1);
     strncpy(yylval.sval, yytext, yyleng);
-    printf("%s \tyylval efter copying, length: %ld\n", yylval.sval, strlen(yylval.sval));
+    //printf("%s \tyylval efter copying, length: %ld\n", yylval.sval, strlen(yylval.sval));
     return T_IDENTIFIER;
 }
 
 <INITIAL>= {
-    printf("%s \tassign\n", yytext);
+    //printf("%s \tassign\n", yytext);
     increment_counter(yyleng);
     return T_ASSIGN;
 }
 
 <INITIAL>{SINGLE_OPERATOR} {
-    printf("%s \tsingle operator\n", yytext);
+    //printf("%s \tsingle operator\n", yytext);
     increment_counter(yyleng);
     return yytext[0];
 }
 
 <INITIAL>{OPERATOR} {
-    printf("%s \tdigraph operator\n", yytext);
+    //printf("%s \tdigraph operator\n", yytext);
     increment_counter(yyleng);
     return find_digraph(yytext);
 }
 
 <INITIAL>";" {
-    printf("%s \tsemicolon\n", yytext);
+    //printf("%s \tsemicolon\n", yytext);
     increment_counter(yyleng);
     return ';';
 }
@@ -196,12 +196,12 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
 }
 
 <INITIAL>{WHITESPACES} {
-    printf("%s \twhitespace\n", yytext); 
+    //printf("%s \twhitespace\n", yytext); 
     increment_counter(yyleng);
 }
 
 <<EOF>> {
-    printf("%s \tEOF\n", yytext);
+    //printf("%s \tEOF\n", yytext);
     return 0; 
 }
 

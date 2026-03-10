@@ -197,24 +197,24 @@ int scopecheck(struct AST_node *root, linked_list *ll){
 
     //scope check calls for out of order definitions
     for (linked_list_node *lln = calls->head; lln != NULL; lln = lln->next) {
-        printf("calls\n");
+        //printf("calls\n");
         call_info *c = ((call_info *) lln->data);
         struct AST_node *node = c->node;
         var_info *v = symbol_table_get(c->called_scope, node->call_expr.identifier->primary_expr.identifier_name);
         if (!v) {
-            to_error("call to undefined function", c);
+            to_error("call to undefined function", c->node);
             continue;
         }
         if (v->kind != ID_FUNCTION) {
-            to_error("tried to call a variable", c);
+            to_error("tried to call a variable", c->node);
             continue;
         }
         if (node->call_expr.arguments->size != v->num_params){
-            to_error("Number of arguments does not match function definition", c);
+            to_error("Number of arguments does not match function definition", c->node);
             continue;
         }
     }
-    printf("calls done\n");
+    //printf("calls done\n");
 
     return scope_errors->size;
 }

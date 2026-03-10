@@ -135,8 +135,8 @@ void generate_code_helper(struct AST_node *node) {
                 "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\nsection .text\n\n");
             create_print_int();
             linked_list_append(generated_code, \
-                "global _start\n_start:\tmov rbp, rsp\n\tmov [rbp+16], rbp\n\tmov rax, qword[rbp+16]\n");
-            print_rax();
+                "global _start\n_start:\n\tmov rbp, rsp\n\tmov [rbp+16], rbp\n\tmov rax, qword[rbp+16]\n");
+            //print_rax();
             for (linked_list_node *n = node->module.module_declarations->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
             }
@@ -165,7 +165,7 @@ void generate_code_helper(struct AST_node *node) {
                 linked_list_append(generated_code, "\n");
             }
             linked_list_append(generated_code, function_name);
-            linked_list_append(generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n\tlea rax, [rbp]\n");
+            linked_list_append(generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n");  
             //print_rax();
 
             /* DOGSHIT
@@ -186,7 +186,7 @@ void generate_code_helper(struct AST_node *node) {
                 char *name = (char *) ((struct AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name;
                 ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
 
-                printf("offset for %s is: %d\n", name, ((var_info *) symbol_table_get(stack_offset, name))->offset);
+                //printf("offset for %s is: %d\n", name, ((var_info *) symbol_table_get(stack_offset, name))->offset);
                 offset_counter++;
             }
             offset_counter += 3;
@@ -217,7 +217,7 @@ void generate_code_helper(struct AST_node *node) {
             if (node->var_decl.expr_stmt) {
                 var = symbol_table_get(stack_offset, name);
                 var->offset = offset_counter * 8;
-                printf("offset is %d for var %s in var_decl\n", offset_counter * 8, name);
+                //printf("offset is %d for var %s in var_decl\n", offset_counter * 8, name);
                 offset_counter++;
                 generate_code_helper(node->var_decl.expr_stmt);
                 linked_list_append(generated_code, "\tpush rax\n");
@@ -229,13 +229,13 @@ void generate_code_helper(struct AST_node *node) {
                 old_table = stack_offset;
                 stack_offset = node->table;
                 old_c = offset_counter;
-                printf("offset counter is %d in block\n", offset_counter * 8);
+                //printf("offset counter is %d in block\n", offset_counter * 8);
             }
             for (linked_list_node *n = node->block.stmt_list->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
             }
             if (in_function) {
-                printf("offset counter is %d in post-block\n", offset_counter * 8);
+                //printf("offset counter is %d in post-block\n", offset_counter * 8);
                 stack_offset = old_table;
                 offset_counter = old_c;
             }
@@ -253,18 +253,18 @@ void generate_code_helper(struct AST_node *node) {
                 linked_list_append(generated_code, end_if_label);
                 linked_list_append(generated_code, "\n");
             }
-            printf("entering if branch\n");
+            //printf("entering if branch\n");
             generate_code_helper(node->if_stmt.if_branch);
-            printf("exiting if branch\n");
+            //printf("exiting if branch\n");
             linked_list_append(generated_code, "\tjmp ");
             linked_list_append(generated_code, end_if_label);
             linked_list_append(generated_code, "\n");
             if (node->if_stmt.else_branch) {
                 linked_list_append(generated_code, else_label);
                 linked_list_append(generated_code, ":\n");
-                printf("entering else branch\n");
+                //printf("entering else branch\n");
                 generate_code_helper(node->if_stmt.else_branch);
-                printf("exiting else branch\n");
+                //printf("exiting else branch\n");
             }
             linked_list_append(generated_code, generate_label("end_if", i));
             linked_list_append(generated_code, ":\n");
@@ -278,7 +278,7 @@ void generate_code_helper(struct AST_node *node) {
         case A_EXPR_STMT:
             return;
         case A_RETURN_STMT:
-            printf("entering return\n");
+            //printf("entering return\n");
             if (node->return_stmt.expression) {
                 generate_code_helper(node->return_stmt.expression);
             }
@@ -286,10 +286,10 @@ void generate_code_helper(struct AST_node *node) {
             linked_list_append(generated_code, "\tjmp ");
             linked_list_append(generated_code, op);
             linked_list_append(generated_code, "\n");
-            printf("exiting return\n");
+            //printf("exiting return\n");
             break;
         case A_ASSIGN_EXPR:
-            printf("entering assign\n");
+            //printf("entering assign\n");
             operations = calloc(64, sizeof(char));
             if (!operations) {
                 exit(-2);
@@ -297,7 +297,7 @@ void generate_code_helper(struct AST_node *node) {
             name = node->assign_expr.identifier->primary_expr.identifier_name;
             int offset = ((var_info *) symbol_table_get(stack_offset, name))->offset;
             if (offset) {
-                printf("got offset, it is: %d for var %s\n", offset, name);
+                //printf("got offset, it is: %d for var %s\n", offset, name);
                 generate_code_helper(node->assign_expr.expression);
                 sprintf(operations, "\tmov qword[rbp-%d], rax\n", offset);
                 linked_list_append(generated_code, operations);
@@ -305,7 +305,7 @@ void generate_code_helper(struct AST_node *node) {
                 generate_code_helper(node->assign_expr.expression);
                 //char *name = node->var_decl.identifier->primary_expr.identifier_name;
                 ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
-                printf("offset_counter is at: %d for var %s in assign\n", offset_counter, name);
+                //printf("offset_counter is at: %d for var %s in assign\n", offset_counter, name);
                 //printf("offset_counter is at: %d\n", offset_counter);
                 linked_list_append(generated_code, "\tpush rax");
                 offset_counter++;
@@ -400,7 +400,7 @@ void generate_code_helper(struct AST_node *node) {
                     int offset = var->offset;
                     int depth = var->nesting_depth;
 
-                    printf("offset is at: %d for var %s in primary. We are at depth %d and var depth is %d\n", offset, node->primary_expr.identifier_name, frame_depth, depth);
+                    //printf("offset is at: %d for var %s in primary. We are at depth %d and var depth is %d\n", offset, node->primary_expr.identifier_name, frame_depth, depth);
                     //printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
                     if (offset > 0) {
                         if (var->nesting_depth == frame_depth) {
@@ -432,7 +432,7 @@ void generate_code_helper(struct AST_node *node) {
             }       
             break;
         case A_CALL_EXPR:
-            printf("entering call\n");
+            //printf("entering call\n");
             i = 0;
             /* DOGSHIT
             for each (parameters) {
@@ -461,22 +461,24 @@ void generate_code_helper(struct AST_node *node) {
             }
             // STATIC LINK
             var = symbol_table_get(stack_offset, node->call_expr.identifier->primary_expr.identifier_name);
-            if (var->nesting_depth == frame_depth - 1) {
-                linked_list_append(generated_code, "\tmov rax, qword[rbp+16]\n\tpush rax\n");
+            //printf("Calling %s, we are at frame depth %d and the called function has depth %d\n", node->call_expr.identifier->primary_expr.identifier_name, frame_depth, var->nesting_depth);
+            if (frame_depth == var->nesting_depth) {
+                linked_list_append(generated_code, "\tlea rax, [rbp]\t\t\t; Calling a nested function, static link is calling functions rbp\n");
             } else {
+                linked_list_append(generated_code, "\tlea rax, [rbp+16]\t\t\t; Load the address containing the address of the static link for link traversal\n\tmov rax, qword[rax]\t\t\t; Dereference rax to get the address of the static link\n");
+                //print_rax();
                 int depth_diff = (frame_depth - 1) - var->nesting_depth;
-                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
-                depth_diff--;
                 while (depth_diff > 0) {                    //rax + 16
-                    linked_list_append(generated_code, "\tlea rax, qword[rax+16]\n\tmov rax, qword[rax]\n");
+                    linked_list_append(generated_code, "\tlea rax, [rax+16]\n\tmov rax, qword[rax]\t\t\t\t; Traversing static link\n");
+                    //print_rax();
                     depth_diff--;
                 }
-                linked_list_append(generated_code, "\tpush rax\n");
             }
+            linked_list_append(generated_code, "\tpush rax\t\t\t\t\t; Pushing static link to stack\n");
 
             linked_list_append(generated_code, "\tcall ");
             linked_list_append(generated_code, node->call_expr.identifier->primary_expr.identifier_name);
-            linked_list_append(generated_code, "0\n");
+            linked_list_append(generated_code, "0\t\t\t\t; Calling function\n");
             linked_list_append(generated_code, "\tadd rsp, ");
             char *number = calloc(100, sizeof(char));
             int j = 0;
@@ -487,21 +489,21 @@ void generate_code_helper(struct AST_node *node) {
                 j++;
             }
             j--;
-            printf("Integer is %d\n", i);
+            //printf("Integer is %d\n", i);
             while (i != 0) {
                 number[j--] = (char) ((i % 10) + '0');
-                printf("%c", (char)((i % 10) + '0'));
+                //printf("%c", (char)((i % 10) + '0'));
                 i = i / 10;
             }
-            printf("string is %s\n", number);
+            //printf("string is %s\n", number);
             linked_list_append(generated_code, number);
-            linked_list_append(generated_code, "\n");
-            printf("exiting call\n");
+            linked_list_append(generated_code, "\t\t\t\t\t; Reset stack pointer after call, getting rid of function arguments\n");
+            //printf("exiting call\n");
             break;
         case A_PARAMETER_EXPR:
-            printf("entering parameter\n");
+            //printf("entering parameter\n");
             generate_code_helper(node->parameter.identifier);
-            printf("exiting parameter\n");
+            //printf("exiting parameter\n");
             break;
         default:
             return;

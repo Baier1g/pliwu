@@ -78,7 +78,7 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
                     break;
                 case TYPE_IDENTIFIER:
                     size_t len = strlen((char*) b);
-                    printf("%ld length\n", len);
+                    //printf("%ld length\n", len);
                     node->primary_expr.identifier_name = calloc(len + 1, sizeof(char));
                     //memset(node->primary_expr.identifier_name, 0, len + 1);
                     strncpy(node->primary_expr.identifier_name, b, len);

@@ -1,19 +1,24 @@
 int yarr = 500;
-int yurr = 200;
-main(20, "c");
+main(5, "c");
 
 func main(int argv, char argc) {
     print(yarr);
     int habibi = 30;
-    print(habibi);
+    //bool sheeesh = id(habibi, 50, "f");
 
     // Nested function test
     func nest(int a) -> int {
         print(yarr);
         print(habibi);
-        print(yurr);
-        return a + 10;
+
+        func nest_nest(int a) -> int {
+            print(yarr);
+            print(habibi);
+            return a + 10;
+        }
+
+        return nest_nest(a) + 10;
     }
-    nest(habibi);
+    print(nest(habibi));
     return;
 }

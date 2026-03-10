@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         }
         linked_list_append(prog->program.modules, module);
     }
-    AST_printer(prog);
+    //AST_printer(prog);
 
     
     linked_list *errors = linked_list_new();
