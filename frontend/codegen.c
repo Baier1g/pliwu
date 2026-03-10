@@ -74,6 +74,12 @@ char *generate_label(char* string, int i) {
     return tmp;
 }
 
+void print_rax() {
+    linked_list_append(generated_code,
+                       "\tmov rdi, rax\t\t\t\t; Move argument to be printed from rax to rdi\n\tpush rax\t\t\t\t\t; Save value to be printed to the stack\n\tcall print_int\t\t\t\t; Call the print function\n\tpop rax\t\t\t\t\t\t; Restore the printed value\n");
+    return;
+}
+
 void create_print_macro(void) {
     linked_list_append(generated_code, \
     "%macro sys_write 3\n\tmov rdi, %1\n\tmov rsi, %2\n\tmov rdx, %3\n\tmov rax,1\n\tsyscall\n%endmacro\n\n");
@@ -129,7 +135,8 @@ void generate_code_helper(struct AST_node *node) {
                 "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\nsection .text\n\n");
             create_print_int();
             linked_list_append(generated_code, \
-                "global _start\n_start:\n\tpush rbp\n\tmov rbp, rsp\n");
+                "global _start\n_start:\tmov rbp, rsp\n\tmov [rbp+16], rbp\n\tmov rax, qword[rbp+16]\n");
+            print_rax();
             for (linked_list_node *n = node->module.module_declarations->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
             }
@@ -158,7 +165,8 @@ void generate_code_helper(struct AST_node *node) {
                 linked_list_append(generated_code, "\n");
             }
             linked_list_append(generated_code, function_name);
-            linked_list_append(generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n");
+            linked_list_append(generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n\tlea rax, [rbp]\n");
+            //print_rax();
 
             /* DOGSHIT
             for (linked_list_node lln = node->func_def.parameters.head; i < 6; lln = lln->next) {
@@ -399,12 +407,16 @@ void generate_code_helper(struct AST_node *node) {
                             linked_list_append(generated_code, "\tlea rax, [rbp]\n");
                         } else {
                             int depth_diff = frame_depth - var->nesting_depth;
-                            linked_list_append(generated_code, "\tlea rax, [rbp+16]\n");
-                            while (depth_diff >= 0) {                    //rax + 16
-                                linked_list_append(generated_code, "\tlea rax, qword[rax+16]\n");
+                            linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
+                            depth_diff--;
+                            //print_rax();
+                            while (depth_diff > 0) {                    //rax + 16
+                                linked_list_append(generated_code, "\tlea rax, [rax+16]\n\tmov rax, qword[rax]\n");
+                                //print_rax();
                                 depth_diff--;
                             }
-                            linked_list_append(generated_code, "\tsub qword[rax], 16\n");
+                            //linked_list_append(generated_code, "\tsub rax, 16\n");
+                            //print_rax();
                         }
                         sprintf(op, "\tmov rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", offset);
                     } else {
@@ -450,13 +462,13 @@ void generate_code_helper(struct AST_node *node) {
             // STATIC LINK
             var = symbol_table_get(stack_offset, node->call_expr.identifier->primary_expr.identifier_name);
             if (var->nesting_depth == frame_depth - 1) {
-                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tpush rax\n");
+                linked_list_append(generated_code, "\tmov rax, qword[rbp+16]\n\tpush rax\n");
             } else {
                 int depth_diff = (frame_depth - 1) - var->nesting_depth;
-                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n");
+                linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
                 depth_diff--;
                 while (depth_diff > 0) {                    //rax + 16
-                    linked_list_append(generated_code, "\tlea rax, [rax+16]\n");
+                    linked_list_append(generated_code, "\tlea rax, qword[rax+16]\n\tmov rax, qword[rax]\n");
                     depth_diff--;
                 }
                 linked_list_append(generated_code, "\tpush rax\n");
