@@ -121,7 +121,7 @@ union YYSTYPE
 {
 #line 26 "grammar.y"
 
-    struct AST_node* nval;
+    struct AST_node *nval;
     struct linked_list *llval;
     double fval;
     int ival;

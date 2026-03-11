@@ -15,8 +15,8 @@ typedef struct operand* operand;
 //char* arg_registers[6] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
 
 char *op_code_to_string(op_code);
-void generate_code(linked_list *, struct AST_node *);
-void generate_code_helper(struct AST_node *);
+void generate_code(linked_list *, AST_node *);
+void generate_code_helper(AST_node *);
 void create_print_macro(void);
 void create_print_int(void);
 

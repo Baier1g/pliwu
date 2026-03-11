@@ -24,6 +24,14 @@ print_int:
 	dec r10
 	inc rcx
 	mov rax, qword[rbp-8]
+	mov rbx, 0
+	mov rbx, rax
+	shl rax, 1
+	mov rax, rbx
+	jnc prin
+	neg rax
+	mov r14, 1
+prin:
 	mov r8, 10
 L1:
 	xor rdx, rdx
@@ -34,6 +42,13 @@ L1:
 	inc rcx
 	test rax, rax
 	jnz L1
+	cmp r14, 1
+	jne printtt
+	mov r14, 0
+	mov byte[r10], 0x2d
+	dec r10
+	inc rcx
+printtt:
 	lea rsi, [r10+1]
 	cld
 _L1:
@@ -61,25 +76,6 @@ _start:
 	push rax					; Pushing static link to stack
 	call main0				; Calling function
 	add rsp, 24					; Reset stack pointer after call, getting rid of function arguments
-	mov rax, 1
-	cmp rax, 0
-	je false0
-	mov rax, 1
-	cmp rax, 0
-	je false0
-	mov rax, 1
-	jmp end_logical0
-false0:
-	mov rax, 0
-end_logical0:
-	je end_if0
-	mov rax, 400
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	jmp end_if0
-end_if0:
 	mov rsp, rbp
 	pop rbp
 	mov rax, 1
@@ -91,6 +87,7 @@ main0:
 	lea rax, [rbp+16]
 	mov rax, qword[rax]
 	mov rax, qword[rax-8]		; Load the value of a variable into rax
+	sub rax, 1001
 	mov rdi, rax				; Move argument to be printed from rax to rdi
 	push rax					; Save value to be printed to the stack
 	call print_int				; Call the print function

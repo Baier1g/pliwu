@@ -44,7 +44,7 @@ char *op_code_to_string(op_code op) {
     }
 }
 
-char *decide_branching(struct AST_node *node) {
+char *decide_branching(AST_node *node) {
     // JUMPS for if statements, returns the opposite instruction since we jump to the else label
     switch(node->binary_expr.op) {
         case A_LESS:
@@ -103,7 +103,7 @@ void create_print_int(void) {
     "\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
 }
 
-void generate_code(linked_list *ll, struct AST_node *node) {
+void generate_code(linked_list *ll, AST_node *node) {
     generated_code = ll;
     functions = linked_list_new();
     create_print_macro();
@@ -118,7 +118,7 @@ void generate_code(linked_list *ll, struct AST_node *node) {
     }
 }
 
-void generate_code_helper(struct AST_node *node) {
+void generate_code_helper(AST_node *node) {
     char *operations = NULL;
     char *op = NULL;
     char *name = NULL;
@@ -183,7 +183,7 @@ void generate_code_helper(struct AST_node *node) {
             } DOGSHIT END*/
 
             for (linked_list_node *lln = node->func_def.parameters->tail; lln != NULL; lln = lln->prev) {
-                char *name = (char *) ((struct AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name;
+                char *name = (char *) ((AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name;
                 ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
 
                 //printf("offset for %s is: %d\n", name, ((var_info *) symbol_table_get(stack_offset, name))->offset);
@@ -459,7 +459,7 @@ void generate_code_helper(struct AST_node *node) {
              DOGSHIT END*/
             linked_list *params = node->call_expr.arguments;
             for (linked_list_node *lln = params->tail; lln != NULL; lln = lln->prev) {
-                generate_code_helper((struct AST_node *) lln->data);
+                generate_code_helper((AST_node *) lln->data);
                 linked_list_append(generated_code, "\tpush rax\n");
                 i++;
             }

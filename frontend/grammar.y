@@ -10,11 +10,11 @@
     extern int yylex(void);
     void yyerror(char const*);
     extern void yyrestart(FILE*);
-    struct AST_node *run_bison(const char*);
-    struct AST_node *binexp(void *, int, void *);
-    struct AST_node *relexp(void *, int, void *);
+    AST_node *run_bison(const char*);
+    AST_node *binexp(void *, int, void *);
+    AST_node *relexp(void *, int, void *);
 
-    struct AST_node *prog;
+    AST_node *prog;
 
     extern FILE *yyin;
     unsigned short line_number = 1;
@@ -24,7 +24,7 @@
 
 /* DECLARATIONS */
 %union {
-    struct AST_node* nval;
+    struct AST_node *nval;
     struct linked_list *llval;
     double fval;
     int ival;
@@ -241,15 +241,15 @@ void yyerror(char const* err) {
     printf("%s: line: %d, character: %ld, token: %s\n", err, line_number, start_current_character, "skill issue");
 }
 
-struct AST_node* binexp(void* left, int op, void* right) {
+AST_node* binexp(void* left, int op, void* right) {
     return create_ternary_node(start_current_character, line_number, A_ARITHMETIC_EXPR, left, (void*) op, right);
 }
 
-struct AST_node* relexp(void* left, int op, void* right) {
+AST_node* relexp(void* left, int op, void* right) {
     return create_ternary_node(start_current_character, line_number, A_RELATIONAL_EXPR, left, (void*) op, right);
 }
 
-struct AST_node *run_bison(const char* filename) {
+AST_node *run_bison(const char* filename) {
     yyin = fopen(filename,"r");
     if (!yyin) {
         return NULL;

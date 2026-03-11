@@ -25,8 +25,8 @@ var_info *create_var_info(int nesting_depth) {
     return tmp;
 }
 
-struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void *a) {
-    struct AST_node *node = malloc(sizeof(struct AST_node));
+AST_node *create_unary_node(int startchar, int line, kind node_kind, void *a) {
+    AST_node *node = malloc(sizeof(AST_node));
     if (!node) {
         return NULL;
     }
@@ -58,8 +58,8 @@ struct AST_node *create_unary_node(int startchar, int line, kind node_kind, void
     return node;
 }
 
-struct AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, void *b) {
-    struct AST_node *node = malloc(sizeof(struct AST_node));
+AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, void *b) {
+    AST_node *node = malloc(sizeof(AST_node));
     node->pos = create_pos(startchar, line);
     node->kind = node_kind;
     node->table = NULL;
@@ -108,8 +108,8 @@ struct AST_node *create_binary_node(int startchar, int line, kind node_kind, voi
     return node;
 }
 
-struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, void* b, void *c) {
-    struct AST_node *node = malloc(sizeof(struct AST_node));
+AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, void* b, void *c) {
+    AST_node *node = malloc(sizeof(AST_node));
     if (!node) {
         return NULL;
     }
@@ -141,8 +141,8 @@ struct AST_node *create_ternary_node(int startchar, int line, kind node_kind, vo
     return node;
 }
 
-struct AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *a, void *b, void *c, void *d) {
-    struct AST_node *node = malloc(sizeof(struct AST_node));
+AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *a, void *b, void *c, void *d) {
+    AST_node *node = malloc(sizeof(AST_node));
     if (!node) {
         return NULL;
     }
@@ -237,7 +237,7 @@ char *binary_op_enum_to_string(binary_op operand) {
     }
 }
 
-void kill_tree(struct AST_node* node) {
+void kill_tree(AST_node* node) {
     if (!node) {
         return;
     }
@@ -326,7 +326,7 @@ void kill_tree(struct AST_node* node) {
     return;
 }
 
-void AST_printer(struct AST_node *node) {
+void AST_printer(AST_node *node) {
     if (!node) {
         return;
     }

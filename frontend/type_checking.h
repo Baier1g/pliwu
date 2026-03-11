@@ -9,6 +9,6 @@
  * Does type checking of the provided AST_node. Potential errors are stored in the provided linked list
  * Return 0 if no error was discovered, the amount of errors otherwise
  */
-int typecheck(struct AST_node *, linked_list *);
+int typecheck(AST_node *, linked_list *);
 
 #endif

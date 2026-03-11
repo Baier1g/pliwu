@@ -89,7 +89,7 @@ ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
     increment_counter(yyleng);
 }
 
-<COMMENT>.* {
+<COMMENT>. {
     //printf("%s\n", yytext);
     increment_counter(yyleng);
 }

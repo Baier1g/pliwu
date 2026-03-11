@@ -5,11 +5,11 @@ linked_list *type_errors;
 data_type current_return_type = TYPE_VOID;
 
 
-void type_to_error(char *error_msg, struct AST_node *node) {
+void type_to_error(char *error_msg, AST_node *node) {
     linked_list_append(type_errors, error_msg);
 }
 
-data_type recurse_type(struct AST_node *node) {
+data_type recurse_type(AST_node *node) {
     if (!node) {
         return TYPE_VOID;
     }
@@ -23,7 +23,7 @@ data_type recurse_type(struct AST_node *node) {
             outer_table = type_scope;
             type_scope = node->table;
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
-                recurse_type((struct AST_node *) lln->data);
+                recurse_type((AST_node *) lln->data);
             }
             type_scope = outer_table;
             break;
@@ -168,12 +168,12 @@ data_type recurse_type(struct AST_node *node) {
             //return func type
 
             name = node->call_expr.identifier->primary_expr.identifier_name;
-            struct AST_node * funcnode = ((var_info*) symbol_table_get(type_scope, name))->ast_node;
+            AST_node * funcnode = ((var_info*) symbol_table_get(type_scope, name))->ast_node;
             linked_list_node *param_node = funcnode->func_def.parameters->head;
             
             for (linked_list_node *lln = node->call_expr.arguments->head; lln != NULL; lln = lln->next) {
                 d_type = recurse_type(lln->data);
-                d_type_right = ((struct AST_node *) param_node->data)->parameter.type;
+                d_type_right = ((AST_node *) param_node->data)->parameter.type;
 
                 if (d_type != d_type_right) {
                     type_to_error("Argument type does not match parameter type", node);
@@ -194,11 +194,11 @@ data_type recurse_type(struct AST_node *node) {
     return TYPE_VOID;
 }
 
-int typecheck(struct AST_node *root, linked_list *ll) {
+int typecheck(AST_node *root, linked_list *ll) {
     type_errors = ll;
     type_scope = root->table;
     for (linked_list_node *lln = root->program.modules->head; lln != NULL; lln = lln->next) {
-        recurse_type((struct AST_node *) lln->data);
+        recurse_type((AST_node *) lln->data);
     }
     return ll->size;
 }

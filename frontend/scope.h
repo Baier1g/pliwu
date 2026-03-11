@@ -9,6 +9,6 @@
  * Scopechecks the given AST node
  * returns 0 if no errors were discovered.
  */
-int scopecheck (struct AST_node *, linked_list *);
+int scopecheck (AST_node *, linked_list *);
 
 #endif

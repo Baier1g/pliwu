@@ -5,6 +5,7 @@
 #include "symbol_table.h"
 
 typedef struct var_info var_info;
+typedef struct AST_node AST_node;
 
 typedef enum {
     A_PROGRAM,
@@ -79,7 +80,7 @@ struct var_info {
     int nesting_depth;
     int offset;
     // For functions
-    struct AST_node* ast_node;
+    AST_node *ast_node;
     short num_params;
 };
 
@@ -103,7 +104,7 @@ var_info *create_var_info(int);
  * Module
  * Program
  */
-struct AST_node *create_unary_node(int, int, kind, void *);
+AST_node *create_unary_node(int, int, kind, void *);
 
 /*
  * Creates a binary AST node.
@@ -119,7 +120,7 @@ struct AST_node *create_unary_node(int, int, kind, void *);
  * Assignment expression (a: *AST_node identifier, b: *AST_node)
  * Parameter expression (a: data_type type, b: AST_node* identifier)
  */
-struct AST_node *create_binary_node(int, int, kind, void *, void *);
+AST_node *create_binary_node(int, int, kind, void *, void *);
 
 /*
  * Creates a ternary AST node.
@@ -137,19 +138,19 @@ struct AST_node *create_binary_node(int, int, kind, void *, void *);
  * Relational expression (a: left operand, b: operator, c: right operand)
  * Variable declaration (a : datatype, b: identifier, c: (optional) expression)
  */
-struct AST_node *create_ternary_node(int, int, kind, void *, void *, void *);
+AST_node *create_ternary_node(int, int, kind, void *, void *, void *);
 
-struct AST_node *create_quaternary_node(int, int, kind, void *, void *, void *, void *);
+AST_node *create_quaternary_node(int, int, kind, void *, void *, void *, void *);
 
 /*
  * Recursively frees all memory associated with the node
  */
-void kill_tree(struct AST_node*);
+void kill_tree(AST_node*);
 
 /*
  * Recursively prints the abstract syntax tree
  */
-void AST_printer(struct AST_node*);
+void AST_printer(AST_node*);
 
 // AST_node
 struct AST_node {

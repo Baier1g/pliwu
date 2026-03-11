@@ -12,23 +12,23 @@ short is_in_function = 0;
 short nesting_depth = 0;
 
 struct call_info {
-    struct AST_node *node;
+    AST_node *node;
     symbol_table *called_scope;
 };
 
-call_info *create_call_info(struct AST_node *node, symbol_table *table) {
+call_info *create_call_info(AST_node *node, symbol_table *table) {
     call_info *tmp = calloc(1, sizeof(call_info));
     tmp->node = node;
     tmp->called_scope = table;
     return tmp;
 }
 
-void to_error(char *error_msg, struct AST_node *n) {
+void to_error(char *error_msg, AST_node *n) {
     //find line #, find startchar with helper
     linked_list_append(scope_errors, error_msg);
 }
 
-void recurse_scope(struct AST_node *node) {
+void recurse_scope(AST_node *node) {
     symbol_table *outer_table;
     switch(node->kind) {
         case A_PROGRAM:
@@ -38,7 +38,7 @@ void recurse_scope(struct AST_node *node) {
             nesting_depth++;
             node->table = create_symbol_table(current_scope, current_scope->global);
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
-                recurse_scope((struct AST_node *) lln->data);
+                recurse_scope((AST_node *) lln->data);
             }
 
             nesting_depth--;
@@ -184,7 +184,7 @@ void recurse_scope(struct AST_node *node) {
 }
 
 
-int scopecheck(struct AST_node *root, linked_list *ll){
+int scopecheck(AST_node *root, linked_list *ll){
     current_scope = create_symbol_table(NULL, NULL);
     current_scope->global = current_scope;
     calls = linked_list_new();
@@ -193,14 +193,14 @@ int scopecheck(struct AST_node *root, linked_list *ll){
 
     //scopecheck ast node
     for (linked_list_node *lln = root->program.modules->head; lln != NULL; lln = lln->next) {
-        recurse_scope((struct AST_node *) lln->data);
+        recurse_scope((AST_node *) lln->data);
     }
 
     //scope check calls for out of order definitions
     for (linked_list_node *lln = calls->head; lln != NULL; lln = lln->next) {
         //printf("calls\n");
         call_info *c = ((call_info *) lln->data);
-        struct AST_node *node = c->node;
+        AST_node *node = c->node;
         var_info *v = symbol_table_get(c->called_scope, node->call_expr.identifier->primary_expr.identifier_name);
         if (!v) {
             to_error("call to undefined function", c->node);
