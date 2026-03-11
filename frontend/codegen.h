@@ -48,6 +48,7 @@ struct operation {
     op_code op;
     operand arg1;
     operand arg2;
+    char* comment;
 };
 
 struct operand {

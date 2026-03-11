@@ -51,11 +51,11 @@ typedef enum {
 } unary_op;
 
 typedef enum {
+    TYPE_VOID,
     TYPE_INT,
     TYPE_CHAR,
     TYPE_BOOL,
     TYPE_IDENTIFIER,
-    TYPE_VOID,
 } data_type;
 
 typedef struct {

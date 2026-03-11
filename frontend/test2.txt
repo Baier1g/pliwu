@@ -4,6 +4,7 @@ main(5, "c");
 func main(int argv, char argc) {
     print(yarr);
     int habibi = 30;
+    print(habibi / 10);
     //bool sheeesh = id(habibi, 50, "f");
 
     // Nested function test
@@ -17,7 +18,7 @@ func main(int argv, char argc) {
             return a + 10;
         }
 
-        return nest_nest(a) + 10;
+        return nest_nest(a) / 10;
     }
     print(nest(habibi));
     return;

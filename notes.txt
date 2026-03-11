@@ -18,6 +18,7 @@ TODOS:
 7. Add filename to module in AST_node, to improve error handling clarity.
 8. Hella memory leaks in codegen when writing lines with specific offsets (too bad!)
 9. Der skal startes fra main og den må ikke kalde sig selv
+10. Declaring unassigned variables not working in codegen
 
 QUESTIONS:
 1. Bison precedence does not work, why?

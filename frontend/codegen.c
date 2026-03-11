@@ -378,6 +378,10 @@ void generate_code_helper(struct AST_node *node) {
                     linked_list_append(generated_code,\
                         "\tpop rbx\n\tsub rax, rbx\n");
                     break;
+                case A_DIV:
+                    linked_list_append(generated_code,\
+                        "\txor rdx, rdx\n\tpop rbx\n\tdiv rbx\n");
+                    break;
             }
             break;
         case A_UNARY_EXPR:
