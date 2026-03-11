@@ -60,6 +60,7 @@ void recurse_scope(struct AST_node *node) {
             var_info *var = create_var_info(nesting_depth);
             var->kind = ID_FUNCTION;
             var->num_params = node->func_def.parameters->size;
+            var->ast_node = node;
             if (symbol_table_insert(current_scope,node->func_def.identifier->primary_expr.identifier_name, var)){
                 to_error("function name already used", node);
                 return;
@@ -216,5 +217,5 @@ int scopecheck(struct AST_node *root, linked_list *ll){
     }
     //printf("calls done\n");
 
-    return scope_errors->size;
+    return ll->size;
 }

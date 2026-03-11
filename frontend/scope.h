@@ -7,7 +7,7 @@
 
 /*
  * Scopechecks the given AST node
- * returns 0 if an errors was discovered.
+ * returns 0 if no errors were discovered.
  */
 int scopecheck (struct AST_node *, linked_list *);
 

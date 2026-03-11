@@ -79,6 +79,7 @@ struct var_info {
     int nesting_depth;
     int offset;
     // For functions
+    struct AST_node* ast_node;
     short num_params;
 };
 
