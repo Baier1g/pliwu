@@ -19,6 +19,7 @@ TODOS:
 8. Hella memory leaks in codegen when writing lines with specific offsets (too bad!)
 9. Der skal startes fra main og den må ikke kalde sig selv
 10. Declaring unassigned variables not working in codegen
+11. Add type to print statement (in ast node) ((so we can decide which assembly function to use easier))
 
 QUESTIONS:
 1. Bison precedence does not work, why?
