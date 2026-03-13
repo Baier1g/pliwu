@@ -22,6 +22,6 @@ TODOS:
 11. Add type to print statement (in ast node) ((so we can decide which assembly function to use easier))
 
 QUESTIONS:
-1. Bison precedence does not work, why?
+1. Bison precedence does not work, why? (we don't know )
 2. Logicals could maybe be done better, how?
 
