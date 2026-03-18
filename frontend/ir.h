@@ -9,6 +9,7 @@
 #include <string.h>
 
 typedef struct frame frame;
+typedef struct block block;
 typedef struct operation operation;
 typedef struct operand operand;
 
@@ -18,6 +19,8 @@ typedef enum operand_type operand_type;
 char *op_code_to_string(op_code);
 operation *create_op(op_code, operand *, operand *, char *);
 frame *create_frame();
+
+block *create_block
 
 /*
  * Sets the second argument as the next property of the first operation argument
@@ -70,14 +73,22 @@ enum operand_type {
     CONSTANT,
     TEMP,
     LABEL,
+    VARIABLE,
 };
 
 /*
  * A struct representing a stack frame i.e. a function
  */
 struct frame {
+    char *name;
     operation* operations;
     frame **nested_frames;
+};
+
+struct block {
+    block *left, *right;
+    symbol_table *table;
+    operation *start;
 };
 
 /*
@@ -88,6 +99,7 @@ struct operation {
     op_code op;
     operand *arg1;
     operand *arg2;
+    operand *arg3;
     char* comment;
 };
 
@@ -98,6 +110,7 @@ struct operation {
 struct operand {
     operand_type type;
     union {
+        char *variable_name;
         int constant;
         operation *dest;
         frame *call;
