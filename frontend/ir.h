@@ -9,7 +9,7 @@
 #include <string.h>
 
 typedef struct frame frame;
-typedef struct block block;
+typedef struct segment segment;
 typedef struct operation operation;
 typedef struct operand operand;
 
@@ -17,15 +17,11 @@ typedef enum op_code op_code;
 typedef enum operand_type operand_type;
 
 char *op_code_to_string(op_code);
-operation *create_op(op_code, operand *, operand *, char *);
+operation *create_op(op_code, operand *, operand *, operand *);
 frame *create_frame();
+frame *create_named_frame(char *);
 
-block *create_block
-
-/*
- * Sets the second argument as the next property of the first operation argument
- */
-void link_operations(operation *, operation *);
+segment *create_segment(symbol_table *);
 
 /*
  * Creates an operand.
@@ -33,47 +29,61 @@ void link_operations(operation *, operation *);
  */
 operand *create_operand(operand_type, void *);
 
-operation *create_IR_tree(AST_node *);
+frame *create_IR_tree(AST_node *);
 
 /*
  * VERY RUDIMENTARY
  */
-enum op_code {
-    MOV,
+enum op_code
+{
+    /*MOV,
     LEA,
     PUSH,
-    POP,
-    PARAM,
+    POP,*/
+    IR_ASSIGN,
+    IR_PARAM,
 
-    ADD,
-    ADC,
-    SUB,
-    IMUL,
-    DIV,
-    
-    CMP,
-    XOR,
+    IR_ADD,
+    // ADC,
+    IR_SUB,
+    IR_MUL,
+    IR_DIV,
 
-    LABEL,
-    CALL,
-    RET,
-    INT,
+    IR_EQUALS,
+    IR_NEQUALS,
+    IR_LESS,
+    IR_GREATER,
+    IR_LESS_EQ,
+    IR_GREATER_EQ,
 
-    JNC,
+    IR_AND,
+    IR_OR,
+
+    /*CMP,
+    XOR,*/
+
+    IR_PRINT,
+    IR_CALL,
+    IR_RET,
+    // INT,
+
+    IR_GOTO,
+    /*JNC,
     JMP,
     JNE,
     JE,
     JG,
     JL,
     JGE,
-    JLE,
+    JLE,*/
 };
 
 enum operand_type {
-    CONSTANT,
-    TEMP,
-    LABEL,
-    VARIABLE,
+    P_CONSTANT,
+    P_TEMP,
+    P_LABEL,
+    P_VARIABLE,
+    P_FUNC_CALL,
 };
 
 /*
@@ -81,26 +91,24 @@ enum operand_type {
  */
 struct frame {
     char *name;
-    operation* operations;
-    frame **nested_frames;
+    segment *segment;
+    linked_list *nested_frames;
 };
 
-struct block {
-    block *left, *right;
+struct segment {
+    segment *left, *right;
     symbol_table *table;
-    operation *start;
+    linked_list *operations;
 };
 
 /*
  * A struct representing an instruction
  */
 struct operation {
-    operation *next, *prev;
     op_code op;
     operand *arg1;
     operand *arg2;
     operand *arg3;
-    char* comment;
 };
 
 /*
@@ -112,7 +120,7 @@ struct operand {
     union {
         char *variable_name;
         int constant;
-        operation *dest;
+        segment *dest;
         frame *call;
     };
 };

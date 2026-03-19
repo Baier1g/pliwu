@@ -25,3 +25,9 @@ QUESTIONS:
 1. Bison precedence does not work, why? (we don't know )
 2. Logicals could maybe be done better, how?
 
+
+        | BLOCK |
+        /       \
+    | BLOCK |  | BLOCK |
+        \       /
+        | BLOCK |
