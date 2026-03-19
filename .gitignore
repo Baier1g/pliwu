@@ -1,6 +1,9 @@
 *.out
 *.tab.c 
-y.output 
+*.o
+out
+gen_asm.asm
+y.output
 grammar.out 
 lex.yy.c
 .gdb_history
