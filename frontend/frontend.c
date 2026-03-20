@@ -4,6 +4,7 @@
 #include "scope.h"
 #include "type_checking.h"
 #include "codegen.h"
+#include "ir.h"
 
 
 extern AST_node *run_bison(const char*);
@@ -40,6 +41,11 @@ int main(int argc, char* argv[]) {
         }
         exit(-1);
     }
+
+    frame *root = create_IR_tree(prog);
+    print_IR_tree(root);
+
+
 
     linked_list *ass = linked_list_new();
     generate_code(ass, prog);

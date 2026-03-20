@@ -74,17 +74,28 @@ char *generate_label(char* string, int i) {
     return tmp;
 }
 
+/* 
+ * Helper function used for debugging.
+ * Generates assembly for printing the contents of rax
+ */
 void print_rax() {
     linked_list_append(generated_code,
                        "\tmov rdi, rax\t\t\t\t; Move argument to be printed from rax to rdi\n\tpush rax\t\t\t\t\t; Save value to be printed to the stack\n\tcall print_int\t\t\t\t; Call the print function\n\tpop rax\t\t\t\t\t\t; Restore the printed value\n");
     return;
 }
 
+/*
+ * Generates the assembly for the print macro used by print_int
+ */
 void create_print_macro(void) {
     linked_list_append(generated_code, \
     "%macro sys_write 3\n\tmov rdi, %1\n\tmov rsi, %2\n\tmov rdx, %3\n\tmov rax,1\n\tsyscall\n%endmacro\n\n");
 }
 
+/*
+ * Generates the assembly for the print_int function.
+ * So far, it only handles unsigned integers
+ */
 void create_print_int(void) {
     // Print prelude
     linked_list_append(generated_code, \
@@ -103,6 +114,9 @@ void create_print_int(void) {
     "\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
 }
 
+/*
+ * Main entry point of code emission
+ */
 void generate_code(linked_list *ll, AST_node *node) {
     generated_code = ll;
     functions = linked_list_new();
@@ -118,6 +132,9 @@ void generate_code(linked_list *ll, AST_node *node) {
     }
 }
 
+/*
+ * Function that handles code generation for all different types of AST_node
+ */
 void generate_code_helper(AST_node *node) {
     char *operations = NULL;
     char *op = NULL;
@@ -307,7 +324,7 @@ void generate_code_helper(AST_node *node) {
                 ((var_info *) symbol_table_get(stack_offset, name))->offset = offset_counter * 8;
                 //printf("offset_counter is at: %d for var %s in assign\n", offset_counter, name);
                 //printf("offset_counter is at: %d\n", offset_counter);
-                linked_list_append(generated_code, "\tpush rax");
+                linked_list_append(generated_code, "\tpush rax\n");
                 offset_counter++;
             }
             break;

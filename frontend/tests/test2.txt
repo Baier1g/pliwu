@@ -3,6 +3,7 @@ main(5, "c");
 
 func main(int argv, char argc) {
     print(yarr);
+    int test;
     int habibi = 30;
     print(habibi / 10);
     //bool sheeesh = id(habibi, 50, "f");
@@ -21,5 +22,7 @@ func main(int argv, char argc) {
         return nest_nest(a) / 10;
     }
     print(nest(habibi));
+    test = 700000;
+    print(test);
     return;
 }

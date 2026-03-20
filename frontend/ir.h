@@ -16,11 +16,29 @@ typedef struct operand operand;
 typedef enum op_code op_code;
 typedef enum operand_type operand_type;
 
+/*
+ * Returns a string representing the op code provided
+ */
 char *op_code_to_string(op_code);
+
+/*
+ * Creates an operation from the provided arguments
+ */
 operation *create_op(op_code, operand *, operand *, operand *);
+
+/*
+ * Creates an unnamed frame struct
+ */
 frame *create_frame();
+
+/*
+ * Creates named frame struct
+ */
 frame *create_named_frame(char *);
 
+/*
+ * Creates a segment struct with the provided symbol table
+ */
 segment *create_segment(symbol_table *);
 
 /*
@@ -29,10 +47,19 @@ segment *create_segment(symbol_table *);
  */
 operand *create_operand(operand_type, void *);
 
+/*
+ * The main entrypoint of intermediate code generation.
+ * It takes the root of an AST as argument
+ */
 frame *create_IR_tree(AST_node *);
 
 /*
- * VERY RUDIMENTARY
+ * Prints the IR tree to the terminal
+ */
+void print_IR_tree(frame *);
+
+/*
+ * This enum describes the different types of operations in the intermediate representation
  */
 enum op_code
 {
@@ -40,6 +67,7 @@ enum op_code
     LEA,
     PUSH,
     POP,*/
+    IR_VAR_DECL,
     IR_ASSIGN,
     IR_PARAM,
 
@@ -78,6 +106,9 @@ enum op_code
     JLE,*/
 };
 
+/*
+ * This enum holds different types of operand used in the intermediate representation
+ */
 enum operand_type {
     P_CONSTANT,
     P_TEMP,
@@ -95,6 +126,9 @@ struct frame {
     linked_list *nested_frames;
 };
 
+/*
+ * A struct representing a straight line segment of the code
+ */
 struct segment {
     segment *left, *right;
     symbol_table *table;
