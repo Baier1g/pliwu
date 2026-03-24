@@ -69,17 +69,18 @@ extern int yydebug;
     T_AND = 270,                   /* T_AND  */
     T_IF = 271,                    /* T_IF  */
     T_ELSE = 272,                  /* T_ELSE  */
-    T_RETURN = 273,                /* T_RETURN  */
-    T_FUNC = 274,                  /* T_FUNC  */
-    T_PRINT = 275,                 /* T_PRINT  */
-    T_INT = 276,                   /* T_INT  */
-    T_BOOL = 277,                  /* T_BOOL  */
-    T_CHAR = 278,                  /* T_CHAR  */
-    T_INT_TYPE = 279,              /* T_INT_TYPE  */
-    T_BOOL_TYPE = 280,             /* T_BOOL_TYPE  */
-    T_CHAR_TYPE = 281,             /* T_CHAR_TYPE  */
-    T_VOID_TYPE = 282,             /* T_VOID_TYPE  */
-    T_IDENTIFIER = 283             /* T_IDENTIFIER  */
+    T_WHILE = 273,                 /* T_WHILE  */
+    T_RETURN = 274,                /* T_RETURN  */
+    T_FUNC = 275,                  /* T_FUNC  */
+    T_PRINT = 276,                 /* T_PRINT  */
+    T_INT = 277,                   /* T_INT  */
+    T_BOOL = 278,                  /* T_BOOL  */
+    T_CHAR = 279,                  /* T_CHAR  */
+    T_INT_TYPE = 280,              /* T_INT_TYPE  */
+    T_BOOL_TYPE = 281,             /* T_BOOL_TYPE  */
+    T_CHAR_TYPE = 282,             /* T_CHAR_TYPE  */
+    T_VOID_TYPE = 283,             /* T_VOID_TYPE  */
+    T_IDENTIFIER = 284             /* T_IDENTIFIER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -103,17 +104,18 @@ extern int yydebug;
 #define T_AND 270
 #define T_IF 271
 #define T_ELSE 272
-#define T_RETURN 273
-#define T_FUNC 274
-#define T_PRINT 275
-#define T_INT 276
-#define T_BOOL 277
-#define T_CHAR 278
-#define T_INT_TYPE 279
-#define T_BOOL_TYPE 280
-#define T_CHAR_TYPE 281
-#define T_VOID_TYPE 282
-#define T_IDENTIFIER 283
+#define T_WHILE 273
+#define T_RETURN 274
+#define T_FUNC 275
+#define T_PRINT 276
+#define T_INT 277
+#define T_BOOL 278
+#define T_CHAR 279
+#define T_INT_TYPE 280
+#define T_BOOL_TYPE 281
+#define T_CHAR_TYPE 282
+#define T_VOID_TYPE 283
+#define T_IDENTIFIER 284
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -128,7 +130,7 @@ union YYSTYPE
     char cval;
     char* sval;
 
-#line 132 "y.tab.h"
+#line 134 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -32,7 +32,7 @@ void recurse_scope(AST_node *node) {
     symbol_table *outer_table;
     switch(node->kind) {
         case A_PROGRAM:
-            printf("error -> scope: entered with kind A_PROGRAM");
+            printf("scope.c::recurse_scope: entered with kind A_PROGRAM\n");
             break;
         case A_MODULE:
             nesting_depth++;
@@ -124,11 +124,21 @@ void recurse_scope(AST_node *node) {
             
             current_scope = outer_table;
             break;
+        case A_WHILE_LOOP:
+            recurse_scope(node->while_loop.condition);
+            
+            outer_table = current_scope;
+            current_scope = create_symbol_table(current_scope, current_scope->global);
+            node->table = current_scope;
+
+            recurse_scope(node->while_loop.block);
+            current_scope = outer_table;
+            break;
         case A_PRINT_STMT:
             recurse_scope(node->print_stmt.expression);
             break;
         case A_EXPR_STMT:
-            printf("error -> scope: entered with kind A_EXPR_STMT");
+            printf("scope.c::recurse_scope: Entered with kind A_EXPR_STMT\n");
             break;
         case A_RETURN_STMT:
             if (!is_in_function) {
@@ -177,7 +187,7 @@ void recurse_scope(AST_node *node) {
             }
             break;
         default:
-            printf("error -> scope: Unknown ast kind");
+            printf("scope.c::recurse_scope: Unknown ast kind\n");
             break;
     }    
     return;

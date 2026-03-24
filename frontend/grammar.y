@@ -52,6 +52,7 @@
 /* LONGER TOKENS */
 %token T_IF
 %token T_ELSE
+%token T_WHILE
 %token T_RETURN
 %token T_FUNC
 %token T_PRINT
@@ -68,6 +69,7 @@
 %type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
 %type <nval> conditionalExpression assignExpression expression expressionStatement
 %type <nval> block returnStatement else ifStatement printStatement statement
+%type <nval> loopStatement whileLoop
 %type <nval> function funcDefinition varDeclaration declaration multiplicativeExpression
 %type <nval> module 
 %type <llval> blockBody args parameters
@@ -124,7 +126,8 @@ args:
 ;
 
 statement:
-    ifStatement         {$$ = $1;}             
+    ifStatement         {$$ = $1;}
+|   loopStatement       {$$ = $1;}         
 |   returnStatement     {$$ = $1;}
 |   printStatement      {$$ = $1;}
 |   expressionStatement {$$ = $1;}
@@ -135,10 +138,20 @@ ifStatement:
     T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else {$$ = create_ternary_node(start_current_character, line_number, A_IF_STMT, $3, $5, $6);}
 ;
 
+loopStatement:
+    whileLoop   {$$ = $1;}
+;
+
+whileLoop:
+    T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN block {$$ = create_binary_node(start_current_character, line_number, A_WHILE_LOOP, $3, $5);}
+;
+
 else:
     /*%empty*/      {$$ = NULL;}
 |   T_ELSE block    {$$ = $2;}
 ;
+
+
 
 returnStatement:
     T_RETURN expression ';' {$$ = create_unary_node(start_current_character, line_number, A_RETURN_STMT, $2);}
@@ -173,17 +186,17 @@ assignExpression:
 ;
 
 conditionalExpression:
-    logicalOR {$$ = $1;}
-;
-
-logicalOR:
-    logicalAND                  {$$ = $1;}
-|   logicalOR T_OR logicalAND   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void *) A_OR, $3);}
+    logicalAND {$$ = $1;}
 ;
 
 logicalAND:
+    logicalOR                               {$$ = $1;}
+|   logicalAND T_AND logicalOR   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void*) A_AND, $3);}
+;
+
+logicalOR:
     relationalExpression                    {$$ = $1;}
-|   logicalAND T_AND relationalExpression   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void*) A_AND, $3);}
+|   logicalOR T_OR relationalExpression     {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void *) A_OR, $3);}
 ;
 
 relationalExpression:

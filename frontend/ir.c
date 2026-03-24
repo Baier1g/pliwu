@@ -2,10 +2,10 @@
 
 segment *current_segment;
 frame *current_frame;
-symbol_table *current_frame_table, *current_AST_table;
+symbol_table *current_frame_table;
 int temp_counter = 1;
 
-char *IR_op_code_to_string(enum IR_op_code op) {
+char *IR_op_code_to_string(IR_op_code op) {
     switch (op) {
         case IR_ASSIGN:
             return "assign";
@@ -35,6 +35,10 @@ char *IR_op_code_to_string(enum IR_op_code op) {
             return "and";
         case IR_OR:
             return "or";
+        case IR_IF:
+            return "if";
+        case IR_WHILE:
+            return "while";
         case IR_PRINT:
             return "print";
         case IR_CALL:
@@ -44,7 +48,7 @@ char *IR_op_code_to_string(enum IR_op_code op) {
         case IR_GOTO:
             return "goto";
         default:
-            return "Unkown op_code in op_code_to_string";
+            return "ir.c::IR_op_code_to_string: Unknown op_code";
     }
 }
 
@@ -77,7 +81,7 @@ enum IR_op_code AST_op_to_IR_op(binary_op op) {
     }
 }
 
-IR_operation *create_op(enum IR_op_code op, IR_operand *arg1, IR_operand *arg2, IR_operand *arg3) {
+IR_operation *create_op(IR_op_code op, IR_operand *arg1, IR_operand *arg2, IR_operand *arg3) {
     IR_operation *oper = malloc(sizeof(IR_operation));
     oper->op = op;
     oper->arg1 = arg1;
@@ -132,8 +136,9 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
+    int condition;
     symbol_table *sym, *old_table;
     frame *frm, *old_frame;
     segment *seg, *old_segment;
@@ -211,24 +216,51 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
                 recurse_IR_tree((AST_node *) lln->data);
             }
-            print_IR(current_segment);
             break;
         case A_IF_STMT:
-            recurse_IR_tree(node->if_stmt.condition);
+            condition = recurse_IR_tree(node->if_stmt.condition);
             current_segment->left = create_segment(node->if_stmt.if_branch->table);
             current_segment->right = create_segment(node->if_stmt.else_branch->table);
+            
+            IR_operand *if_branch = create_operand(P_LABEL, current_segment->left);
+            IR_operand *else_branch = create_operand(P_LABEL, current_segment->right);
+            op = create_op(IR_IF, create_operand(P_TEMP, condition), if_branch, else_branch);
+
+            linked_list_append(current_segment->operations, op);
             seg = create_segment(node->table);
             old_segment = current_segment;
 
             current_segment = current_segment->left;
             recurse_IR_tree(node->if_stmt.if_branch);
-            
             current_segment->left = seg;
+            op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
+            linked_list_append(current_segment->operations, op);
 
             current_segment = old_segment->right;
             recurse_IR_tree(node->if_stmt.else_branch);
             current_segment->left = seg;
             current_segment = seg;
+            break;
+        case A_WHILE_LOOP:
+            seg = create_segment(node->table);
+            current_segment->left = seg;
+            current_segment = seg;
+            current_segment->left = create_segment(node->while_loop.block->table);
+            current_segment->left->left = current_segment;
+            current_segment->right = create_segment(node->table);
+
+            condition = recurse_IR_tree(node->while_loop.condition);
+            IR_operand *arg2 = create_operand(P_LABEL, current_segment->left);
+            IR_operand *arg3 = create_operand(P_LABEL, current_segment->right);
+            op = create_op(IR_WHILE, create_operand(P_TEMP, condition), arg2, arg3);
+            linked_list_append(current_segment->operations, op);
+            
+            current_segment = current_segment->left;
+            recurse_IR_tree(node->while_loop.block);
+            op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
+            linked_list_append(current_segment->operations, op);
+
+            current_segment = seg->right;
             break;
         case A_PRINT_STMT:
             expr = NULL;
@@ -301,14 +333,14 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_segment->operations, op);
             }
             frame *called_func = (frame *) symbol_table_get(current_frame_table, node->call_expr.identifier->primary_expr.identifier_name);
-            op = create_op(IR_CALL, create_operand(P_FUNC_CALL, called_func), NULL, NULL);
+            op = create_op(IR_CALL, create_operand(P_TEMP, temp_counter), create_operand(P_FUNC_CALL, called_func), NULL);
             linked_list_append(current_segment->operations, op);
-            break;
+            return temp_counter++;
         case A_PARAMETER_EXPR:
             
             break;
         default:
-            printf("ir.c::recurse_IR_tree: unknown AST_node kind");
+            printf("ir.c::recurse_IR_tree: Unknown AST_node kind");
             break;
     }
     return 0;
@@ -329,7 +361,9 @@ void print_operand(IR_operand *op) {
             printf("%s", op->call->name);
             break;
         case P_LABEL:
+            // No way to print segment names as of yet
             printf("wuh?");
+            break;
     }
 }
 
@@ -367,10 +401,28 @@ void print_operation(IR_operation *op) {
             print_operand(op->arg2);
             break;
         case IR_CALL:
+            print_operand(op->arg1);
+            printf(" <- ");
+            printf("%s ", name);
+            print_operand(op->arg2);
+            break;
+        case IR_GOTO:
+            printf("%s", name);
+            break;
+        case IR_IF:
+            printf("%s ", name);
+            print_operand(op->arg1);
+            break;
+        case IR_WHILE:
             printf("%s ", name);
             print_operand(op->arg1);
             break;
         case IR_PRINT:
+            printf("%s ", name);
+            if (op->arg1) {
+                print_operand(op->arg1);
+            }
+            break;
         case IR_RET:
             printf("%s ", name);
             if (op->arg1) {
@@ -388,17 +440,33 @@ void print_operation(IR_operation *op) {
     printf("\n");
 }
 
-void print_IR(segment *segment) {
-    if (!segment) {
+void print_IR(segment *seg) {
+    if (!seg) {
         return;
     }
     IR_operation *op;
-    for (linked_list_node *lln = segment->operations->head; lln != NULL; lln = lln->next) {
+    for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         op = (IR_operation *) lln->data;
         print_operation(op);
     }
-    print_IR(segment->left);
-    print_IR(segment->right);
+    printf("\n");
+
+    if (seg->operations->size) {
+        IR_op_code code = ((IR_operation *) seg->operations->tail->data)->op;
+        if (code == IR_IF || code == IR_WHILE) {
+            segment *left = seg->left;
+            for (linked_list_node *lln = left->operations->head; lln != NULL; lln = lln->next) {
+                op = (IR_operation *) lln->data;
+                print_operation(op);
+            }
+            printf("\n");
+            print_IR(seg->right);
+        } else {
+            print_IR(seg->left);
+            print_IR(seg->right);
+        }
+    }
+    //printf("\n");
 }
 
 void print_IR_tree(frame *root) {

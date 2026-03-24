@@ -80,6 +80,13 @@ data_type recurse_type(AST_node *node) {
             recurse_type(node->if_stmt.if_branch);
             recurse_type(node->if_stmt.else_branch);
             break;
+        case A_WHILE_LOOP:
+            d_type = recurse_type(node->while_loop.condition);
+            if (!(d_type == TYPE_BOOL || d_type == TYPE_INT)){
+                type_to_error("while-condition of incorrect type", node);
+            }
+            recurse_type(node->while_loop.block);
+            break;
         case A_PRINT_STMT:
             recurse_type(node->print_stmt.expression);
             break;
@@ -188,7 +195,7 @@ data_type recurse_type(AST_node *node) {
             ((var_info *) symbol_table_get(type_scope, name))->type = d_type;
             return d_type;
         default:
-            printf("Typecheck: unrecognized ast node");
+            printf("type_checking.c::recurse_type: Unrecognized ast node");
             break;
     }
     return TYPE_VOID;

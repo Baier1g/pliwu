@@ -16,6 +16,7 @@ typedef enum {
 
     A_BLOCK_STMT,  // declaration*
     A_IF_STMT,     // condition, if_block, else_block
+    A_WHILE_LOOP,
     A_PRINT_STMT,  // expression
     A_EXPR_STMT,   // expression
     A_RETURN_STMT, // type, expression
@@ -117,6 +118,7 @@ AST_node *create_unary_node(int, int, kind, void *);
  * The kinds of binary node:
  * Primary expression (a: data_type, b: literal value)
  * Unary expression (a: unary_op, b: *AST_node)
+ * While loop (a: *AST_node, b: *AST_node)
  * Assignment expression (a: *AST_node identifier, b: *AST_node)
  * Parameter expression (a: data_type type, b: AST_node* identifier)
  */
@@ -199,6 +201,11 @@ struct AST_node {
             struct AST_node *if_branch;
             struct AST_node *else_branch;
         } if_stmt;
+
+        struct {
+            AST_node *condition;
+            AST_node *block;
+        } while_loop;
 
         // Print statement
         struct {

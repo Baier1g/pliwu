@@ -18,7 +18,7 @@ pos create_pos(int start, int line) {
 var_info *create_var_info(int nesting_depth) {
     var_info *tmp = calloc(1, sizeof(var_info));
     if (!tmp) {
-        printf("malloc FAILED\n");
+        printf("ast.c::create_var_info: calloc FAILED\n");
         return NULL;
     }
     tmp->nesting_depth = nesting_depth;
@@ -52,7 +52,7 @@ AST_node *create_unary_node(int startchar, int line, kind node_kind, void *a) {
             node->return_stmt.expression = a;
             break;
         default:
-            printf("Unexpected kind in create_unary_node: %d\n", node_kind);
+            printf("ast.c::create_unary_node: Unexpected kind %d\n", node_kind);
             break;
         }
     return node;
@@ -89,6 +89,10 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
             node->unary_expr.op = (unary_op) a;
             node->unary_expr.expression = b;
             break;
+        case A_WHILE_LOOP:
+            node->while_loop.condition = a;
+            node->while_loop.block = b;
+            break;
         case A_ASSIGN_EXPR:
             node->assign_expr.identifier = a;
             node->assign_expr.expression = b;
@@ -102,7 +106,7 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
             node->call_expr.arguments = b;
             break;
         default:
-            printf("Unexpected kind in create_binary_node: %d\n", node_kind);
+            printf("ast.c::create_binary_node: Unexpected kind %d\n", node_kind);
             break;
     }
     return node;
@@ -135,7 +139,7 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
             node->var_decl.expr_stmt = c;
             break;
         default:
-            printf("Unexpected kind in create_ternary_node: %d\n", node_kind);
+            printf("ast.c::create_ternary_node: Unexpected kind %d\n", node_kind);
             break;
         }
     return node;
@@ -157,7 +161,7 @@ AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *
             node->func_def.function_block = d;
             break;
         default:
-            printf("Unexpected kind in create_quaternary_node: %d\n", node_kind);
+            printf("ast.c::create_quaternary_node: Unexpected kind %d\n", node_kind);
             break;
         }
     return node;
@@ -177,6 +181,8 @@ char *kind_enum_to_string(kind type) {
             return "Block statement";
         case A_IF_STMT:
             return "If statement";
+        case A_WHILE_LOOP:
+            return "While loop";
         case A_PRINT_STMT:
             return "Print statement";
         case A_EXPR_STMT:
@@ -200,7 +206,7 @@ char *kind_enum_to_string(kind type) {
         case A_PARAMETER_EXPR:
             return "Parameter expression";
         default:
-            return "Unknown kind";
+            return "ast.c::kind_enum_to_string: Unknown kind";
     }
 }
 
@@ -233,7 +239,7 @@ char *binary_op_enum_to_string(binary_op operand) {
         case A_OR:
             return "OR";
         default:
-            return "Unkown operator";
+            return "ast.c::binary_op_enum_to_string: Unkown operator";
     }
 }
 
@@ -275,6 +281,10 @@ void kill_tree(AST_node* node) {
             kill_tree(node->if_stmt.if_branch);
             kill_tree(node->if_stmt.else_branch);
             free(node);
+            break;
+        case A_WHILE_LOOP:
+            kill_tree(node->while_loop.condition);
+            kill_tree(node->while_loop.block);
             break;
         case A_PRINT_STMT:
             kill_tree(node->print_stmt.expression);
@@ -320,7 +330,7 @@ void kill_tree(AST_node* node) {
             free(node);
             break;
         default:
-            printf("This should not happen :thinking:");
+            printf("ast.c::kill_tree: Unkown AST kind\n");
             break;
     }
     return;
@@ -399,6 +409,11 @@ void AST_printer(AST_node *node) {
             AST_printer(node->if_stmt.else_branch);
             indents--;
             break;
+        case A_WHILE_LOOP:
+            indents++;
+            AST_printer(node->while_loop.condition);
+            AST_printer(node->while_loop.block);
+            indents--;
         case A_PRINT_STMT:
             indents++;
             AST_printer(node->print_stmt.expression);
@@ -456,7 +471,7 @@ void AST_printer(AST_node *node) {
                     printf("Literal: None\n");
                     break;
                 default:
-                    printf("Someting went wong UwU");
+                    printf("ast.c::AST_printer::primary: Unknown primary type\n");
                     break;
             }
             indents--;
@@ -472,6 +487,7 @@ void AST_printer(AST_node *node) {
             indents--;
             break;
         default:
+            printf("ast.c::AST_printer: Unkown AST kind\n");
             break;
     }
 }

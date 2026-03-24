@@ -287,6 +287,23 @@ void generate_code_helper(AST_node *node) {
             linked_list_append(generated_code, ":\n");
             label_counter++;
             break;
+        case A_WHILE_LOOP:
+            i = label_counter++;
+            char *while_label = generate_label("while", i);
+            char *end_while_label = generate_label("end_while", i);
+            linked_list_append(generated_code, while_label);
+            linked_list_append(generated_code, ":\n");
+            generate_code_helper(node->while_loop.condition);
+            linked_list_append(generated_code, decide_branching(node->while_loop.condition));
+            linked_list_append(generated_code, end_while_label);
+            linked_list_append(generated_code, "\n");
+            generate_code_helper(node->while_loop.block);
+            linked_list_append(generated_code, "\n\tjmp ");
+            linked_list_append(generated_code, while_label);
+            linked_list_append(generated_code, "\n");
+            linked_list_append(generated_code, end_while_label);
+            linked_list_append(generated_code, ":\n");
+            break;
         case A_PRINT_STMT:
             generate_code_helper(node->print_stmt.expression);
             linked_list_append(generated_code, \
@@ -505,6 +522,7 @@ void generate_code_helper(AST_node *node) {
             int j = 0;
             i = (params->size + 1) * 8;
             int k = i;
+            int boo;
             while (k != 0) {
                 k = k /10;
                 j++;

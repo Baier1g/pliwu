@@ -19,12 +19,12 @@ typedef enum operand_type operand_type;
 /*
  * Returns a string representing the op code provided
  */
-char *IR_op_code_to_string(enum IR_op_code);
+char *IR_op_code_to_string(IR_op_code);
 
 /*
  * Creates an operation from the provided arguments
  */
-IR_operation *create_op(enum IR_op_code, IR_operand *, IR_operand *, IR_operand *);
+IR_operation *create_op(IR_op_code, IR_operand *, IR_operand *, IR_operand *);
 
 /*
  * Creates an unnamed frame struct
@@ -89,6 +89,8 @@ enum IR_op_code {
     /*CMP,
     XOR,*/
 
+    IR_IF,
+    IR_WHILE,
     IR_PRINT,
     IR_CALL,
     IR_RET,
