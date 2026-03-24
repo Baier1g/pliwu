@@ -10,21 +10,21 @@
 
 typedef struct frame frame;
 typedef struct segment segment;
-typedef struct operation operation;
-typedef struct operand operand;
+typedef struct IR_operation IR_operation;
+typedef struct IR_operand IR_operand;
 
-typedef enum op_code op_code;
+typedef enum IR_op_code IR_op_code;
 typedef enum operand_type operand_type;
 
 /*
  * Returns a string representing the op code provided
  */
-char *op_code_to_string(op_code);
+char *IR_op_code_to_string(enum IR_op_code);
 
 /*
  * Creates an operation from the provided arguments
  */
-operation *create_op(op_code, operand *, operand *, operand *);
+IR_operation *create_op(enum IR_op_code, IR_operand *, IR_operand *, IR_operand *);
 
 /*
  * Creates an unnamed frame struct
@@ -45,7 +45,7 @@ segment *create_segment(symbol_table *);
  * Creates an operand.
  * The operand_type defines which member of the union is instantiated.
  */
-operand *create_operand(operand_type, void *);
+IR_operand *create_operand(operand_type, void *);
 
 /*
  * The main entrypoint of intermediate code generation.
@@ -61,8 +61,7 @@ void print_IR_tree(frame *);
 /*
  * This enum describes the different types of operations in the intermediate representation
  */
-enum op_code
-{
+enum IR_op_code {
     /*MOV,
     LEA,
     PUSH,
@@ -138,18 +137,18 @@ struct segment {
 /*
  * A struct representing an instruction
  */
-struct operation {
-    op_code op;
-    operand *arg1;
-    operand *arg2;
-    operand *arg3;
+struct IR_operation {
+    enum IR_op_code op;
+    IR_operand *arg1;
+    IR_operand *arg2;
+    IR_operand *arg3;
 };
 
 /*
  * A struct representing an operand.
  * Can be either a constant, a temporary or a label
  */
-struct operand {
+struct IR_operand {
     operand_type type;
     union {
         char *variable_name;

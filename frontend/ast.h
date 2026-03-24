@@ -152,6 +152,8 @@ void kill_tree(AST_node*);
  */
 void AST_printer(AST_node*);
 
+char *kind_enum_to_string(kind);
+
 // AST_node
 struct AST_node {
     kind kind;
