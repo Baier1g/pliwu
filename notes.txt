@@ -21,6 +21,7 @@ TODOS:
 10. Declaring unassigned variables not working in codegen
 11. Add type to print statement (in ast node) ((so we can decide which assembly function to use easier))
 12. Eliminate dead code, either in scope or later
+13. Maybe make set
 
 QUESTIONS:
 1. Bison precedence does not work, why? (we don't know )

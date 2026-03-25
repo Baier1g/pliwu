@@ -26,6 +26,10 @@ char *IR_op_code_to_string(IR_op_code);
  */
 IR_operation *create_op(IR_op_code, IR_operand *, IR_operand *, IR_operand *);
 
+void handle_use_set(IR_operation *);
+
+void handle_def_set(IR_operation *);
+
 /*
  * Creates an unnamed frame struct
  */
@@ -59,6 +63,11 @@ frame *create_IR_tree(AST_node *);
 void print_IR_tree(frame *);
 
 /*
+ * Performs liveness analysis on the provided IR by populating the in- and out set of the each operation.
+ */
+void liveness(frame *);
+
+/*
  * This enum describes the different types of operations in the intermediate representation
  */
 enum IR_op_code {
@@ -69,6 +78,7 @@ enum IR_op_code {
     IR_VAR_DECL,
     IR_ASSIGN,
     IR_PARAM,
+    IR_POP_PARAM,
 
     IR_ADD,
     // ADC,
@@ -123,7 +133,7 @@ enum operand_type {
  */
 struct frame {
     char *name;
-    segment *segment;
+    segment *segment, *last;
     linked_list *nested_frames;
 };
 
@@ -131,6 +141,8 @@ struct frame {
  * A struct representing a straight line segment of the code
  */
 struct segment {
+    int iteration;
+    linked_list *pred;
     segment *left, *right;
     symbol_table *table;
     linked_list *operations;
@@ -140,6 +152,7 @@ struct segment {
  * A struct representing an instruction
  */
 struct IR_operation {
+    linked_list *in, *out, *use, *def;
     enum IR_op_code op;
     IR_operand *arg1;
     IR_operand *arg2;
@@ -158,6 +171,15 @@ struct IR_operand {
         segment *dest;
         frame *call;
     };
+};
+
+/* A struct that represents a node in the register allocation graph 
+ * Color holds the allocated register of a temporary
+ * The connections array holds the indices of the temporaries that are alive at the same time
+ */
+struct RA_node {
+    int color;
+    int *connections;
 };
 
 

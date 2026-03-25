@@ -9,6 +9,8 @@ char *IR_op_code_to_string(IR_op_code op) {
     switch (op) {
         case IR_ASSIGN:
             return "assign";
+        case IR_POP_PARAM:
+            return "pop_param";
         case IR_PARAM:
             return "param";
         case IR_ADD:
@@ -47,6 +49,8 @@ char *IR_op_code_to_string(IR_op_code op) {
             return "return";
         case IR_GOTO:
             return "goto";
+        case IR_VAR_DECL:
+            return "var_decl";
         default:
             return "ir.c::IR_op_code_to_string: Unknown op_code";
     }
@@ -83,10 +87,16 @@ enum IR_op_code AST_op_to_IR_op(binary_op op) {
 
 IR_operation *create_op(IR_op_code op, IR_operand *arg1, IR_operand *arg2, IR_operand *arg3) {
     IR_operation *oper = malloc(sizeof(IR_operation));
+    oper->in = linked_list_new();
+    oper->out = linked_list_new();
+    oper->use = linked_list_new();
+    oper->def = linked_list_new();
     oper->op = op;
     oper->arg1 = arg1;
     oper->arg2 = arg2;
     oper->arg3 = arg3;
+    handle_use_set(oper);
+    handle_def_set(oper);
     return oper;
 }
 
@@ -108,7 +118,9 @@ frame *create_named_frame(char *name) {
 segment *create_segment(symbol_table *table) {
     segment *tmp = malloc(sizeof(segment));
     tmp->left = tmp->right = NULL;
+    tmp->iteration = 0;
     tmp->table = table;
+    tmp->pred = linked_list_new();
     tmp->operations = linked_list_new();
     return tmp;
 }
@@ -136,7 +148,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     symbol_table *sym, *old_table;
@@ -173,6 +185,7 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 recurse_IR_tree((AST_node *) lln->data);
             }
+            current_frame->last = current_segment;
             current_frame_table = old_table;
             current_frame = old_frame;
             current_segment = old_segment;
@@ -198,6 +211,8 @@ int recurse_IR_tree(AST_node *node) {
             }
             
             recurse_IR_tree(node->func_def.function_block);
+
+            current_frame->last = current_segment;
             current_frame_table = old_table;
             current_frame = old_frame;
             current_segment = old_segment;
@@ -207,6 +222,8 @@ int recurse_IR_tree(AST_node *node) {
             expr = NULL;
             if (node->var_decl.expr_stmt) {
                 expr = create_operand(P_TEMP, recurse_IR_tree(node->var_decl.expr_stmt));
+            } else {
+                expr = create_operand(P_CONSTANT, 0);
             }
             op = create_op(IR_VAR_DECL, id, expr, NULL);
             //print_operation(op);
@@ -220,7 +237,9 @@ int recurse_IR_tree(AST_node *node) {
         case A_IF_STMT:
             condition = recurse_IR_tree(node->if_stmt.condition);
             current_segment->left = create_segment(node->if_stmt.if_branch->table);
+            linked_list_append(current_segment->left->pred, current_segment);
             current_segment->right = create_segment(node->if_stmt.else_branch->table);
+            linked_list_append(current_segment->right->pred, current_segment);
             
             IR_operand *if_branch = create_operand(P_LABEL, current_segment->left);
             IR_operand *else_branch = create_operand(P_LABEL, current_segment->right);
@@ -228,6 +247,8 @@ int recurse_IR_tree(AST_node *node) {
 
             linked_list_append(current_segment->operations, op);
             seg = create_segment(node->table);
+            linked_list_append(seg->pred, current_segment->left);
+            linked_list_append(seg->pred, current_segment->right);
             old_segment = current_segment;
 
             current_segment = current_segment->left;
@@ -246,8 +267,11 @@ int recurse_IR_tree(AST_node *node) {
             current_segment->left = seg;
             current_segment = seg;
             current_segment->left = create_segment(node->while_loop.block->table);
+            linked_list_append(seg->pred, current_segment);
+            linked_list_append(current_segment->pred, seg);
             current_segment->left->left = current_segment;
             current_segment->right = create_segment(node->table);
+            linked_list_append(current_segment->right->pred, current_segment);
 
             condition = recurse_IR_tree(node->while_loop.condition);
             IR_operand *arg2 = create_operand(P_LABEL, current_segment->left);
@@ -335,6 +359,8 @@ int recurse_IR_tree(AST_node *node) {
             frame *called_func = (frame *) symbol_table_get(current_frame_table, node->call_expr.identifier->primary_expr.identifier_name);
             op = create_op(IR_CALL, create_operand(P_TEMP, temp_counter), create_operand(P_FUNC_CALL, called_func), NULL);
             linked_list_append(current_segment->operations, op);
+            op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, node->call_expr.arguments->size * 8), NULL, NULL);
+            linked_list_append(current_segment->operations, op);
             return temp_counter++;
         case A_PARAMETER_EXPR:
             
@@ -369,6 +395,7 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
+    printf("%s, in_set size: %d, out_set size: %d, def_set size: %d, use_set size: %d\n", name, op->in->size, op->out->size, op->def->size, op->use->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -429,6 +456,7 @@ void print_operation(IR_operation *op) {
                 print_operand(op->arg1);
             }
             break;
+        case IR_POP_PARAM:
         case IR_PARAM:
             printf("%s ", name);
             print_operand(op->arg1);
@@ -453,6 +481,12 @@ void print_IR(segment *seg) {
 
     if (seg->operations->size) {
         IR_op_code code = ((IR_operation *) seg->operations->tail->data)->op;
+        if (code == IR_GOTO) {
+            return;
+        }
+        print_IR(seg->left);
+        print_IR(seg->right);
+        /*IR_op_code code = ((IR_operation *) seg->operations->tail->data)->op;
         if (code == IR_IF || code == IR_WHILE) {
             segment *left = seg->left;
             for (linked_list_node *lln = left->operations->head; lln != NULL; lln = lln->next) {
@@ -464,9 +498,8 @@ void print_IR(segment *seg) {
         } else {
             print_IR(seg->left);
             print_IR(seg->right);
-        }
+        }*/
     }
-    //printf("\n");
 }
 
 void print_IR_tree(frame *root) {
@@ -479,7 +512,6 @@ void print_IR_tree(frame *root) {
     }
 }
 
-
 frame *create_IR_tree(AST_node *root) {
     current_frame_table = create_symbol_table(NULL, NULL);
     frame *global_frame = create_named_frame("/PROGRAM");
@@ -489,10 +521,198 @@ frame *create_IR_tree(AST_node *root) {
     for (linked_list_node *lln = root->program.modules->head; lln != NULL; lln = lln->next) {
         recurse_IR_tree((AST_node *) lln->data);
     }
+    current_frame->last = current_frame->segment;
     if (strcmp("/PROGRAM", current_frame->name) != 0) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
     printf("Finished IR creation\n");
+    liveness(current_frame);
     return global_frame;
+}
+
+int add_to_set(linked_list *ll, int temp_num) {
+    linked_list_node *lln = linked_list_find(ll, temp_num);
+    if (!lln) {
+        linked_list_append(ll, temp_num);
+        return 1;
+    }
+    return 0;
+}
+
+void set_union(linked_list *ll, linked_list *from) {
+    for (linked_list_node *lln = from->head; lln != NULL; lln = lln->next) {
+        add_to_set(ll, lln->data);
+    }
+}
+
+void handle_use_set(IR_operation *op) {
+    //printf("Handling a use set of type %s\n", IR_op_code_to_string(op->op));
+    IR_op_code code = op->op;
+    linked_list *ll = op->use;
+    switch(code) {
+        case IR_ADD:
+        case IR_SUB:
+        case IR_MUL:
+        case IR_DIV:
+        case IR_EQUALS:
+        case IR_NEQUALS:
+        case IR_LESS:
+        case IR_GREATER:
+        case IR_LESS_EQ:
+        case IR_GREATER_EQ:
+        case IR_AND:
+        case IR_OR:
+            linked_list_append(ll, op->arg2->constant);
+            linked_list_append(ll, op->arg3->constant);
+            break;
+        case IR_WHILE:
+        case IR_IF:
+        case IR_PRINT:
+        case IR_PARAM:
+            linked_list_append(ll, op->arg1->constant);
+            break;
+        case IR_RET:
+            if (op->arg1) {
+                linked_list_append(ll, op->arg1->constant);
+            }
+            break;
+        case IR_VAR_DECL:
+            if (op->arg2->type != P_CONSTANT) {
+                linked_list_append(ll, op->arg2->constant);
+            }
+            break;
+        case IR_ASSIGN:
+            if (op->arg1->type != P_TEMP) {
+                linked_list_append(ll, op->arg2->constant);
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void handle_def_set(IR_operation *op) {
+    //printf("Handling a def set of type %s\n", IR_op_code_to_string(op->op));
+    IR_op_code code = op->op;
+    linked_list *ll = op->def;
+    switch(code) {
+        case IR_ADD:
+        case IR_SUB:
+        case IR_MUL:
+        case IR_DIV:
+        case IR_EQUALS:
+        case IR_NEQUALS:
+        case IR_LESS:
+        case IR_GREATER:
+        case IR_LESS_EQ:
+        case IR_GREATER_EQ:
+        case IR_AND:
+        case IR_OR:
+        case IR_CALL:
+            linked_list_append(ll, op->arg1->constant);
+            break;
+        case IR_ASSIGN:
+            if (op->arg1->type == P_TEMP) {
+                linked_list_append(ll, op->arg1->constant);
+            }
+            break;
+    }
+}
+
+linked_list *copy_set(linked_list *ll_from) {
+    linked_list *ll = linked_list_new();
+    for (linked_list_node *lln = ll_from->head; lln != NULL; lln = lln->next) {
+        linked_list_append(ll, lln->data);
+    }
+    return ll;
+}
+
+void liveness(frame *frm) {
+    IR_operation *op;
+    segment *seg;
+    int iteration = 0;
+    linked_list *new_segments = linked_list_new();
+    int change = 1;
+
+    while (change) {
+        //printf("Iteration loop\n");
+        linked_list_append(new_segments, frm->last);
+        change = 0;
+        while (new_segments->size != 0) {
+            //printf("Segment loop\n");
+            seg = (segment *) linked_list_pop_front(new_segments);
+
+            //printf("popped frunk seg->iteration: %d, iteration: %d\n", seg->iteration, iteration);
+            if (seg->iteration != iteration) {
+                continue;
+            }
+            //printf("Correct iteration\n");
+            seg->iteration++;
+
+            for (linked_list_node *lln = seg->operations->tail; lln != NULL; lln = lln->prev) {
+                //printf("Operation loop\n");
+                IR_operation *op = ((IR_operation *) lln->data);
+                int in_size = op->in->size;
+                int out_size = op->out->size;
+                IR_op_code code = op->op;
+
+                // In set work
+                //printf("In set work\n");
+                linked_list *ll = copy_set(op->out);
+                //printf("copied set\n");
+                if (op->def->size) {
+                    int def = op->def->head->data;
+                    //printf("Got number %d\n", def);
+                    linked_list_node* ddef = linked_list_find(ll, def);
+                    if(ddef){
+                        //printf("ddef%d\n", ddef->data);
+                        linked_list_remove(ll, ddef);
+                        //printf("removed set\n");
+                    }
+                }
+                linked_list_delete(op->in);
+                //printf("deleted set\n");
+                set_union(ll, op->use);
+                //printf("Unionized set\n");
+                op->in = ll;
+                //printf("In set done!\n");
+
+                // Out set work
+                //printf("Out set work\n");
+                ll = linked_list_new();
+                if (lln == seg->operations->tail) {
+                    if (seg->left) {
+                        IR_operation *next = (IR_operation *) seg->left->operations->head->data;
+                        set_union(ll, next->in);
+                        if (seg->right) {
+                            next = (IR_operation *) seg->right->operations->head->data;
+                            set_union(ll, next->in);
+                        }
+                    }
+                } else {
+                    set_union(ll, ((IR_operation *) lln->next->data)->in);
+                }
+                //printf("Out set done\n");
+                linked_list_delete(op->out);
+                op->out = ll;
+
+                if (in_size != op->in->size || out_size != op->out->size) {
+                    change = 1;
+                }
+                //printf("oi: %d; oo: %d, ni: %d; no: %d\n", in_size, out_size, op->in->size, op->out->size);
+            }
+
+            //printf("Adding segments\n");
+            for (linked_list_node *lln = seg->pred->head; lln != NULL; lln = lln->next) {
+                linked_list_append(new_segments, (segment *) lln->data);
+            }
+        }
+        iteration++;
+    }
+
+    // Liveness analysis of nested frames
+    for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
+        liveness((frame *) lln->data);
+    }
 }

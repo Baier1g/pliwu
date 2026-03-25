@@ -48,6 +48,7 @@ void destroy_entry(table_entry *entry) {
 hash_map *create_hash_map(int capacity) {
     hash_map *map = malloc(sizeof(hash_map));
     //assert(map);
+    map->keys = linked_list_new();
     map->size = 0;
     map->capacity = capacity;
     map->buckets = calloc(capacity, sizeof(table_entry*));
@@ -60,13 +61,17 @@ int hash_map_insert(hash_map *map, const char *key, void *value) {
     table_entry *node = map->buckets[index];
     if (node) {
         if (!contains_key(node, key)) {
-            add_entry(node, create_entry(key, value));
+            table_entry *en = create_entry(key, value);
+            add_entry(node, en);
+            linked_list_append(map->keys, en->key);
             map->size++;
         } else {
             return -1;
         }
     } else {
-        map->buckets[index] = create_entry(key, value);
+        table_entry *en = create_entry(key, value);
+        map->buckets[index] = en;
+        linked_list_append(map->keys, en->key);
         map->size++;
     }
     return 0;
@@ -82,6 +87,7 @@ int hash_map_delete(hash_map *map, const char *key) {
             if (!strcmp(curr->key, key)) {
                 if (!prev) {
                     prev = curr->next;
+                    linked_list_remove(map->keys, linked_list_find(map->keys, curr->key));
                     curr->next = NULL;
                     destroy_entry(curr);
                     map->buckets[index] = prev;
@@ -89,6 +95,7 @@ int hash_map_delete(hash_map *map, const char *key) {
                 } else {
                     prev->next = curr->next;
                     curr->next == NULL;
+                    linked_list_remove(map->keys, linked_list_find(map->keys, curr->key));
                     destroy_entry(curr);
                     map->size--;
                 }
@@ -128,6 +135,7 @@ void destroy_hash_map(hash_map *map) {
             destroy_entry(map->buckets[i]);
         }
     }
+    linked_list_delete(map->keys);
     free(map->buckets);
     free(map);
 }
@@ -143,9 +151,9 @@ int hash_map_contains(hash_map *map, const char *key) {
     }
     return 0;
 }
-/*
-int main() {
-    hash_map *map = create_hash_map(128);
+
+/*int main() {
+    hash_map *map = create_hash_map(2);
     if (!map) {
         printf("fucked\n");
         return -1;
@@ -155,20 +163,19 @@ int main() {
     hash_map_insert(map, "gg",  (void * ) 6);
     hash_map_insert(map, "frend", (void *) 10);
     hash_map_insert(map, "frenzy", (void *) 4);
-    if (hash_map_insert(map, "frenzy", (void *) 20)) {
-        printf("Shit's already there, fam\n");
-    }
+    //if (hash_map_insert(map, "frenzy", (void *) 20)) {
+    //    printf("Shit's already there, fam\n");
+    //}
     printf("Indices: %d, %d, %d, %d, %d\n", hash_function(map, "henlo"), hash_function(map, "fren"), hash_function(map, "gg"), hash_function(map, "frend"), hash_function(map, "frenzy"));
-    if (!hash_map_delete(map, "henlo")) {
+    if (!hash_map_delete(map, "frenzy")) {
         printf("Deletion succesful\n");
     }
-    if (!hash_map_get(map, "henlo")) {
+    if (!hash_map_get(map, "frenzy")) {
         printf("Truly gone :bless:\n");
     }
-    printf("Indices: %d, %d, %d, %d\n", hash_function(map, "fren"), hash_function(map, "gg"), hash_function(map, "frend"), hash_function(map, "frenzy"));
+    printf("Indices: %d, %d, %d, %d\n", hash_map_get(map, "fren"), hash_map_get(map, "gg"), hash_map_get(map, "frend"), hash_map_get(map, "henlo"));
     printf("Key: %s, value: %d\n", "gg", (int) hash_map_get(map, "gg"));
 
     destroy_hash_map(map);
     return 0;
-}
-*/
+}*/

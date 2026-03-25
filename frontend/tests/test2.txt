@@ -28,7 +28,6 @@ func main(int argv, char argc) {
         i = i + 1;
     }
     char lll = "l";
-    bool fgg = false;
     return;
 }
 
@@ -40,5 +39,6 @@ func id(int a, int b, char c) -> bool {
     } else {
         bombaclat = bombaclat + 500;
     }
+    bool boo = 50 * 100 - 10 / 5 > 60 + 70 * 3 || a * b - 1002 / 3 > 2 * a - b && true || false;
     return true;
 }

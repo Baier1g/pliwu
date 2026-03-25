@@ -522,7 +522,6 @@ void generate_code_helper(AST_node *node) {
             int j = 0;
             i = (params->size + 1) * 8;
             int k = i;
-            int boo;
             while (k != 0) {
                 k = k /10;
                 j++;

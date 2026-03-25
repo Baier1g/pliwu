@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include "linked_list.h"
 
 #define PRIME 257
 
@@ -20,6 +21,7 @@ struct table_entry {
 
 struct hash_table {
     int size, capacity;
+    linked_list *keys;
     buckets buckets;
 };
 
