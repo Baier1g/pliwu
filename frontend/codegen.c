@@ -262,7 +262,11 @@ void generate_code_helper(AST_node *node) {
             char *else_label = generate_label("else", i);
             char *end_if_label = generate_label("end_if", i);
             generate_code_helper(node->if_stmt.condition);
-            linked_list_append(generated_code, decide_branching(node->if_stmt.condition));
+            if (node->if_stmt.condition->kind == A_PRIMARY_EXPR) {
+                linked_list_append(generated_code, "\ttest rax, rax\n\tjz ");
+            } else {
+                linked_list_append(generated_code, decide_branching(node->if_stmt.condition));
+            }
             if (node->if_stmt.else_branch) {
                 linked_list_append(generated_code, else_label);
                 linked_list_append(generated_code, "\n");

@@ -47,4 +47,9 @@ linked_list_node *linked_list_find(linked_list *ll, void *elem);
 // Returns: node->data
 void *linked_list_remove(linked_list *ll, linked_list_node *node);
 
+/*
+ * Appends the provided data to the front of the linked list
+ */
+void linked_list_put_front(linked_list *ll, void *data);
+
 #endif // linked_list_H

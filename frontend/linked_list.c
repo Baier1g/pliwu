@@ -96,3 +96,21 @@ void *linked_list_remove(linked_list *ll, linked_list_node *node) {
     free(node);
     return dataptr;
 }
+
+void linked_list_put_front(linked_list *ll, void *data) {
+    if (!ll->size) {
+        linked_list_append(ll, data);
+    } else {
+        linked_list_node *ptr = (struct linked_list_node *) malloc(sizeof(struct linked_list_node));
+        if (!ptr) {
+            return;
+        }
+        ptr->data = data;
+        ptr->prev = NULL;
+        ll->head->prev = ptr;
+        ptr->next = ll->head;
+        ll->head = ptr;
+        ll->size++;
+    }
+
+}

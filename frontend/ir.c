@@ -265,15 +265,17 @@ int recurse_IR_tree(AST_node *node) {
         case A_WHILE_LOOP:
             seg = create_segment(node->table);
             current_segment->left = seg;
-            current_segment = seg;
-            current_segment->left = create_segment(node->while_loop.block->table);
+            seg->left = create_segment(node->while_loop.block->table);
             linked_list_append(seg->pred, current_segment);
-            linked_list_append(current_segment->pred, seg);
-            current_segment->left->left = current_segment;
+            current_segment = seg;
+            printf("into while\n");
+            //linked_list_append(current_segment->pred, seg);
+            //current_segment->left->left = current_segment;
             current_segment->right = create_segment(node->table);
             linked_list_append(current_segment->right->pred, current_segment);
 
             condition = recurse_IR_tree(node->while_loop.condition);
+            printf("condition while done\n");
             IR_operand *arg2 = create_operand(P_LABEL, current_segment->left);
             IR_operand *arg3 = create_operand(P_LABEL, current_segment->right);
             op = create_op(IR_WHILE, create_operand(P_TEMP, condition), arg2, arg3);
@@ -281,9 +283,11 @@ int recurse_IR_tree(AST_node *node) {
             
             current_segment = current_segment->left;
             recurse_IR_tree(node->while_loop.block);
+            printf("through recursion while\n");
             op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
             linked_list_append(current_segment->operations, op);
-
+            current_segment->left = seg;
+            printf("end while\n");
             current_segment = seg->right;
             break;
         case A_PRINT_STMT:
@@ -526,8 +530,8 @@ frame *create_IR_tree(AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    printf("Finished IR creation\n");
     liveness(current_frame);
+    printf("Finished IR creation\n");
     return global_frame;
 }
 
@@ -642,6 +646,39 @@ void liveness(frame *frm) {
         while (new_segments->size != 0) {
             //printf("Segment loop\n");
             seg = (segment *) linked_list_pop_front(new_segments);
+            if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op == IR_WHILE && seg->left->iteration == iteration) {
+                segment *tmp = seg;
+                //printf("tmp: %d, seg->left: %d\n", tmp, seg->left);
+                seg = seg->left;
+                while (tmp != seg->left) {
+                    if (seg->operations->size == 0) {
+                        seg = seg->left;
+                        continue;
+                    }
+                    printf("tmp: %d, seg->left: %d, seg->right = %d\t i:%d, si:%d\n", tmp, seg->left, seg->right, iteration, seg->iteration);
+                    if (((IR_operation *) seg->operations->tail->data)->op == IR_WHILE) {
+                        seg = seg->right;
+                    } else {
+                        seg = seg->left;
+                    }
+                }
+                //printf("tmp: %d, seg->left: %d\t i:%d, si:%d\n", tmp, seg->left, iteration, seg->iteration);
+                linked_list_append(new_segments, tmp);
+            }
+            if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op == IR_IF) {
+                int t = 0;
+                if (seg->left->iteration == iteration) {
+                    linked_list_put_front(new_segments, seg->left);
+                    t = 1;
+                } else if (seg->right->iteration == iteration) {
+                    linked_list_put_front(new_segments, seg->right);
+                    t = 1;
+                }
+                if (t) {
+                    linked_list_append(new_segments, seg);
+                    continue;
+                }
+            }
 
             //printf("popped frunk seg->iteration: %d, iteration: %d\n", seg->iteration, iteration);
             if (seg->iteration != iteration) {

@@ -43,10 +43,10 @@ int main(int argc, char* argv[]) {
     }
 
     frame *root = create_IR_tree(prog);
-    //print_IR_tree(root);
+    print_IR_tree(root);
 
 
-
+    printf("generating code\n");
     linked_list *ass = linked_list_new();
     generate_code(ass, prog);
     fp = fopen("gen_asm.asm", "w");
