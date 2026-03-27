@@ -531,6 +531,9 @@ frame *create_IR_tree(AST_node *root) {
         exit(2);
     }
     liveness(current_frame);
+    RA_graph *graph = create_graph(temp_counter);
+    connect_graph(graph, current_frame);
+    print_graph(graph);
     printf("Finished IR creation\n");
     return global_frame;
 }
@@ -655,7 +658,7 @@ void liveness(frame *frm) {
                         seg = seg->left;
                         continue;
                     }
-                    printf("tmp: %d, seg->left: %d, seg->right = %d\t i:%d, si:%d\n", tmp, seg->left, seg->right, iteration, seg->iteration);
+                    //printf("tmp: %d, seg->left: %d, seg->right = %d\t i:%d, si:%d\n", tmp, seg->left, seg->right, iteration, seg->iteration);
                     if (((IR_operation *) seg->operations->tail->data)->op == IR_WHILE) {
                         seg = seg->right;
                     } else {
@@ -751,5 +754,93 @@ void liveness(frame *frm) {
     // Liveness analysis of nested frames
     for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
         liveness((frame *) lln->data);
+    }
+}
+
+RA_graph *create_graph(int num_nodes) {
+    RA_graph *graph = (RA_graph *) malloc(sizeof(RA_graph));
+    graph->num_nodes = num_nodes;
+    graph->nodes = (RA_node **) malloc(sizeof(RA_node *) * (num_nodes + 1));
+    for (int i = 1; i <= graph->num_nodes; i++) {
+        *(graph->nodes + i) = create_graph_node(num_nodes);
+    }
+    return graph;
+}
+
+RA_node *create_graph_node(int max_connections) {
+    RA_node *node = malloc(sizeof(RA_node));
+    node->color = 0;
+    node->connections = (int *) calloc(max_connections, sizeof(int));
+    node->num_edges = 0;
+    return node;
+}
+
+void connect_nodes(RA_graph *graph, int temp1, int temp2) {
+    RA_node *node1 = graph->nodes[temp1];
+    RA_node *node2 = graph->nodes[temp2];
+    int in = 0;
+    for (int i = 0; i < node1->num_edges; i++) {
+        if (node1->connections[i] == temp2) {
+            in = 1;
+            break;
+        }
+    }
+
+    if (!in) {
+        node1->connections[node1->num_edges++] = temp2;
+        node2->connections[node2->num_edges++] = temp1; 
+    }
+}
+
+void graph_handle_operation(RA_graph *graph, IR_operation *op) {
+    if (op->out->size > 1) {
+        int i = 1;
+        for (linked_list_node *n = op->out->head; n->next != NULL; n = n->next) {
+            i = (int) n->data;
+            linked_list_node *ln = n->next;
+            while (ln) {
+                connect_nodes(graph, i, (int) ln->data);
+                ln = ln->next;
+            }
+        }
+    }
+}
+
+void connect_graph(RA_graph *graph, frame *frm) {
+    linked_list *segments = linked_list_new();
+    segment *seg;
+    linked_list_append(segments, frm->segment);
+    int i = frm->segment->iteration;
+    while (segments->size) {
+        seg = linked_list_pop_front(segments);
+        if (seg->iteration != i) {
+            continue;
+        }
+        seg->iteration++;
+        for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
+            IR_operation *op = (IR_operation *) lln->data;
+            graph_handle_operation(graph, op);
+        }
+        if (seg->left) {
+            linked_list_append(segments, seg->left);
+            if (seg->right) {
+                linked_list_append(segments, seg->right);
+            }
+        }
+    }
+
+    for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
+        connect_graph(graph, (frame *) lln->data);
+    }
+}
+
+void print_graph(RA_graph *graph) {
+    for (int i = 1; i < graph->num_nodes; i++) {
+        RA_node *node = graph->nodes[i];
+        printf("Node T%d: ", i);
+        for (int j = 0; j < node->num_edges; j++) {
+            printf("%d, ", node->connections[j]);
+        }
+        printf("\n");
     }
 }

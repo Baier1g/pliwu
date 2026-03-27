@@ -5,6 +5,7 @@
 #include "type_checking.h"
 #include "codegen.h"
 #include "ir.h"
+#include "optimiser.h"
 
 
 extern AST_node *run_bison(const char*);
@@ -23,7 +24,7 @@ int main(int argc, char* argv[]) {
         }
         linked_list_append(prog->program.modules, module);
     }
-    //AST_printer(prog);
+    AST_printer(prog);
 
     
     linked_list *errors = linked_list_new();
@@ -42,8 +43,11 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
+    AST_optimiser_constant_folding(prog);
+    AST_printer(prog);
+
     frame *root = create_IR_tree(prog);
-    print_IR_tree(root);
+    //print_IR_tree(root);
 
 
     printf("generating code\n");

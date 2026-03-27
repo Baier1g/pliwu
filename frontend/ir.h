@@ -13,6 +13,9 @@ typedef struct segment segment;
 typedef struct IR_operation IR_operation;
 typedef struct IR_operand IR_operand;
 
+typedef struct RA_graph RA_graph;
+typedef struct RA_node RA_node;
+
 typedef enum IR_op_code IR_op_code;
 typedef enum operand_type operand_type;
 
@@ -173,14 +176,31 @@ struct IR_operand {
     };
 };
 
+/*
+ * A struct that represents a graph of temporary variables.
+ */
+struct RA_graph {
+    int num_nodes;
+    RA_node **nodes;
+};
+
 /* A struct that represents a node in the register allocation graph 
  * Color holds the allocated register of a temporary
  * The connections array holds the indices of the temporaries that are alive at the same time
  */
 struct RA_node {
     int color;
+    int num_edges;
     int *connections;
 };
+
+RA_graph *create_graph(int);
+RA_node *create_graph_node(int);
+void connect_nodes(RA_graph *, int, int);
+void connect_graph(RA_graph *, frame *);
+void print_graph(RA_graph *);
+
+
 
 
 #endif
