@@ -239,7 +239,7 @@ char *binary_op_enum_to_string(binary_op operand) {
         case A_OR:
             return "OR";
         default:
-            return "ast.c::binary_op_enum_to_string: Unkown operator";
+            return "ast.c::binary_op_enum_to_string: Unknown operator";
     }
 }
 
@@ -330,7 +330,7 @@ void kill_tree(AST_node* node) {
             free(node);
             break;
         default:
-            printf("ast.c::kill_tree: Unkown AST kind\n");
+            printf("ast.c::kill_tree: Unknown AST kind\n");
             break;
     }
     return;
@@ -487,7 +487,7 @@ void AST_printer(AST_node *node) {
             indents--;
             break;
         default:
-            printf("ast.c::AST_printer: Unkown AST kind\n");
+            printf("ast.c::AST_printer: Unknown AST kind\n");
             break;
     }
 }

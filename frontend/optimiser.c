@@ -1,5 +1,27 @@
 #include "optimiser.h"
 
+AST_node *CF_fold_children(AST_node *node) {
+    int i, j;
+    i = j = 0;
+
+    AST_node *tmp = AST_optimiser_constant_folding(node->binary_expr.left);
+    if (tmp && tmp->kind == A_PRIMARY_EXPR) {
+        node->binary_expr.left = tmp;
+        i = 1;
+    }
+    tmp = AST_optimiser_constant_folding(node->binary_expr.right);
+    if (tmp && tmp->kind == A_PRIMARY_EXPR) {
+        node->binary_expr.right = tmp;
+        j = 1;
+    }
+
+    if (i && j) {
+        return AST_optimiser_constant_folding(node);
+    } else {
+        return NULL;
+    }
+}
+
 AST_node *AST_optimiser_constant_folding(AST_node *node) {
     if (!node) {
         return NULL;
@@ -21,7 +43,10 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
             AST_optimiser_constant_folding(node->func_def.function_block);
             break;
         case A_VAR_DECL:
-            AST_optimiser_constant_folding(node->var_decl.expr_stmt);
+            tmp = AST_optimiser_constant_folding(node->var_decl.expr_stmt);
+            if (tmp) {
+                node->var_decl.expr_stmt = tmp;
+            }
             break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
@@ -44,22 +69,41 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
             AST_optimiser_constant_folding(node->while_loop.block);
             break;
         case A_PRINT_STMT:
-            AST_optimiser_constant_folding(node->print_stmt.expression);
+            tmp = AST_optimiser_constant_folding(node->print_stmt.expression);
+            if (tmp) {
+                node->print_stmt.expression = tmp;
+            }
             break;
         case A_EXPR_STMT:
-            AST_optimiser_constant_folding(node->expr_stmt.expression);
+            tmp = AST_optimiser_constant_folding(node->expr_stmt.expression);
+            if (tmp) {
+                node->expr_stmt.expression = tmp;
+            }
             break;
         case A_RETURN_STMT:
-            AST_optimiser_constant_folding(node->return_stmt.expression);
-            break;
+            tmp = AST_optimiser_constant_folding(node->return_stmt.expression);
+            if (tmp) {
+                node->return_stmt.expression = tmp;
+            }
+            break; 
         case A_ASSIGN_EXPR:
-            AST_optimiser_constant_folding(node->assign_expr.expression);
+            tmp = AST_optimiser_constant_folding(node->assign_expr.expression);
+            if (tmp) {
+                node->assign_expr.expression = tmp;
+            }
             break;
         case A_LOGICAL_EXPR:
             if (node->binary_expr.left->kind == A_PRIMARY_EXPR && node->binary_expr.right->kind == A_PRIMARY_EXPR) {
                 int temp;
-                int arg1 = node->binary_expr.left->primary_expr.identifier_name;
-                int arg2 = node->binary_expr.right->primary_expr.identifier_name;
+
+                AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
+                AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
+                if (!n1 || !n2) {
+                    return NULL;
+                }
+
+                int arg1 = n1->primary_expr.bool_value;
+                int arg2 = n2->primary_expr.bool_value;
                 switch (node->binary_expr.op) {
                     case A_AND:
                         temp = arg1 && arg2;
@@ -72,29 +116,16 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                 kill_tree(node);
                 return tmp;
             } else {
-                int i, j;
-                i = j = 0;
-
-                tmp = AST_optimiser_constant_folding(node->binary_expr.left);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.left = tmp;
-                    i = 1;
-                }
-
-                tmp = AST_optimiser_constant_folding(node->binary_expr.right);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.right = tmp;
-                    j = 1;
-                }
-                if (i && j) {
-                    return AST_optimiser_constant_folding(node);
-                } else {
-                    return NULL;
-                }
+                return CF_fold_children(node);
             }
         case A_RELATIONAL_EXPR:
             if (node->binary_expr.left->kind == A_PRIMARY_EXPR && node->binary_expr.right->kind == A_PRIMARY_EXPR) {
                 int temp;
+                AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
+                AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
+                if (!n1 || !n2) {
+                    return NULL;
+                }
                 int arg1 = node->binary_expr.left->primary_expr.integer_value;
                 int arg2 = node->binary_expr.right->primary_expr.integer_value;
                 switch (node->binary_expr.op) {
@@ -121,29 +152,18 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                 kill_tree(node);
                 return tmp;
             } else {
-                int i, j;
-                i = j = 0;
-
-                tmp = AST_optimiser_constant_folding(node->binary_expr.left);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.left = tmp;
-                    i = 1;
-                }
-
-                tmp = AST_optimiser_constant_folding(node->binary_expr.right);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.right = tmp;
-                    j = 1;
-                }
-                if (i && j) {
-                    return AST_optimiser_constant_folding(node);
-                } else {
-                    return NULL;
-                }
+                return CF_fold_children(node);
             }
         case A_ARITHMETIC_EXPR:
             if (node->binary_expr.left->kind == A_PRIMARY_EXPR && node->binary_expr.right->kind == A_PRIMARY_EXPR) {
                 int temp;
+
+                AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
+                AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
+                if (!n1 || !n2) {
+                    return NULL;
+                }
+
                 int arg1 = node->binary_expr.left->primary_expr.integer_value;
                 int arg2 = node->binary_expr.right->primary_expr.integer_value;
                 switch (node->binary_expr.op) {
@@ -164,41 +184,37 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                 kill_tree(node);
                 return tmp;
             } else {
-                int i, j;
-                i = j = 0;
-                tmp = AST_optimiser_constant_folding(node->binary_expr.left);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.left = tmp;
-                    i = 1;
-                }
-                tmp = AST_optimiser_constant_folding(node->binary_expr.right);
-                if (tmp && tmp->kind == A_PRIMARY_EXPR) {
-                    node->binary_expr.right = tmp;
-                    j = 1;
-                }
-                if (i && j) {
-                    return AST_optimiser_constant_folding(node);
-                } else {
-                    return NULL;
-                }
+                return CF_fold_children(node);
             }
             return tmp;
         case A_UNARY_EXPR:
             AST_optimiser_constant_folding(node);
             break;
         case A_PRIMARY_EXPR:
-            return node;
+            if (node->primary_expr.type != TYPE_IDENTIFIER) {
+                return node;
+            }
+            return NULL;
+            break;
         case A_CALL_EXPR:
             linked_list *ll = node->call_expr.arguments;
             for (linked_list_node *lln = ll->head; lln != NULL; lln = lln->next) {
-                AST_optimiser_constant_folding((AST_node *) lln->data);
+                tmp = AST_optimiser_constant_folding((AST_node *) lln->data);
+                if (tmp) {
+                    lln->data = tmp;
+                }
             }
             break;
         case A_PARAMETER_EXPR:
             break;
         default:
-            printf("optimiser.c::AST_optimiser_constant_folding: Unkown AST kind\n");
+            printf("optimiser.c::AST_optimiser_constant_folding: Unknown AST kind\n");
             break;
     }
+    return NULL;
+}
+
+AST_node *AST_optimiser_dead_code_elimination(AST_node *node) {
+    // TO BE IMPLEMENTED
     return NULL;
 }

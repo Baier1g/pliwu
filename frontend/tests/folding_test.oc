@@ -1,8 +1,43 @@
-main(1);
+main(1 + 2 + 3 + 4 + 5 + 6);
 
-func main(int i) {
+func main(int m) {
     int a = 5 + 6 + 7 + 9;
     int b = 1000 - 5 * 10 + 2;
     int c = 1000 / 10 + 3;
+    bool boo = 50 * 100 - 10 / 5 > 60 + 70 * 3 || 3 * 9 - 1002 / 3 > 2 * 7 - 2 && true || false;
     print(c);
+    int i = 0;
+    int d = 50;
+    int e = 100;
+    int f = 10;
+    int g = 5;
+    int h = 60;
+    int k = 70;
+    int j = 3;
+    while (i < 5) {
+        print(i);
+        while (g > 0) {
+            if (i > 2) {
+                j = k + g;
+                if (boo) {
+                    j = j + j;
+                    if (1) {
+                        j = j + j;
+                    } else {
+                        j = j- j;
+                    }
+                } else {
+                    j = j - j;
+                }
+            } else {
+                j = k - g;
+            }
+            print(j);
+            g = g - 1;
+        }
+        g = 3;
+        d = 3;
+        i = i + 1;
+    }
+    return;
 }
