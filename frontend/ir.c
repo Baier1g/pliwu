@@ -399,7 +399,7 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
-    printf("%s, in_set size: %d, out_set size: %d, def_set size: %d, use_set size: %d\n", name, op->in->size, op->out->size, op->def->size, op->use->size);
+    //printf("%s, in_set size: %d, out_set size: %d, def_set size: %d, use_set size: %d\n", name, op->in->size, op->out->size, op->def->size, op->use->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -760,6 +760,11 @@ void liveness(frame *frm) {
 RA_graph *create_graph(int num_nodes) {
     RA_graph *graph = (RA_graph *) malloc(sizeof(RA_graph));
     graph->num_nodes = num_nodes;
+    graph->adj_matrix = (int **) malloc((num_nodes + 1) * sizeof(int *));
+    for (int i = 1; i <= num_nodes + 1; i++) {
+        graph->adj_matrix[i] = (int *) calloc(num_nodes + 1, sizeof(int));
+        graph->adj_matrix[i][i] = 1;
+    }
     graph->nodes = (RA_node **) malloc(sizeof(RA_node *) * (num_nodes + 1));
     for (int i = 1; i <= graph->num_nodes; i++) {
         *(graph->nodes + i) = create_graph_node(num_nodes);
@@ -787,6 +792,7 @@ void connect_nodes(RA_graph *graph, int temp1, int temp2) {
     }
 
     if (!in) {
+        graph->adj_matrix[temp1][temp2] = graph->adj_matrix[temp2][temp1] = 1;
         node1->connections[node1->num_edges++] = temp2;
         node2->connections[node2->num_edges++] = temp1; 
     }
@@ -840,6 +846,32 @@ void print_graph(RA_graph *graph) {
         printf("Node T%d: ", i);
         for (int j = 0; j < node->num_edges; j++) {
             printf("%d, ", node->connections[j]);
+        }
+        printf("\n");
+    }
+}
+
+void print_adj_matrix(RA_graph *graph) {
+    for (int i = 0; i < graph->num_nodes; i++) {
+        if (i < 10) {
+            printf("%d  ", i);
+        } else {
+            printf("%d ", i);
+        }
+    }
+    printf("\n");
+    for (int i = 1; i < graph->num_nodes; i++) {
+        if (i < 10) {
+            printf("%d  ", i);
+        } else {
+            printf("%d ", i);
+        }
+        for (int j = 1; j < graph->num_nodes; j++) {
+            if (j < 10) {
+                printf(" %d ", graph->adj_matrix[i][j]);
+            } else {
+                printf(" %d ", graph->adj_matrix[i][j]);
+            }
         }
         printf("\n");
     }

@@ -18,6 +18,7 @@ typedef struct RA_node RA_node;
 
 typedef enum IR_op_code IR_op_code;
 typedef enum operand_type operand_type;
+typedef enum reg_color reg_color;
 
 /*
  * Returns a string representing the op code provided
@@ -181,6 +182,7 @@ struct IR_operand {
  */
 struct RA_graph {
     int num_nodes;
+    int **adj_matrix;
     RA_node **nodes;
 };
 
@@ -194,11 +196,27 @@ struct RA_node {
     int *connections;
 };
 
+enum reg_color {
+    R15 = 1,
+    R14,
+    R13,
+    R12,
+    R11,
+    R10,
+    RBX,
+    R9,
+    R8,
+    RCX,
+    RAX,
+    RDX,
+};
+
 RA_graph *create_graph(int);
 RA_node *create_graph_node(int);
 void connect_nodes(RA_graph *, int, int);
 void connect_graph(RA_graph *, frame *);
 void print_graph(RA_graph *);
+void print_adj_matrix(RA_graph *);
 
 
 

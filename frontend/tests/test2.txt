@@ -33,7 +33,7 @@ func main(int argv, char argc) {
     while (i < 5) {
         print(i);
         bool boo = d * e - f / g > h + i * j || 10 * 50 - ((e * f) + g - j) / j > 2 * 10 - 50 && true || false;
-        while (g > 0) {
+        /*while (g > 0) {
             if (i > 2) {
                 j = k + g;
                 if (boo) {
@@ -51,7 +51,7 @@ func main(int argv, char argc) {
             }
             print(j);
             g = g - 1;
-        }
+        }*/
         g = 3;
         d = 3;
         i = i + 1;
