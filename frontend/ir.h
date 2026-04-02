@@ -196,6 +196,9 @@ struct RA_node {
     int *connections;
 };
 
+// Constant for max registers available during register allocation
+#define MAX_REG 4
+
 enum reg_color {
     R15 = 1,
     R14,

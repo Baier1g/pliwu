@@ -534,6 +534,7 @@ frame *create_IR_tree(AST_node *root) {
     RA_graph *graph = create_graph(temp_counter);
     connect_graph(graph, current_frame);
     print_graph(graph);
+    register_allocation(global_frame, graph);
     printf("Finished IR creation\n");
     return global_frame;
 }
@@ -750,6 +751,7 @@ void liveness(frame *frm) {
         }
         iteration++;
     }
+    linked_list_delete(new_segments);
 
     // Liveness analysis of nested frames
     for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
@@ -763,7 +765,7 @@ RA_graph *create_graph(int num_nodes) {
     graph->adj_matrix = (int **) malloc((num_nodes + 1) * sizeof(int *));
     for (int i = 1; i <= num_nodes + 1; i++) {
         graph->adj_matrix[i] = (int *) calloc(num_nodes + 1, sizeof(int));
-        graph->adj_matrix[i][i] = 1;
+        //graph->adj_matrix[i][i] = 1;
     }
     graph->nodes = (RA_node **) malloc(sizeof(RA_node *) * (num_nodes + 1));
     for (int i = 1; i <= graph->num_nodes; i++) {
@@ -847,7 +849,8 @@ void print_graph(RA_graph *graph) {
         for (int j = 0; j < node->num_edges; j++) {
             printf("%d, ", node->connections[j]);
         }
-        printf("\n");
+
+        printf("| color: %d\n", node->color);
     }
 }
 
@@ -875,4 +878,122 @@ void print_adj_matrix(RA_graph *graph) {
         }
         printf("\n");
     }
+}
+
+void RA_disconnect_node(RA_graph *graph, int t1) {
+    RA_node *node = graph->nodes[t1];
+    for (int i = 0; i < node->num_edges; i++) {
+        int tmp = node->connections[i];
+        //graph->adj_matrix[t1][tmp] = graph->adj_matrix[tmp][t1] = 0;
+        graph->nodes[tmp]->num_edges--;
+    }
+    node->num_edges = 0;
+}
+
+void RA_simplify(RA_graph *graph, int *simple, int *spill) {
+    int spill_count, simple_count;
+    spill_count = simple_count = 0;
+    for (int i = 1; i < graph->num_nodes; i++) {
+        if (graph->nodes[i]->num_edges < MAX_REG) {
+            RA_disconnect_node(graph, i);
+            simple[simple_count++] = i;
+        } else {
+            spill[spill_count++] = i;
+        }
+    }
+}
+
+/*
+ * colour selection part of register allocation.
+ * Returns the number of actual spill nodes
+ */
+int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
+    int current_color = 1;
+    int spill_count = 0;
+    RA_node *node, *tmp;
+
+    int i = 0;
+    int curr = 0;
+    while ((curr = simple[i]) != 0) {
+        node = graph->nodes[curr];
+        int colors[MAX_REG + 1] = {};
+        int j = curr;
+        while (j > 0) {
+            if (graph->adj_matrix[curr][j] == 1) {
+                connect_nodes(graph, curr, j);
+                colors[graph->nodes[j]->color]++;
+            }
+            j--;
+        }
+        int color = 0;
+        for (int k = 1; k < MAX_REG + 1; k++) {
+            if (colors[k] == 0) {
+                color = k;
+                break;
+            }
+        }
+        if (color != 0) {
+            node->color = color;
+        } else {
+            spill[spill_count++] = curr;
+        }
+        i++;
+    }
+
+    i = 0;
+    while ((curr = potential_spill[i]) != 0) {
+        node = graph->nodes[curr];
+        int colors[MAX_REG + 1] = {};
+        int j = graph->num_nodes;
+        while (j > 0) {
+            if (graph->adj_matrix[curr][j] == 1) {
+                connect_nodes(graph, curr, j);
+                colors[graph->nodes[j]->color]++;
+            }
+            j--;
+        }
+        int color = 0;
+        for (int k = 1; k < MAX_REG + 1; k++) {
+            if (colors[k] == 0) {
+                color = k;
+                break;
+            }
+        }
+        if (color != 0) {
+            node->color = color;
+        } else {
+            spill[spill_count++] = curr;
+        }
+
+        i++;
+    }
+
+    return spill_count;
+}
+
+void register_allocation(frame *program, RA_graph *graph) {
+    int *simple_nodes = calloc(graph->num_nodes + 1, sizeof(int));
+    int *potential_spill = calloc(graph->num_nodes + 1, sizeof(int));
+    int *actual_spill = calloc(graph->num_nodes + 1, sizeof(int));
+
+    /* PSEUDO PROCEDURE
+    K: Number of registers
+    simplify graph: 
+        add all nodes of degree < K to simple_nodes, rest to potential spill
+    select colors: 
+        go through all simple nodes and color them, afterwards go through all nodes in potential spill.
+        if a potential spill node is uncolourable, add them to actual spill, but continue
+    while actual spill nodes exist:
+        rewrite program to push and pop from stack, adding new temporaries where needed.
+        rebuild graph from program, simplify and select again.
+    */
+
+    RA_simplify(graph, simple_nodes, potential_spill);
+    int spill = RA_select(graph, simple_nodes, potential_spill, spill);
+    print_graph(graph);
+
+    free(simple_nodes);
+    free(potential_spill);
+    free(actual_spill);
+    return;
 }
