@@ -8,3 +8,4 @@ grammar.out
 lex.yy.c
 .gdb_history
 frontend/.gdb_history
+frontend/y.tab.h

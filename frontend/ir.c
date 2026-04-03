@@ -268,14 +268,12 @@ int recurse_IR_tree(AST_node *node) {
             seg->left = create_segment(node->while_loop.block->table);
             linked_list_append(seg->pred, current_segment);
             current_segment = seg;
-            printf("into while\n");
             //linked_list_append(current_segment->pred, seg);
             //current_segment->left->left = current_segment;
             current_segment->right = create_segment(node->table);
             linked_list_append(current_segment->right->pred, current_segment);
 
             condition = recurse_IR_tree(node->while_loop.condition);
-            printf("condition while done\n");
             IR_operand *arg2 = create_operand(P_LABEL, current_segment->left);
             IR_operand *arg3 = create_operand(P_LABEL, current_segment->right);
             op = create_op(IR_WHILE, create_operand(P_TEMP, condition), arg2, arg3);
@@ -283,11 +281,9 @@ int recurse_IR_tree(AST_node *node) {
             
             current_segment = current_segment->left;
             recurse_IR_tree(node->while_loop.block);
-            printf("through recursion while\n");
             op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
             linked_list_append(current_segment->operations, op);
             current_segment->left = seg;
-            printf("end while\n");
             current_segment = seg->right;
             break;
         case A_PRINT_STMT:
@@ -939,7 +935,6 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         }
         i++;
     }
-
     i = 0;
     while ((curr = potential_spill[i]) != 0) {
         node = graph->nodes[curr];
@@ -964,7 +959,6 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         } else {
             spill[spill_count++] = curr;
         }
-
         i++;
     }
 
@@ -972,10 +966,11 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
 }
 
 void register_allocation(frame *program, RA_graph *graph) {
+
     int *simple_nodes = calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = calloc(graph->num_nodes + 1, sizeof(int));
     int *actual_spill = calloc(graph->num_nodes + 1, sizeof(int));
-
+    
     /* PSEUDO PROCEDURE
     K: Number of registers
     simplify graph: 
@@ -989,7 +984,8 @@ void register_allocation(frame *program, RA_graph *graph) {
     */
 
     RA_simplify(graph, simple_nodes, potential_spill);
-    int spill = RA_select(graph, simple_nodes, potential_spill, spill);
+   
+    int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
     print_graph(graph);
 
     free(simple_nodes);
