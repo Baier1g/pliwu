@@ -45,7 +45,7 @@ SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
 OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
 CHARACTER           (.|\n)
 WHITESPACES         [\t\r ]+
-ILLEGAL_IDENTIFIER  [0-9]([_a-zA-Z0-9]*)
+ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
 
 %s STR COMMENT

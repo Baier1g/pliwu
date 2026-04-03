@@ -531,6 +531,7 @@ frame *create_IR_tree(AST_node *root) {
     connect_graph(graph, current_frame);
     print_graph(graph);
     register_allocation(global_frame, graph);
+    print_graph(graph);
     printf("Finished IR creation\n");
     return global_frame;
 }
@@ -914,6 +915,9 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         node = graph->nodes[curr];
         int colors[MAX_REG + 1] = {};
         int j = curr;
+        /*for (int i = 0; node->connections[i] != 0; i++) {
+
+        }*/
         while (j > 0) {
             if (graph->adj_matrix[curr][j] == 1) {
                 connect_nodes(graph, curr, j);
@@ -965,6 +969,20 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
     return spill_count;
 }
 
+/*
+ * UNFINISHED AND UNNECESSARY
+ */
+void rewrite_program(frame *frm, int *spilled_nodes) {
+    frame *current_frame = frm;
+    segment current_segment;
+    linked_list *new_segments = linked_list_new();
+    int curr_node, spill_count;
+    spill_count = 0;
+    while ((curr_node = spilled_nodes[spill_count++] != 0)) {
+        // DO work
+    }
+}
+
 void register_allocation(frame *program, RA_graph *graph) {
 
     int *simple_nodes = calloc(graph->num_nodes + 1, sizeof(int));
@@ -986,7 +1004,11 @@ void register_allocation(frame *program, RA_graph *graph) {
     RA_simplify(graph, simple_nodes, potential_spill);
    
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
-    print_graph(graph);
+    if (spill) {
+        // rebuild program
+        // reconstruct graph from program (Or just realloc nodes and add new temporaries directly)
+        // recursive call (or do simplify and select again iteratively)
+    }
 
     free(simple_nodes);
     free(potential_spill);

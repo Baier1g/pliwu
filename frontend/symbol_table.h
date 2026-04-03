@@ -27,4 +27,6 @@ void *symbol_table_get(symbol_table *, char *);
  */
 int symbol_table_contains(symbol_table *, char *);
 
+linked_list *get_keys(symbol_table *);
+
 #endif

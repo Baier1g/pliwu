@@ -145,6 +145,7 @@ struct frame {
  * A struct representing a straight line segment of the code
  */
 struct segment {
+    int last_temporary;
     int iteration;
     linked_list *pred;
     segment *left, *right;
@@ -197,7 +198,7 @@ struct RA_node {
 };
 
 // Constant for max registers available during register allocation
-#define MAX_REG 4
+#define MAX_REG 6
 
 enum reg_color {
     R15 = 1,

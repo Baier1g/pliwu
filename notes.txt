@@ -23,6 +23,7 @@ TODOS:
 12. Eliminate dead code, either in scope or later
 13. Maybe make set
 14. Constant folding on AST, potentially on variables if we do SSA form
+15. Potentially implement rewrite program in register_allocation
 
 QUESTIONS:
 1. Bison precedence does not work, why? (we don't know )
@@ -34,3 +35,26 @@ QUESTIONS:
     | BLOCK |  | BLOCK |
         \       /
         | BLOCK |
+
+
+key[0] < 58
+
+T30 <- add T26, T29
+T31 <- greater T25, T30
+1 <- 500
+T33 <- e
+T34 <- f
+T35 <- mul T33, T34
+T36 <- g
+T37 <- add T35, T36
+T38 <- j
+T39 <- sub T37, T38
+T40 <- j
+T41 <- div T39, T40
+T32 <- _1
+T42 <- sub T32, T41
+T43 <- -30
+T44 <- greater T42, T43
+T45 <- or T31, T44
+T46 <- 1
+T47 <- and T45, T46

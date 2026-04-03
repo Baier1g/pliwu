@@ -37,3 +37,7 @@ int symbol_table_contains(symbol_table *table, char *key) {
     }
     return symbol_table_contains(table->outer, key);
 }
+
+linked_list *get_keys(symbol_table *table) {
+    return table->map->keys;
+}
