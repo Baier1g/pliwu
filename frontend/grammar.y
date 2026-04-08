@@ -81,6 +81,7 @@
 module:
     /*%empty*/          {prog = create_unary_node(0, 0, A_MODULE, linked_list_new());}
 |   module declaration  {linked_list_append(prog->module.module_declarations, $2);}
+|   module error        {printf("error in declaration on line %d", line_number); yyerrok;}
 ;
 
 declaration:
@@ -131,7 +132,6 @@ statement:
 |   returnStatement     {$$ = $1;}
 |   printStatement      {$$ = $1;}
 |   expressionStatement {$$ = $1;}
-|   error statement
 ;
 
 ifStatement:
@@ -164,6 +164,7 @@ printStatement:
 
 block:
     T_LEFT_BRACE blockBody T_RIGHT_BRACE {$$ = create_unary_node(start_current_character, line_number, A_BLOCK_STMT, $2);}
+//|   T_LEFT_BRACE error T_RIGHT_BRACE {} //this rule is probably not necessary, as all errors in a block should be covered by either the statements error or expression error. But we should probably have one similar to this one when we add groupings.
 ;
 
 blockBody:
@@ -173,11 +174,11 @@ blockBody:
 
 expressionStatement:
     expression ';' {$$ = $1;}
+|   error ';' {printf("error in expression on line %d", line_number); yyerrok;}
 ;
 
 expression:
     assignExpression {$$ = $1;}
-|   error             
 ;
 
 assignExpression:
@@ -243,7 +244,7 @@ identifier:
 primary:
     T_INT           {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_INT, (void *) yylval.ival); /*printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);*/}
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
-|   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");}
+|   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
 |   identifier      {$$ = $1;}
 ;
