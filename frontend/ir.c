@@ -3,7 +3,11 @@
 segment *current_segment;
 frame *current_frame;
 symbol_table *current_frame_table;
+hash_map *local_variables;
 int temp_counter = 1;
+int if_counter = 0;
+int while_counter = 0;
+
 
 char *IR_op_code_to_string(IR_op_code op) {
     switch (op) {
@@ -85,6 +89,12 @@ enum IR_op_code AST_op_to_IR_op(binary_op op) {
     }
 }
 
+char *IR_generate_label(char* string, int i) {
+    char *tmp = calloc(strlen(string) + 5, sizeof(char));
+    sprintf(tmp, "%s%d", string, i);
+    return tmp;
+}
+
 IR_operation *create_op(IR_op_code op, IR_operand *arg1, IR_operand *arg2, IR_operand *arg3) {
     IR_operation *oper = malloc(sizeof(IR_operation));
     oper->in = linked_list_new();
@@ -152,6 +162,7 @@ int recurse_IR_tree(AST_node *node) {
 
     int condition;
     symbol_table *sym, *old_table;
+    hash_map *tmp;
     frame *frm, *old_frame;
     segment *seg, *old_segment;
     IR_operation *op;
@@ -168,6 +179,8 @@ int recurse_IR_tree(AST_node *node) {
             old_segment = current_segment;
             current_frame = frm;
             current_segment = frm->segment;
+            tmp = local_variables;
+            local_variables = create_hash_map(128);
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 AST_node *n;
                 //printf("Made it to %s in module\n", kind_enum_to_string(((AST_node *)lln->data)->kind));
@@ -185,6 +198,8 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 recurse_IR_tree((AST_node *) lln->data);
             }
+            destroy_hash_map(local_variables);
+            local_variables = tmp;
             current_frame->last = current_segment;
             current_frame_table = old_table;
             current_frame = old_frame;
@@ -192,7 +207,7 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_FUNC_DEF:
             frm = symbol_table_get(current_frame_table, node->func_def.identifier->primary_expr.identifier_name);
-            frm->segment = create_segment(node->table);
+            frm->segment = create_segment(node->func_def.function_block->table);
             sym = create_symbol_table(current_frame_table, current_frame_table->global);
             old_table = current_frame_table;
             current_frame_table = sym;
@@ -210,7 +225,11 @@ int recurse_IR_tree(AST_node *node) {
                 }
             }
             
+            tmp = local_variables;
+            local_variables = create_hash_map(128);
             recurse_IR_tree(node->func_def.function_block);
+            destroy_hash_map(local_variables);
+            local_variables = tmp;
 
             current_frame->last = current_segment;
             current_frame_table = old_table;
@@ -235,10 +254,12 @@ int recurse_IR_tree(AST_node *node) {
             }
             break;
         case A_IF_STMT:
+            int if_c = if_counter++;
             condition = recurse_IR_tree(node->if_stmt.condition);
             current_segment->left = create_segment(node->if_stmt.if_branch->table);
             linked_list_append(current_segment->left->pred, current_segment);
             current_segment->right = create_segment(node->if_stmt.else_branch->table);
+            current_segment->right->name = IR_generate_label("else", if_c);
             linked_list_append(current_segment->right->pred, current_segment);
             
             IR_operand *if_branch = create_operand(P_LABEL, current_segment->left);
@@ -247,6 +268,7 @@ int recurse_IR_tree(AST_node *node) {
 
             linked_list_append(current_segment->operations, op);
             seg = create_segment(node->table);
+            seg->name = IR_generate_label("end_if", if_c);
             linked_list_append(seg->pred, current_segment->left);
             linked_list_append(seg->pred, current_segment->right);
             old_segment = current_segment;
@@ -263,7 +285,9 @@ int recurse_IR_tree(AST_node *node) {
             current_segment = seg;
             break;
         case A_WHILE_LOOP:
+            int while_c = while_counter++;
             seg = create_segment(node->table);
+            seg->name = IR_generate_label("start_while", while_c);
             current_segment->left = seg;
             seg->left = create_segment(node->while_loop.block->table);
             linked_list_append(seg->pred, current_segment);
@@ -271,6 +295,7 @@ int recurse_IR_tree(AST_node *node) {
             //linked_list_append(current_segment->pred, seg);
             //current_segment->left->left = current_segment;
             current_segment->right = create_segment(node->table);
+            current_segment->right->name = IR_generate_label("end_while", while_c);
             linked_list_append(current_segment->right->pred, current_segment);
 
             condition = recurse_IR_tree(node->while_loop.condition);
@@ -472,7 +497,15 @@ void print_IR(segment *seg) {
     if (!seg) {
         return;
     }
+    linked_list *keys = get_keys(seg->table);
+    for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
+        var_info *vi = (var_info *) symbol_table_get(seg->table, (char *) lln->data);
+        printf("variable: %s\n", (char *) lln->data);
+    }
     IR_operation *op;
+    if (seg->name) {
+        printf("%s:\n", seg->name);
+    }
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         op = (IR_operation *) lln->data;
         print_operation(op);
@@ -514,13 +547,16 @@ void print_IR_tree(frame *root) {
 
 frame *create_IR_tree(AST_node *root) {
     current_frame_table = create_symbol_table(NULL, NULL);
+    local_variables = create_hash_map(128);
     frame *global_frame = create_named_frame("/PROGRAM");
     global_frame->segment = create_segment(root->table);
     current_frame = global_frame;
     current_segment = global_frame->segment;
+    hash_map *tmp = local_variables;
     for (linked_list_node *lln = root->program.modules->head; lln != NULL; lln = lln->next) {
         recurse_IR_tree((AST_node *) lln->data);
     }
+    free(tmp);
     current_frame->last = current_frame->segment;
     if (strcmp("/PROGRAM", current_frame->name) != 0) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
@@ -1005,6 +1041,7 @@ void register_allocation(frame *program, RA_graph *graph) {
    
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
     if (spill) {
+        // Unnecessary since we'll have a maximum of 4 variables live at any time 
         // rebuild program
         // reconstruct graph from program (Or just realloc nodes and add new temporaries directly)
         // recursive call (or do simplify and select again iteratively)

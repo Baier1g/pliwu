@@ -21,6 +21,11 @@ typedef enum operand_type operand_type;
 typedef enum reg_color reg_color;
 
 /*
+ * Most based and useful function in this entire compiler
+ */
+char *IR_generate_label(char *, int);
+
+/*
  * Returns a string representing the op code provided
  */
 char *IR_op_code_to_string(IR_op_code);
@@ -145,8 +150,8 @@ struct frame {
  * A struct representing a straight line segment of the code
  */
 struct segment {
-    int last_temporary;
     int iteration;
+    char* name;
     linked_list *pred;
     segment *left, *right;
     symbol_table *table;
@@ -198,7 +203,7 @@ struct RA_node {
 };
 
 // Constant for max registers available during register allocation
-#define MAX_REG 6
+#define MAX_REG 8
 
 enum reg_color {
     R15 = 1,
@@ -221,6 +226,7 @@ void connect_nodes(RA_graph *, int, int);
 void connect_graph(RA_graph *, frame *);
 void print_graph(RA_graph *);
 void print_adj_matrix(RA_graph *);
+void register_allocation(frame *, RA_graph *);
 
 
 

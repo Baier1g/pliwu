@@ -1,9 +1,9 @@
 #ifndef OPTIMISER_H
 #define OPTIMISER_H
 
-#include <string.h>
 #include "ast.h"
 #include "ir.h"
+#include <string.h>
 
 /*
  * Performs constant folding on the AST.

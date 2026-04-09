@@ -152,7 +152,7 @@ void generate_code_helper(AST_node *node) {
                 "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\nsection .text\n\n");
             create_print_int();
             linked_list_append(generated_code, \
-                "global _start\n_start:\n\tmov rbp, rsp\n\tmov [rbp+16], rbp\n\tmov rax, qword[rbp+16]\n");
+                "global _start\n_start:\n\tmov rbp, rsp\n");
             //print_rax();
             for (linked_list_node *n = node->module.module_declarations->head; n != NULL; n = n->next) {
                 generate_code_helper(n->data);
