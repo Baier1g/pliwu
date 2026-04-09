@@ -52,4 +52,11 @@ void *linked_list_remove(linked_list *ll, linked_list_node *node);
  */
 void linked_list_put_front(linked_list *ll, void *data);
 
+/*
+ * Adds a new linked list node to ll after lln
+ */
+linked_list_node *linked_list_put_next(linked_list *ll, linked_list_node *lln, void *data);
+
+void linked_list_copy_to(linked_list *, linked_list *);
+
 #endif // linked_list_H

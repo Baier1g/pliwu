@@ -114,3 +114,20 @@ void linked_list_put_front(linked_list *ll, void *data) {
     }
 
 }
+
+linked_list_node *linked_list_put_next(linked_list *ll, linked_list_node *lln, void *data) {
+    linked_list_node *tmp = (struct linked_list_node *) malloc(sizeof(struct linked_list_node));
+    tmp->data = data;
+    linked_list_node *next = lln->next;
+    next->prev = tmp;
+    lln->next = tmp;
+    tmp->prev = lln;
+    tmp->next = next;
+    ll->size++;
+}
+
+void linked_list_copy_to(linked_list *source, linked_list *dest) {
+    for (linked_list_node *lln = source->head; lln != NULL; lln = lln->next) {
+        linked_list_append(dest, lln->data);
+    }
+}

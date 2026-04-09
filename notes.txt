@@ -24,6 +24,7 @@ TODOS:
 13. Maybe make set
 14. Constant folding on AST, potentially on variables if we do SSA form
 15. Potentially implement rewrite program in register_allocation
+16. Problems in rewrite_segment, variables end up in print statements
 
 QUESTIONS:
 1. Bison precedence does not work, why? (we don't know )

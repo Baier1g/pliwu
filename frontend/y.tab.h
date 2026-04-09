@@ -121,7 +121,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 26 "grammar.y"
+#line 27 "grammar.y"
 
     struct AST_node *nval;
     struct linked_list *llval;

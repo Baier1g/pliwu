@@ -142,6 +142,7 @@ enum operand_type {
  */
 struct frame {
     char *name;
+    hash_map *locals;
     segment *segment, *last;
     linked_list *nested_frames;
 };
@@ -203,7 +204,7 @@ struct RA_node {
 };
 
 // Constant for max registers available during register allocation
-#define MAX_REG 8
+#define MAX_REG 4
 
 enum reg_color {
     R15 = 1,

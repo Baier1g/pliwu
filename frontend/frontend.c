@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
     //AST_printer(prog);
 
     frame *root = create_IR_tree(prog);
-    print_IR_tree(root);
+    //print_IR_tree(root);
 
 
     printf("generating code\n");

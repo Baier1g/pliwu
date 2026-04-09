@@ -5,10 +5,10 @@ func main(int argv, char argc) {
     print(yarr);
     int test;
     int habibi = 30;
-    /*print(habibi / 10);
-    bool sheeesh = id(habibi, 50, "f"); 
+    print(habibi / 10);
+    //bool sheeesh = id(habibi, 50, "f"); 
 
-    Nested function test
+    //Nested function test
     func nest(int a) -> int {
         print(yarr);
         print(habibi);
@@ -21,7 +21,7 @@ func main(int argv, char argc) {
 
         return nest_nest(a) / 10;
     }
-    print(nest(habibi));*/
+    print(nest(habibi));
     int i = 0;
     int d = 50;
     int e = 100;
@@ -30,13 +30,13 @@ func main(int argv, char argc) {
     int h = 60;
     int k = 70;
     int j = 3;
+    bool boo = d * e - f / g > h + i * j || ((10 * 50) - ((e * f) + (g - j))) / j > 2 * 10 - 50 && true || false;
     while (i < 5) {
         print(i);
-        bool boo = d * e - f / g > h + i * j || ((10 * 50) - ((e * f) + (g - j))) / j > 2 * 10 - 50 && true || false;
         while (g > 0) {
             if (i > 2) {
                 j = k + g;
-                if (boo) {
+                if (1) {
                     j = j + j;
                     if (1) {
                         j = j + j;
@@ -47,6 +47,7 @@ func main(int argv, char argc) {
                     j = j - j;
                 }
             } else {
+                i = j;
                 j = k - g;
             }
             print(j);
@@ -62,7 +63,7 @@ func main(int argv, char argc) {
 
 /*func id(int a, int b, char c) -> bool {
     int bombaclat = 1000;
-    return (50 * 100) - (10 / 5) > (60 + 70) * 3 || (a * b) - (1002 / 3) > 2 * a - b && true || false;
+    //return (50 * 100) - (10 / 5) > (60 + 70) * 3 || (a * b) - (1002 / 3) > 2 * a - b && true || false;
     if (a > b) {
         bombaclat = bombaclat - 500;
     } else {

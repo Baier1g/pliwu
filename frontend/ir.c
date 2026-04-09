@@ -161,6 +161,7 @@ int recurse_IR_tree(AST_node *node) {
     //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
+    char *name;
     symbol_table *sym, *old_table;
     hash_map *tmp;
     frame *frm, *old_frame;
@@ -198,7 +199,7 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 recurse_IR_tree((AST_node *) lln->data);
             }
-            destroy_hash_map(local_variables);
+            frm->locals = local_variables;
             local_variables = tmp;
             current_frame->last = current_segment;
             current_frame_table = old_table;
@@ -227,8 +228,8 @@ int recurse_IR_tree(AST_node *node) {
             
             tmp = local_variables;
             local_variables = create_hash_map(128);
+            frm->locals = local_variables;
             recurse_IR_tree(node->func_def.function_block);
-            destroy_hash_map(local_variables);
             local_variables = tmp;
 
             current_frame->last = current_segment;
@@ -237,16 +238,18 @@ int recurse_IR_tree(AST_node *node) {
             current_segment = old_segment;
             break;
         case A_VAR_DECL:
-            id = create_operand(P_VARIABLE, node->var_decl.identifier->primary_expr.identifier_name);
+            name = node->var_decl.identifier->primary_expr.identifier_name;
             expr = NULL;
             if (node->var_decl.expr_stmt) {
                 expr = create_operand(P_TEMP, recurse_IR_tree(node->var_decl.expr_stmt));
+                hash_map_insert(local_variables, name, expr);
             } else {
+                id = create_operand(P_VARIABLE, name);
                 expr = create_operand(P_CONSTANT, 0);
+                op = create_op(IR_VAR_DECL, id, expr, NULL);
+                linked_list_append(current_segment->operations, op);
             }
-            op = create_op(IR_VAR_DECL, id, expr, NULL);
             //print_operation(op);
-            linked_list_append(current_segment->operations, op);
             break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
@@ -332,8 +335,14 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_ASSIGN_EXPR:
             expr = create_operand(P_TEMP, recurse_IR_tree(node->assign_expr.expression));
-            id = create_operand(P_VARIABLE, node->assign_expr.identifier->primary_expr.identifier_name);
-            op = create_op(IR_ASSIGN, id, expr, NULL);
+            name = node->assign_expr.identifier->primary_expr.identifier_name;
+            if (hash_map_contains(local_variables, name)) {
+                id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(local_variables, name))->constant);
+                op = create_op(IR_ASSIGN, id, expr, NULL);
+            } else {
+                id = create_operand(P_VARIABLE, name);
+                op = create_op(IR_ASSIGN, id, expr, NULL);
+            }
             linked_list_append(current_segment->operations, op);
             break;
         case A_LOGICAL_EXPR:
@@ -366,8 +375,11 @@ int recurse_IR_tree(AST_node *node) {
 
             IR_operand *tmp = create_operand(P_TEMP, temp_counter);
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
-                op = create_op(IR_ASSIGN, tmp,
-                    create_operand(P_VARIABLE, node->primary_expr.identifier_name), NULL);
+                name = node->primary_expr.identifier_name;
+                if (hash_map_contains(local_variables, name)) {
+                    return ((IR_operand *) hash_map_get(local_variables, name))->constant; 
+                }
+                op = create_op(IR_ASSIGN, tmp, create_operand(P_VARIABLE, name), NULL);
             } else {
                 op = create_op(IR_ASSIGN, tmp, create_operand(P_CONSTANT, val), NULL);
             }
@@ -550,13 +562,12 @@ frame *create_IR_tree(AST_node *root) {
     local_variables = create_hash_map(128);
     frame *global_frame = create_named_frame("/PROGRAM");
     global_frame->segment = create_segment(root->table);
+    global_frame->locals = local_variables;
     current_frame = global_frame;
     current_segment = global_frame->segment;
-    hash_map *tmp = local_variables;
     for (linked_list_node *lln = root->program.modules->head; lln != NULL; lln = lln->next) {
         recurse_IR_tree((AST_node *) lln->data);
     }
-    free(tmp);
     current_frame->last = current_frame->segment;
     if (strcmp("/PROGRAM", current_frame->name) != 0) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
@@ -565,9 +576,11 @@ frame *create_IR_tree(AST_node *root) {
     liveness(current_frame);
     RA_graph *graph = create_graph(temp_counter);
     connect_graph(graph, current_frame);
-    print_graph(graph);
+    //print_graph(graph);
+    printf("temp_counter: %d\n", temp_counter);
     register_allocation(global_frame, graph);
-    print_graph(graph);
+    printf("temp_counter: %d\n", temp_counter);
+    //print_graph(graph);
     printf("Finished IR creation\n");
     return global_frame;
 }
@@ -975,8 +988,8 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         }
         i++;
     }
-    i = 0;
-    while ((curr = potential_spill[i]) != 0) {
+    i = (temp_counter - 2) - i;
+    while (i >= 0 && (curr = potential_spill[i]) != 0) {
         node = graph->nodes[curr];
         int colors[MAX_REG + 1] = {};
         int j = graph->num_nodes;
@@ -988,7 +1001,7 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
             j--;
         }
         int color = 0;
-        for (int k = 1; k < MAX_REG + 1; k++) {
+        for (int k = 1; k <= MAX_REG; k++) {
             if (colors[k] == 0) {
                 color = k;
                 break;
@@ -999,28 +1012,153 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         } else {
             spill[spill_count++] = curr;
         }
-        i++;
+        i--;
     }
 
     return spill_count;
 }
 
-/*
- * UNFINISHED AND UNNECESSARY
- */
-void rewrite_program(frame *frm, int *spilled_nodes) {
-    frame *current_frame = frm;
-    segment current_segment;
-    linked_list *new_segments = linked_list_new();
-    int curr_node, spill_count;
-    spill_count = 0;
-    while ((curr_node = spilled_nodes[spill_count++] != 0)) {
-        // DO work
+void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name) {
+    if (!seg) {
+        return;
     }
+    linked_list_node *new, *tmp;
+    IR_operand *op1, *op2, *op3;
+    IR_operation *operation, *current_op;
+    for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
+        current_op = (IR_operation *) lln->data;
+        //print_operation(current_op);
+        linked_list_node *tmp = linked_list_find(current_op->in, spilled_node);
+        if (tmp) {
+            linked_list_remove(current_op->in, tmp);
+        }
+        tmp = linked_list_find(current_op->out, spilled_node);
+        if (tmp) {
+            linked_list_remove(current_op->out, tmp);
+        }
+        
+        if (current_op->arg1 && current_op->arg1->type == P_TEMP && current_op->arg1->constant == spilled_node) {
+            if (!defined) {
+                current_op->arg1->type = P_VARIABLE;
+                current_op->arg1->variable_name = var_name;
+                //op1 = create_operand(P_VARIABLE, var_name);
+                //op2 = create_operand(P_TEMP, spilled_node);
+                //operation = create_op(IR_VAR_DECL, op1, op2, NULL);
+                //linked_list_append(operation->use, spilled_node);
+                //linked_list_put_next(seg->operations, lln, operation);
+                //lln = lln->next;
+                defined = 1;
+                continue;
+            } else {
+                if (current_op->op == IR_IF || current_op->op == IR_WHILE) {
+                    tmp = lln->prev;
+                    linked_list_append(current_op->in, temp_counter);
+
+                    op1 = create_operand(P_TEMP, temp_counter);
+                    op2 = create_operand(P_VARIABLE, var_name);
+                    operation = create_op(IR_ASSIGN, op1, op2, NULL);
+                    linked_list_copy_to(((IR_operation *)tmp->data)->out, operation->in);
+                    linked_list_copy_to(current_op->in, operation->out);
+
+                    linked_list_put_next(seg->operations, tmp, operation);
+                    current_op->arg1->constant = temp_counter++;
+                } else {
+                    current_op->arg1->type = P_VARIABLE;
+                    current_op->arg1->variable_name = var_name;
+                }
+            }        
+        }
+        int p2, p3;
+        if ((p2 = (current_op->arg2 && current_op->arg2->type == P_TEMP && current_op->arg2->constant == spilled_node))
+        || (p3 = (current_op->arg3 && current_op->arg3->type == P_TEMP && current_op->arg3->constant == spilled_node))) {
+            if (current_op->op == IR_ASSIGN) {
+                current_op->arg2->type = P_VARIABLE;
+                current_op->arg2->variable_name = var_name;
+                continue;
+            }
+            
+            op1 = create_operand(P_TEMP, temp_counter);
+            op2 = create_operand(P_VARIABLE, var_name);
+            operation = create_op(IR_ASSIGN, op1, op2, NULL);
+            
+            printf("WE MADE IT\n");
+            tmp = lln->prev;
+            if (!tmp) {
+                linked_list_copy_to(current_op->in, operation->in);
+                linked_list_append(current_op->in, temp_counter);
+                linked_list_copy_to(current_op->in, operation->out);
+                linked_list_put_front(seg->operations, operation);
+            } else {
+                linked_list_append(current_op->in, temp_counter);
+                linked_list_copy_to(((IR_operation *)lln->prev->data)->out, operation->in);
+                linked_list_copy_to(current_op->in, operation->out);
+                linked_list_put_next(seg->operations, lln->prev, operation);
+            }
+            if (p2) {
+                current_op->arg2->constant = temp_counter;
+            }
+            if (p3) {
+                current_op->arg3->constant = temp_counter;
+            }
+            temp_counter++;
+        }
+    }
+    printf("In rewrite_segment\n");
+    linked_list_node *bruh = seg->operations->tail;
+    if (bruh && !(((IR_operation *) bruh->data)->op == IR_GOTO)) {
+        rewrite_segment(seg->left, spilled_node, defined, var_name);
+        //printf("recursing right\n");
+        rewrite_segment(seg->right, spilled_node, defined, var_name);
+    }
+
+    return;
+}
+
+/*
+ * UNFINISHED AND VERY NECESSARY
+ */
+void rewrite_program(frame *frm, int* spilled_nodes, int count) {
+    if (spilled_nodes[count] == 0) {
+        return;
+    }
+    frame *current_frame;
+    linked_list *new_frames = linked_list_new();
+    linked_list_append(new_frames, frm);
+    char *name;
+    int key_found = 0;
+    //printf("in rewrite\n");
+    while (!key_found) {
+        if (!new_frames->size) {
+            return;
+        }
+        //printf("in loop\n");
+        current_frame = linked_list_pop_front(new_frames);
+        linked_list *keys = current_frame->locals->keys;
+        for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
+            IR_operand *tmp = (IR_operand *) hash_map_get(current_frame->locals, (char *) lln->data);
+            if (tmp && tmp->constant == spilled_nodes[count]) {
+                printf("Key found!\n");
+                key_found = 1;
+                name = (char *) lln->data;
+                break;
+            }
+        }
+        if (key_found) {
+            break;
+        }
+        //printf("No key found, checking nested frames\n");
+        for (linked_list_node *lln = current_frame->nested_frames->head; lln != NULL; lln = lln->next) {
+            linked_list_append(new_frames, (frame *) lln->data);
+        }
+    } 
+    rewrite_segment(current_frame->segment, spilled_nodes[count], 0, name);
+    count++;
+    rewrite_program(frm, spilled_nodes, count);
+    return;   
 }
 
 void register_allocation(frame *program, RA_graph *graph) {
-
+    int count = 0;
     int *simple_nodes = calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = calloc(graph->num_nodes + 1, sizeof(int));
     int *actual_spill = calloc(graph->num_nodes + 1, sizeof(int));
@@ -1040,15 +1178,31 @@ void register_allocation(frame *program, RA_graph *graph) {
     RA_simplify(graph, simple_nodes, potential_spill);
    
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
-    if (spill) {
-        // Unnecessary since we'll have a maximum of 4 variables live at any time 
-        // rebuild program
-        // reconstruct graph from program (Or just realloc nodes and add new temporaries directly)
-        // recursive call (or do simplify and select again iteratively)
+    count++;
+    while (spill) {
+        printf("spill node is: %d\n", actual_spill[0]);
+        rewrite_program(program, actual_spill, 0);
+        // KILL GWAPH UwU
+        graph = create_graph(temp_counter);
+        connect_graph(graph, program);
+        //print_graph(graph);
+        free(simple_nodes);
+        free(potential_spill);
+        free(actual_spill);
+        *simple_nodes = calloc(graph->num_nodes + 1, sizeof(int));
+        *potential_spill = calloc(graph->num_nodes + 1, sizeof(int));
+        *actual_spill = calloc(graph->num_nodes + 1, sizeof(int));
+        RA_simplify(graph, simple_nodes, potential_spill);
+   
+        spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
+        count++;
+        //register_allocation(program, graph);
     }
-
-    free(simple_nodes);
-    free(potential_spill);
-    free(actual_spill);
+    print_graph(graph);
+    print_IR_tree(program);
+    printf("Spills: %d, runs: %d\n", spill, count);
+    //free(simple_nodes);
+    //free(potential_spill);
+    //free(actual_spill);
     return;
 }
