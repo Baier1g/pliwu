@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
         exit(-1);
     }
 
-    //AST_optimiser_constant_folding(prog);
+    AST_optimiser_constant_folding(prog);
     //AST_printer(prog);
     int *count = calloc(1, sizeof(int));
 

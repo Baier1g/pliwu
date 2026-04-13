@@ -9,13 +9,14 @@ all:
 	flex rules.l
 	bison -vdy grammar.y
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
-	./grammar.out tests/test2.txt
+	./grammar.out tests/reg_test.oc
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 
 mem:
 	flex rules.l
 	bison -vdy grammar.y
 	$(CC) $(WFLAGS) $(MEMFLAG) -o $(OUT) $(FILES)
+	./grammar.out tests/test2.txt
 
 .PHONY: clean
 clean:

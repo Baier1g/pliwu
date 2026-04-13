@@ -4,6 +4,7 @@
 #include "ast.h"
 #include "ir.h"
 #include "linked_list.h"
+#include "register_allocation.h"
 #include "symbol_table.h"
 #include <stdio.h>
 #include <stdlib.h>

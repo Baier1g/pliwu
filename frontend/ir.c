@@ -432,7 +432,6 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
-    //printf("%s, in_set size: %d, out_set size: %d, def_set size: %d, use_set size: %d\n", name, op->in->size, op->out->size, op->def->size, op->use->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -531,19 +530,6 @@ void print_IR(segment *seg) {
         }
         print_IR(seg->left);
         print_IR(seg->right);
-        /*IR_op_code code = ((IR_operation *) seg->operations->tail->data)->op;
-        if (code == IR_IF || code == IR_WHILE) {
-            segment *left = seg->left;
-            for (linked_list_node *lln = left->operations->head; lln != NULL; lln = lln->next) {
-                op = (IR_operation *) lln->data;
-                print_operation(op);
-            }
-            printf("\n");
-            print_IR(seg->right);
-        } else {
-            print_IR(seg->left);
-            print_IR(seg->right);
-        }*/
     }
 }
 

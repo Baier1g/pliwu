@@ -30,6 +30,10 @@ func main(int argv, char argc) {
     int h = 60;
     int k = 70;
     int j = 3;
+    int l = 500;
+    int m = 600;
+    int n = 700;
+    int o = 800;
     bool boo = d * e - f / g > h + i * j || ((10 * 50) - ((e * f) + (g - j))) / j > 2 * 10 - 50 && true || false;
     while (i < 5) {
         print(i);
@@ -57,6 +61,7 @@ func main(int argv, char argc) {
         d = 3;
         i = i + 1;
     }
+    int p = l + m + n + o;
     char lll = "l";
     return;
 }

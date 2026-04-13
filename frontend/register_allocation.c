@@ -1,13 +1,14 @@
 #include "register_allocation.h"
 
 int temp_c;
+RA_graph *glob_graph;
 
 RA_graph *create_graph(int num_nodes) {
     RA_graph *graph = (RA_graph *) malloc(sizeof(RA_graph));
     graph->num_nodes = num_nodes;
     graph->adj_matrix = (int **) malloc((num_nodes + 1) * sizeof(int *));
     graph->adj_matrix[0] = NULL;
-    for (int i = 1; i <= num_nodes + 1; i++) {
+    for (int i = 1; i <= num_nodes; i++) {
         graph->adj_matrix[i] = (int *) calloc(num_nodes + 1, sizeof(int));
         //graph->adj_matrix[i][i] = 1;
     }
@@ -27,6 +28,7 @@ RA_node *create_graph_node(int max_connections) {
 }
 
 void connect_nodes(RA_graph *graph, int temp1, int temp2) {
+    //printf("connect_nodes: invalid temp_val T_one: %d, T_two: %d, max temp: %d\n", temp1, temp2, graph->num_nodes);
     RA_node *node1 = graph->nodes[temp1];
     RA_node *node2 = graph->nodes[temp2];
     int in = 0;
@@ -36,12 +38,18 @@ void connect_nodes(RA_graph *graph, int temp1, int temp2) {
             break;
         }
     }
+    //printf("checked connections\n");
 
     if (!in) {
+        //printf("in if\n");
         graph->adj_matrix[temp1][temp2] = graph->adj_matrix[temp2][temp1] = 1;
+        //printf("adj_matrix set\n");
         node1->connections[node1->num_edges++] = temp2;
-        node2->connections[node2->num_edges++] = temp1; 
+        //printf("node 1 connections set. node2->num_edges: %d\n", node2->num_edges);
+        node2->connections[node2->num_edges++] = temp1;
+        //printf("node 2 connections set\n");
     }
+    //printf("MADE IT OUT THE CONNECT_NODES\n");
 }
 
 void graph_handle_operation(RA_graph *graph, IR_operation *op) {
@@ -125,18 +133,10 @@ void print_adj_matrix(RA_graph *graph) {
 }
 
 void kill_graph(RA_graph *graph) {
-    for (int i = 1; i < graph->num_nodes; i++) {
-        printf("Freeing row %d out of %d | connections:", i, graph->num_nodes);
-        for (int j = 0; j < graph->nodes[i]->num_edges; j++) {
-            printf(" %d ", graph->nodes[i]->connections[j]);
-        }
-        printf("\n");
+    for (int i = 1; i < graph->num_nodes + 1; i++) {
         free(graph->adj_matrix[i]);
-        printf("    Node %d: adj_matrix row freed\n", i);
-        //free(graph->nodes[i]->connections);
-        printf("    Node %d: connections freed\n", i);
+        free(graph->nodes[i]->connections);
         free(graph->nodes[i]);
-        printf("    Node %d: node freed\n", i);
     }
     free(graph->nodes);
     free(graph->adj_matrix);
@@ -148,7 +148,22 @@ void RA_disconnect_node(RA_graph *graph, int t1) {
     for (int i = 0; i < node->num_edges; i++) {
         int tmp = node->connections[i];
         //graph->adj_matrix[t1][tmp] = graph->adj_matrix[tmp][t1] = 0;
-        graph->nodes[tmp]->num_edges--;
+        if (graph->nodes[tmp]->num_edges - 1 < 0) {
+            printf("RA_disconnect_node: something went wrong\n");
+        } else {
+            RA_node *temp = graph->nodes[tmp];
+            for (int j = 0; j < temp->num_edges; j++) {
+                if (temp->connections[j] == t1) {
+                    int k = j + 1;
+                    while (k <= temp->num_edges) {
+                        temp->connections[k - 1] = temp->connections[k];
+                        k++;
+                    }
+                    graph->nodes[tmp]->num_edges--;
+                    break;
+                }
+            }
+        }
     }
     node->num_edges = 0;
 }
@@ -164,6 +179,20 @@ void RA_simplify(RA_graph *graph, int *simple, int *spill) {
         } else {
             spill[spill_count++] = i;
         }
+    }
+}
+
+void sort_nodes(RA_graph *graph, int *arr) {
+    int i = 1;
+    int curr = 0;
+    while ((curr = arr[i]) != 0) {
+        int j = i - 1;
+        while (j >= 0 && graph->nodes[arr[j]]->num_edges > graph->nodes[curr]->num_edges) {
+            arr[j + 1] = arr[j];
+            j--;
+        }
+        arr[j + 1] = curr;
+        i++;
     }
 }
 
@@ -207,8 +236,8 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         }
         i++;
     }
-    i = (temp_c - 2) - i;
-    //i = 0;
+    //i = (temp_c - 1) - i;
+    i = 0;
     while (i >= 0 && (curr = potential_spill[i]) != 0) {
         node = graph->nodes[curr];
         int colors[MAX_REG + 1] = {};
@@ -221,7 +250,7 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
             j--;
         }
         int color = 0;
-        for (int k = 1; k <= MAX_REG; k++) {
+        for (int k = 1; k < MAX_REG + 1; k++) {
             if (colors[k] == 0) {
                 color = k;
                 break;
@@ -232,7 +261,7 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         } else {
             spill[spill_count++] = curr;
         }
-        i--;
+        i++;
     }
     printf("RA_select finished\n");
     return spill_count;
@@ -357,7 +386,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
         for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
             IR_operand *tmp = (IR_operand *) hash_map_get(current_frame->locals, (char *) lln->data);
             if (tmp && tmp->constant == spilled_nodes[count]) {
-                //printf("Key found!\n");
+                printf("Key found!\n");
                 key_found = 1;
                 name = (char *) lln->data;
                 break;
@@ -366,7 +395,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
         if (key_found) {
             break;
         }
-        //printf("No key found, checking nested frames\n");
+        printf("No key found, checking nested frames\n");
         for (linked_list_node *lln = current_frame->nested_frames->head; lln != NULL; lln = lln->next) {
             linked_list_append(new_frames, (frame *) lln->data);
         }
@@ -381,6 +410,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     int count = 0;
     temp_c = temps;
     RA_graph *graph = create_graph(temp_c);
+    glob_graph = graph;
+
     connect_graph(graph, program);
 
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -400,10 +431,19 @@ RA_graph *register_allocation(int temps, frame *program) {
     */
 
     RA_simplify(graph, simple_nodes, potential_spill);
+    for (int i = 1; i < graph->num_nodes; i++) {
+        printf("Node %d has %d edges\n", i, graph->nodes[i]->num_edges);
+    }
+    sort_nodes(graph, potential_spill);
+    int i = 0;
+    while (potential_spill[i] != 0) {
+        printf("%d, ", graph->nodes[potential_spill[i++]]->num_edges);
+    }
+    printf("\n");
    
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
     count++;
-    print_graph(graph);
+    //print_graph(graph);
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
         printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
@@ -415,17 +455,16 @@ RA_graph *register_allocation(int temps, frame *program) {
         kill_graph(graph);
         graph = NULL;
         graph = create_graph(temp_c);
+        glob_graph = graph;
         connect_graph(graph, program);
         //print_graph(graph);
         simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         actual_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
-        if(!(simple_nodes && potential_spill && actual_spill)) {
-            printf("calloc failed");
-            exit(-1);
-        }
+
         RA_simplify(graph, simple_nodes, potential_spill);
-   
+        sort_nodes(graph, potential_spill);
+
         spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
         count++;
         //register_allocation(program, graph);
