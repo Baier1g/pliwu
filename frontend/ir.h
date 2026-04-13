@@ -13,12 +13,9 @@ typedef struct segment segment;
 typedef struct IR_operation IR_operation;
 typedef struct IR_operand IR_operand;
 
-typedef struct RA_graph RA_graph;
-typedef struct RA_node RA_node;
-
 typedef enum IR_op_code IR_op_code;
 typedef enum operand_type operand_type;
-typedef enum reg_color reg_color;
+
 
 /*
  * Most based and useful function in this entire compiler
@@ -64,7 +61,7 @@ IR_operand *create_operand(operand_type, void *);
  * The main entrypoint of intermediate code generation.
  * It takes the root of an AST as argument
  */
-frame *create_IR_tree(AST_node *);
+frame *create_IR_tree(int *, AST_node *);
 
 /*
  * Prints the IR tree to the terminal
@@ -183,53 +180,5 @@ struct IR_operand {
         frame *call;
     };
 };
-
-/*
- * A struct that represents a graph of temporary variables.
- */
-struct RA_graph {
-    int num_nodes;
-    int **adj_matrix;
-    RA_node **nodes;
-};
-
-/* A struct that represents a node in the register allocation graph 
- * Color holds the allocated register of a temporary
- * The connections array holds the indices of the temporaries that are alive at the same time
- */
-struct RA_node {
-    int color;
-    int num_edges;
-    int *connections;
-};
-
-// Constant for max registers available during register allocation
-#define MAX_REG 4
-
-enum reg_color {
-    R15 = 1,
-    R14,
-    R13,
-    R12,
-    R11,
-    R10,
-    RBX,
-    R9,
-    R8,
-    RCX,
-    RAX,
-    RDX,
-};
-
-RA_graph *create_graph(int);
-RA_node *create_graph_node(int);
-void connect_nodes(RA_graph *, int, int);
-void connect_graph(RA_graph *, frame *);
-void print_graph(RA_graph *);
-void print_adj_matrix(RA_graph *);
-void register_allocation(frame *, RA_graph *);
-
-
-
 
 #endif
