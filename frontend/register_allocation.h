@@ -24,10 +24,11 @@ struct RA_node {
     int color;
     int num_edges;
     int *connections;
+    IR_operation *definition;
 };
 
 // Constant for max registers available during register allocation
-#define MAX_REG 6
+#define MAX_REG 8
 
 enum reg_color {
     R15 = 1,
@@ -36,12 +37,13 @@ enum reg_color {
     R12,
     R11,
     R10,
-    RBX,
     R9,
     R8,
+    RBX,
     RCX,
-    RAX,
-    RDX,
+    //RAX,
+    //RDX,
+    // needs precoloring to work with rax and rdx cause div and mod
 };
 
 RA_graph *create_graph(int);

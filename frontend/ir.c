@@ -247,6 +247,8 @@ int recurse_IR_tree(AST_node *node) {
                 id = create_operand(P_VARIABLE, name);
                 expr = create_operand(P_CONSTANT, 0);
                 op = create_op(IR_VAR_DECL, id, expr, NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
                 linked_list_append(current_segment->operations, op);
             }
             //print_operation(op);
@@ -268,6 +270,8 @@ int recurse_IR_tree(AST_node *node) {
             IR_operand *if_branch = create_operand(P_LABEL, current_segment->left);
             IR_operand *else_branch = create_operand(P_LABEL, current_segment->right);
             op = create_op(IR_IF, create_operand(P_TEMP, condition), if_branch, else_branch);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
 
             linked_list_append(current_segment->operations, op);
             seg = create_segment(node->table);
@@ -280,6 +284,8 @@ int recurse_IR_tree(AST_node *node) {
             recurse_IR_tree(node->if_stmt.if_branch);
             current_segment->left = seg;
             op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
             current_segment = old_segment->right;
@@ -305,11 +311,15 @@ int recurse_IR_tree(AST_node *node) {
             IR_operand *arg2 = create_operand(P_LABEL, current_segment->left);
             IR_operand *arg3 = create_operand(P_LABEL, current_segment->right);
             op = create_op(IR_WHILE, create_operand(P_TEMP, condition), arg2, arg3);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             
             current_segment = current_segment->left;
             recurse_IR_tree(node->while_loop.block);
             op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             current_segment->left = seg;
             current_segment = seg->right;
@@ -320,6 +330,8 @@ int recurse_IR_tree(AST_node *node) {
                 expr = create_operand(P_TEMP, recurse_IR_tree(node->print_stmt.expression));
             }
             op = create_op(IR_PRINT, expr, NULL, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             break;
         case A_EXPR_STMT:
@@ -331,6 +343,8 @@ int recurse_IR_tree(AST_node *node) {
                 expr = create_operand(P_TEMP, recurse_IR_tree(node->return_stmt.expression));
             }
             op = create_op(IR_RET, expr, NULL, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             break;
         case A_ASSIGN_EXPR:
@@ -343,6 +357,8 @@ int recurse_IR_tree(AST_node *node) {
                 id = create_operand(P_VARIABLE, name);
                 op = create_op(IR_ASSIGN, id, expr, NULL);
             }
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             break;
         case A_LOGICAL_EXPR:
@@ -353,6 +369,8 @@ int recurse_IR_tree(AST_node *node) {
             enum IR_op_code op_code = AST_op_to_IR_op(node->binary_expr.op);
 
             op = create_op(op_code, create_operand(P_TEMP, temp_counter), left, right);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             return temp_counter++;
         case A_UNARY_EXPR:
@@ -383,6 +401,8 @@ int recurse_IR_tree(AST_node *node) {
             } else {
                 op = create_op(IR_ASSIGN, tmp, create_operand(P_CONSTANT, val), NULL);
             }
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             return temp_counter++;
             break;
@@ -391,12 +411,18 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = ll->head; lln != NULL; lln = lln->next) {
                 IR_operand *arg = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
                 op = create_op(IR_PARAM, arg, NULL, NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
                 linked_list_append(current_segment->operations, op);
             }
             frame *called_func = (frame *) symbol_table_get(current_frame_table, node->call_expr.identifier->primary_expr.identifier_name);
             op = create_op(IR_CALL, create_operand(P_TEMP, temp_counter), create_operand(P_FUNC_CALL, called_func), NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, node->call_expr.arguments->size * 8), NULL, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             return temp_counter++;
         case A_PARAMETER_EXPR:

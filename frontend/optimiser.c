@@ -177,6 +177,11 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                         temp = arg1 * arg2;
                         break;
                     case A_DIV:
+                        // TODO: Do error handling for division by 0 cases
+                        if (arg2 == 0) {
+                            printf("optimiser::constant_folding: division by zero in line %d at character %d\n", node->pos.line, node->pos.startchar);
+                            arg2 = 1;
+                        }
                         temp = arg1 / arg2;
                         break;
                 }

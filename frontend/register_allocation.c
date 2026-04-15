@@ -24,6 +24,7 @@ RA_node *create_graph_node(int max_connections) {
     node->color = 0;
     node->connections = (int *) calloc(max_connections, sizeof(int));
     node->num_edges = 0;
+    node->definition = NULL;
     return node;
 }
 
@@ -79,6 +80,12 @@ void connect_graph(RA_graph *graph, frame *frm) {
         seg->iteration++;
         for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
             IR_operation *op = (IR_operation *) lln->data;
+            if (op->arg1 && op->arg1->type == P_TEMP) {
+                int temp_num = op->arg1->constant;
+                if (!graph->nodes[temp_num]->definition) {
+                    graph->nodes[temp_num]->definition = op;
+                }
+            }
             graph_handle_operation(graph, op);
         }
         if (seg->left) {
@@ -378,6 +385,23 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
     //printf("in rewrite\n");
     while (!key_found) {
         if (!new_frames->size) {
+            printf("WE got here\n");
+            // Spilled node is a temp, gotts fix that
+            int temp_num = spilled_nodes[count];
+            IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
+            segment *seg = op->in_seg;
+            int i = 0;
+            name = (char *) calloc(9, sizeof(char));
+            sprintf(name, "%d", temp_num);
+            printf("did it, name: %s\n", name);
+            hash_map_insert(op->in_frame->locals, name, op);
+            var_info *var = create_var_info(-1);
+            symbol_table_insert(seg->table, name, var);
+            //printf("inserted\n");
+            rewrite_segment(seg, spilled_nodes[count], 0, name);
+            //printf("rewrote\n");
+            count++;
+            rewrite_program(frm, spilled_nodes, count);
             return;
         }
         //printf("in loop\n");
@@ -386,7 +410,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
         for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
             IR_operand *tmp = (IR_operand *) hash_map_get(current_frame->locals, (char *) lln->data);
             if (tmp && tmp->constant == spilled_nodes[count]) {
-                printf("Key found!\n");
+                //printf("Key found!\n");
                 key_found = 1;
                 name = (char *) lln->data;
                 break;
@@ -395,7 +419,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
         if (key_found) {
             break;
         }
-        printf("No key found, checking nested frames\n");
+        //printf("No key found, checking nested frames\n");
         for (linked_list_node *lln = current_frame->nested_frames->head; lln != NULL; lln = lln->next) {
             linked_list_append(new_frames, (frame *) lln->data);
         }
@@ -409,10 +433,13 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
 RA_graph *register_allocation(int temps, frame *program) {
     int count = 0;
     temp_c = temps;
+    printf("in reg\n");
     RA_graph *graph = create_graph(temp_c);
+    printf("graph created\n");
     glob_graph = graph;
 
     connect_graph(graph, program);
+    print_graph(graph);
 
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -431,15 +458,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     */
 
     RA_simplify(graph, simple_nodes, potential_spill);
-    for (int i = 1; i < graph->num_nodes; i++) {
-        printf("Node %d has %d edges\n", i, graph->nodes[i]->num_edges);
-    }
     sort_nodes(graph, potential_spill);
     int i = 0;
-    while (potential_spill[i] != 0) {
-        printf("%d, ", graph->nodes[potential_spill[i++]]->num_edges);
-    }
-    printf("\n");
    
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
     count++;
@@ -457,7 +477,6 @@ RA_graph *register_allocation(int temps, frame *program) {
         graph = create_graph(temp_c);
         glob_graph = graph;
         connect_graph(graph, program);
-        //print_graph(graph);
         simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         actual_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -466,11 +485,12 @@ RA_graph *register_allocation(int temps, frame *program) {
         sort_nodes(graph, potential_spill);
 
         spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
+        print_graph(graph);
         count++;
         //register_allocation(program, graph);
     }
     //print_graph(graph);
-    //print_IR_tree(program);
+    print_IR_tree(program);
     printf("Temps: %d, spills: %d, runs: %d\n", temp_c, spill, count);
     //free(simple_nodes);
     //free(potential_spill);

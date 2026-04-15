@@ -62,6 +62,10 @@ func main(int argv, char argc) {
         i = i + 1;
     }
     int p = l + m + n + o;
+    print(yarr);
+    yarr = yarr + 200;
+    print(yarr);
+    print(habibi);
     char lll = "l";
     return;
 }
