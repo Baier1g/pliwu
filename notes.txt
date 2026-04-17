@@ -46,4 +46,12 @@ løsning: move source ind i rax og udføre operation, så mov resultat til det a
 IR calls:
 Når der konverteres fra AST til IR skal værdierne i registrene R8-R15 gemmes. Hvis alle pushes hver gang kan det lede til et stort ydelsestab.
 Derfor pushes kun funktionsparametrene (RSI, RDI, RCX, RDX) under konversionen til IR.
-IR_operationen for at pushe vores caller save registre bliver skabt efter register allokering, så kun de registre der er i brug bliver pushet
+IR_operationen for at pushe vores caller save registre bliver skabt efter register allokering, så kun de registre der er i brug bliver pushet.
+
+int a = 300;
+int b = a - 500
+
+T1 <- a
+T2 <- 500
+T3 <- T1
+T4 <- sub T3, T2
