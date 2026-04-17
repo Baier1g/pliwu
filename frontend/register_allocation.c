@@ -175,7 +175,7 @@ void RA_disconnect_node(RA_graph *graph, int t1) {
     node->num_edges = 0;
 }
 
-void RA_simplify(RA_graph *graph, int *simple, int *spill) {
+int RA_simplify(RA_graph *graph, int *simple, int *spill) {
     printf("in RA_simplify\n");
     int spill_count, simple_count;
     spill_count = simple_count = 0;
@@ -187,6 +187,7 @@ void RA_simplify(RA_graph *graph, int *simple, int *spill) {
             spill[spill_count++] = i;
         }
     }
+    return spill_count;
 }
 
 void sort_nodes(RA_graph *graph, int *arr) {
@@ -202,6 +203,24 @@ void sort_nodes(RA_graph *graph, int *arr) {
         i++;
     }
 }
+
+/*int *bogo_sort_nodes(RA_graph *grph, int *arr, int size) {
+    int *new_arr = (int *) calloc(grph->num_nodes, sizeof(int));
+    srand(time(NULL));
+    for (int i = 0; i < size; i++) {
+        int random = rand() % size;
+        if (new_arr[random] != 0) {
+            while (new_arr[random++] != 0) {
+                if (random == size - 1) {
+                    random = 0;
+                }
+            }
+        }
+        new_arr[random] = arr[i];
+    }
+    free(arr);
+    return new_arr;
+}*/
 
 /*
  * colour selection part of register allocation.
@@ -297,6 +316,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
             if (!defined) {
                 current_op->arg1->type = P_VARIABLE;
                 current_op->arg1->variable_name = var_name;
+                printf("var_name: %s\n", var_name);
                 //op1 = create_operand(P_VARIABLE, var_name);
                 //op2 = create_operand(P_TEMP, spilled_node);
                 //operation = create_op(IR_VAR_DECL, op1, op2, NULL);
@@ -313,6 +333,8 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
                     op1 = create_operand(P_TEMP, temp_c);
                     op2 = create_operand(P_VARIABLE, var_name);
                     operation = create_op(IR_ASSIGN, op1, op2, NULL);
+                    operation->in_seg = seg;
+                    operation->in_frame = current_op->in_frame;
                     linked_list_copy_to(((IR_operation *)tmp->data)->out, operation->in);
                     linked_list_copy_to(current_op->in, operation->out);
 
@@ -328,14 +350,20 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
         if ((p2 = (current_op->arg2 && current_op->arg2->type == P_TEMP && current_op->arg2->constant == spilled_node))
         || (p3 = (current_op->arg3 && current_op->arg3->type == P_TEMP && current_op->arg3->constant == spilled_node))) {
             if (current_op->op == IR_ASSIGN) {
+                // TODO: this leaks memory, too bad!
+                //current_op->arg2 = create_operand(P_VARIABLE, var_name);
                 current_op->arg2->type = P_VARIABLE;
                 current_op->arg2->variable_name = var_name;
+                printf("var_name: %s\n", var_name);
                 continue;
             }
             
             op1 = create_operand(P_TEMP, temp_c);
             op2 = create_operand(P_VARIABLE, var_name);
+            printf("var_name: %s\n", var_name);
             operation = create_op(IR_ASSIGN, op1, op2, NULL);
+            operation->in_seg = seg;
+            operation->in_frame = current_op->in_frame;
             
             //printf("WE MADE IT\n");
             tmp = lln->prev;
@@ -393,13 +421,15 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             int i = 0;
             name = (char *) calloc(9, sizeof(char));
             sprintf(name, "%d", temp_num);
-            printf("did it, name: %s\n", name);
-            hash_map_insert(op->in_frame->locals, name, op);
+            if (hash_map_insert(op->in_frame->locals, name, op)) {
+                //printf("Is already there, blood\n");
+            }
+
             var_info *var = create_var_info(-1);
-            symbol_table_insert(seg->table, name, var);
-            //printf("inserted\n");
+            if (symbol_table_insert(seg->table, name, var)) {
+                printf("Alrady in there, cuh\n");
+            }
             rewrite_segment(seg, spilled_nodes[count], 0, name);
-            //printf("rewrote\n");
             count++;
             rewrite_program(frm, spilled_nodes, count);
             return;
@@ -439,7 +469,7 @@ RA_graph *register_allocation(int temps, frame *program) {
     glob_graph = graph;
 
     connect_graph(graph, program);
-    print_graph(graph);
+    //print_graph(graph);
 
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -485,12 +515,13 @@ RA_graph *register_allocation(int temps, frame *program) {
         sort_nodes(graph, potential_spill);
 
         spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
-        print_graph(graph);
+        //print_IR_tree(program);
+        //print_graph(graph);
         count++;
         //register_allocation(program, graph);
     }
     //print_graph(graph);
-    print_IR_tree(program);
+    //print_IR_tree(program);
     printf("Temps: %d, spills: %d, runs: %d\n", temp_c, spill, count);
     //free(simple_nodes);
     //free(potential_spill);

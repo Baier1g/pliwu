@@ -27,6 +27,7 @@ TODOS:
 16. [X] Problems in rewrite_segment, variables end up in print statements
 17. Scopechecker needs to check if a variable has been defined before use
 18. Must disallow chaining relational expressions in grammar (5 < 6 < 7)
+19. Infinite recursion on 3 registers in register allocation
 
 QUESTIONS:
 1. Redundant moves due to register allocation not coalescing

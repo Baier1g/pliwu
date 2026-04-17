@@ -7,6 +7,7 @@
 #include "ir.h"
 #include "optimiser.h"
 #include "register_allocation.h"
+#include "ir_codegen.h"
 
 
 extern AST_node *run_bison(const char*);
@@ -52,7 +53,8 @@ int main(int argc, char* argv[]) {
 
     RA_graph *graph = register_allocation(count[0], root);
     //print_graph(graph);
-    //print_IR_tree(root);
+    print_IR_tree(root);
+    codegen(linked_list_new(), root, graph);
 
 
     printf("generating code\n");
