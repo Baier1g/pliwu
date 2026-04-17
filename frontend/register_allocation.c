@@ -101,6 +101,14 @@ void connect_graph(RA_graph *graph, frame *frm) {
     }
 }
 
+RA_graph *remake_graph(RA_graph *graph, int size) {
+    RA_graph *new_graph = create_graph(size);
+    RA_node **nodes = graph->nodes;
+    for (int i = 1; i < graph->num_nodes + 1; i++) {
+        if ()
+    }
+}
+
 void print_graph(RA_graph *graph) {
     for (int i = 1; i < graph->num_nodes; i++) {
         RA_node *node = graph->nodes[i];
@@ -108,7 +116,7 @@ void print_graph(RA_graph *graph) {
         for (int j = 0; j < node->num_edges; j++) {
             printf("%d, ", node->connections[j]);
         }
-
+        
         printf("| color: %d\n", node->color);
     }
 }
@@ -180,6 +188,9 @@ int RA_simplify(RA_graph *graph, int *simple, int *spill) {
     int spill_count, simple_count;
     spill_count = simple_count = 0;
     for (int i = 1; i <= graph->num_nodes; i++) {
+        if (graph->nodes[i]->color) {
+            continue;
+        }
         if (graph->nodes[i]->num_edges < MAX_REG) {
             RA_disconnect_node(graph, i);
             simple[simple_count++] = i;

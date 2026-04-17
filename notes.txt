@@ -28,6 +28,7 @@ TODOS:
 17. Scopechecker needs to check if a variable has been defined before use
 18. Must disallow chaining relational expressions in grammar (5 < 6 < 7)
 19. Infinite recursion on 3 registers in register allocation
+2. Offset must be added to local variables in IR_codegen
 
 QUESTIONS:
 1. Redundant moves due to register allocation not coalescing
@@ -41,3 +42,8 @@ int a = 5;
 int c = a+a;
 print(a); //10
 løsning: move source ind i rax og udføre operation, så mov resultat til det allokerede resultat register
+
+IR calls:
+Når der konverteres fra AST til IR skal værdierne i registrene R8-R15 gemmes. Hvis alle pushes hver gang kan det lede til et stort ydelsestab.
+Derfor pushes kun funktionsparametrene (RSI, RDI, RCX, RDX) under konversionen til IR.
+IR_operationen for at pushe vores caller save registre bliver skabt efter register allokering, så kun de registre der er i brug bliver pushet
