@@ -3,22 +3,33 @@ OUT = grammar.out
 WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion
 MEMFLAG = -fsanitize=address,leak,undefined
 
-FILES = lex.yy.c y.tab.c ast.c linked_list.c frontend.c hashmap.c symbol_table.c scope.c type_checking.c codegen.c ir.c optimiser.c register_allocation.c ir_codegen.c
+BISON = lex.yy.c y.tab.c
+UTILS = linked_list.c hashmap.c symbol_table.c
+SEMANTIC = ast.c scope.c type_checking.c
+IR = codegen.c ir.c optimiser.c register_allocation.c ir_codegen.c
+
+FILES = frontend.c $(BISON) $(UTILS) $(SEMANTIC) $(IR)
 
 all:
 	flex rules.l
 	bison -vdy grammar.y
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
 	./grammar.out tests/test2.txt
-
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 
-mem:
+%:
+	flex rules.l
+	bison -vdy grammar.y
+	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
+	./grammar.out tests/$*.oc
+	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
+
+mem.%:
 	flex rules.l
 	bison -vdy grammar.y
 	$(CC) $(WFLAGS) $(MEMFLAG) -o $(OUT) $(FILES)
-	./grammar.out tests/test2.txt
+	./grammar.out tests/$*.oc
 
 .PHONY: clean
 clean:
-	rm out *.tab.c y.output grammar.out lex.yy.c *.o gen_asm.asm
+	rm -f out *.o *.out *.tab.c y.output grammar.out lex.yy.c gen_asm.asm
