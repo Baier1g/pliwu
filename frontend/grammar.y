@@ -81,7 +81,6 @@
 module:
     /*%empty*/          {prog = create_unary_node(0, 0, A_MODULE, linked_list_new());}
 |   module declaration  {linked_list_append(prog->module.module_declarations, $2);}
-|   module error        {printf("error in declaration on line %d", line_number); yyerrok;}
 ;
 
 declaration:
@@ -164,7 +163,6 @@ printStatement:
 
 block:
     T_LEFT_BRACE blockBody T_RIGHT_BRACE {$$ = create_unary_node(start_current_character, line_number, A_BLOCK_STMT, $2);}
-//|   T_LEFT_BRACE error T_RIGHT_BRACE {} //this rule is probably not necessary, as all errors in a block should be covered by either the statements error or expression error. But we should probably have one similar to this one when we add groupings.
 ;
 
 blockBody:
@@ -234,6 +232,7 @@ unaryExpression:
 postfixExpression:
     primary {$$ = $1;}
 |   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
+|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in negated grouping on line %d", line_number); yyerrok;}
 ;
 
 identifier:
@@ -246,6 +245,7 @@ primary:
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
+|   T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in grouping on line %d", line_number); yyerrok;}
 |   identifier      {$$ = $1;}
 ;
 
