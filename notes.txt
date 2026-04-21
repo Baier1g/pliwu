@@ -55,3 +55,14 @@ T1 <- a
 T2 <- 500
 T3 <- T1
 T4 <- sub T3, T2
+
+BUGS: (Let's write bugs here (A bit late, I know, get off my back))
+1. IR_VAR_DECL problems when assigning a local variable to a function parameter. Local var doesn't get its own temp and chains itself to the temp of the function parameter...
+func function(int a) {
+    int b = a;
+    b = 1; (It puts 1 into a instead)
+    int c = 1;
+    int d = c;
+    d = 1; (Same problem, this puts value 1 into c)
+}
+STATUS: Think I fixed it, not sure

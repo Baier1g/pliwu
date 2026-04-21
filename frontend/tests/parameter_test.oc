@@ -1,0 +1,10 @@
+int gucci = 10;
+main(1,2,3,4,5,6,7);
+
+func main(int h, int i, int j, int k, int l, int m, int n) {
+    int a1 = i;
+    int bcc = j;
+    int a = bcc;
+    a = ((7+5) * (7 - 3)) * ((50 - 20) * (2 + 4));
+    j = 700;
+}

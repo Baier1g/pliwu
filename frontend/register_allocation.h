@@ -40,7 +40,11 @@ enum reg_color {
     R9,
     R8,
     RBX,
+    RAX,
+    RDI,
+    RSI,
     RCX,
+    RDX
     //RAX,
     //RDX,
     // needs precoloring to work with rax and rdx cause div and mod

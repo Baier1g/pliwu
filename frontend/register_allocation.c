@@ -78,7 +78,21 @@ void connect_graph(RA_graph *graph, frame *frm) {
             continue;
         }
         seg->iteration++;
+        int params_loaded = 0;
         for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
+            if (!params_loaded && seg == frm->segment) {
+                IR_operation *param;
+                int color = RDI;
+                param = ((IR_operation *) lln->data);
+                while (param->op == IR_VAR_DECL && param->arg2->type == P_VARIABLE) {
+                    graph->nodes[param->arg1->constant]->definition = param;
+                    graph->nodes[param->arg1->constant]->color = color++;
+                    graph_handle_operation(graph, param);
+                    lln = lln->next;
+                    param = ((IR_operation *)lln->data);
+                }
+                params_loaded = 1;
+            } 
             IR_operation *op = (IR_operation *) lln->data;
             if (op->arg1 && op->arg1->type == P_TEMP) {
                 int temp_num = op->arg1->constant;
@@ -105,8 +119,11 @@ RA_graph *remake_graph(RA_graph *graph, int size) {
     RA_graph *new_graph = create_graph(size);
     RA_node **nodes = graph->nodes;
     for (int i = 1; i < graph->num_nodes + 1; i++) {
-        if ()
+        if (nodes[i]->color > MAX_REG) {
+            new_graph->nodes[i]->color = nodes[i]->color;
+        }
     }
+    return new_graph;
 }
 
 void print_graph(RA_graph *graph) {
@@ -237,7 +254,7 @@ void sort_nodes(RA_graph *graph, int *arr) {
  * colour selection part of register allocation.
  * Returns the number of actual spill nodes
  */
-int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
+int RA_select(RA_graph *graph, int *simple, int *potential_spill, int *spill) {
     printf("In RA_select\n");
     int current_color = 1;
     int spill_count = 0;
@@ -300,7 +317,7 @@ int RA_select(RA_graph *graph, int *simple, int* potential_spill, int *spill) {
         }
         i++;
     }
-    printf("RA_select finished\n");
+    printf("RA_select finished, spill count is: %d\n", spill_count);
     return spill_count;
 }
 
@@ -327,7 +344,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
             if (!defined) {
                 current_op->arg1->type = P_VARIABLE;
                 current_op->arg1->variable_name = var_name;
-                printf("var_name: %s\n", var_name);
+                //printf("var_name: %s\n", var_name);
                 //op1 = create_operand(P_VARIABLE, var_name);
                 //op2 = create_operand(P_TEMP, spilled_node);
                 //operation = create_op(IR_VAR_DECL, op1, op2, NULL);
@@ -365,13 +382,13 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
                 //current_op->arg2 = create_operand(P_VARIABLE, var_name);
                 current_op->arg2->type = P_VARIABLE;
                 current_op->arg2->variable_name = var_name;
-                printf("var_name: %s\n", var_name);
+                //printf("var_name: %s\n", var_name);
                 continue;
             }
             
             op1 = create_operand(P_TEMP, temp_c);
             op2 = create_operand(P_VARIABLE, var_name);
-            printf("var_name: %s\n", var_name);
+            //printf("var_name: %s\n", var_name);
             operation = create_op(IR_ASSIGN, op1, op2, NULL);
             operation->in_seg = seg;
             operation->in_frame = current_op->in_frame;
@@ -501,10 +518,11 @@ RA_graph *register_allocation(int temps, frame *program) {
     RA_simplify(graph, simple_nodes, potential_spill);
     sort_nodes(graph, potential_spill);
     int i = 0;
-   
     int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
+    printf("got utta there\n");
     count++;
-    //print_graph(graph);
+    printf("got outta* there\n");
+    print_graph(graph);
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
         printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
@@ -513,9 +531,9 @@ RA_graph *register_allocation(int temps, frame *program) {
         free(potential_spill);
         free(actual_spill);
         // KILL GWAPH UwU
+        RA_graph *new_graph = remake_graph(graph, temp_c);
         kill_graph(graph);
-        graph = NULL;
-        graph = create_graph(temp_c);
+        graph = new_graph;
         glob_graph = graph;
         connect_graph(graph, program);
         simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));

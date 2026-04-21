@@ -50,14 +50,14 @@ int main(int argc, char* argv[]) {
     int *count = calloc(1, sizeof(int));
 
     frame *root = create_IR_tree(count, prog);
-
+    
     RA_graph *graph = register_allocation(count[0], root);
     //print_graph(graph);
     print_IR_tree(root);
-    codegen(linked_list_new(), root, graph);
+    //codegen(linked_list_new(), root, graph);
 
 
-    printf("generating code\n");
+    /*printf("generating code\n");
     linked_list *ass = linked_list_new();
     generate_code(ass, prog);
     fp = fopen("gen_asm.asm", "w");
@@ -65,8 +65,8 @@ int main(int argc, char* argv[]) {
         char *tmp = (char*) n->data;
         fwrite(tmp, strlen(tmp), 1, fp);
     }
-    fclose(fp);
     linked_list_delete(ass);
+    fclose(fp);*/
     linked_list_delete(errors);
     kill_tree(prog);
     return 0;
