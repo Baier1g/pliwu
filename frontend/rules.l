@@ -20,7 +20,7 @@
     const char digraphs[NUM_DIGRAPHS][3] = {"->", "&&", "||", "<=", ">=", "==", "!="};
     const int  digraph_tokens[NUM_DIGRAPHS] = {T_ARROW, T_AND, T_OR, T_LESS_EQ, T_GREATER_EQ, T_EQUALS, T_NEQUALS};
 
-    int increment_counter(int);
+    void increment_counter(int);
     int find_keyword(char* keywrd);
     int find_type(char* type);
     int find_digraph(char* digraph);
@@ -221,7 +221,7 @@ void non_dogshit_memset() {
     ;
 }
 
-int increment_counter(int len) {
+void increment_counter(int len) {
     if (current_character == start_current_character) {
         current_character += len;
     } else {
@@ -238,6 +238,7 @@ int find_keyword(char* keywrd) {
             return key_tokens[i];
         }
     }
+    return -1;
 }
 
 int find_type(char* type) {
@@ -255,6 +256,7 @@ int find_digraph(char* digraph) {
             return digraph_tokens[i];
         }
     }
+    return -1;
 }
 
 /***main functions, reads files and processes contents***/

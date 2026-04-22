@@ -111,6 +111,9 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                     case A_OR:
                         temp = arg1 || arg2;
                         break;
+                    default:
+                        printf("optimiser.c::AST_optimiser_constant_folding: Wrong binary_op\n");
+                        exit(1);
                 }
                 tmp = create_binary_node(node->pos.startchar, node->pos.line, A_PRIMARY_EXPR, TYPE_BOOL, temp);
                 kill_tree(node);
@@ -147,6 +150,9 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                     case A_NEQUALS:
                         temp = arg1 != arg2;
                         break;
+                    default:
+                        printf("optimiser.c::AST_optimiser_constant_folding: Wrong binary_op\n");
+                        exit(1);
                 }
                 tmp = create_binary_node(node->pos.startchar, node->pos.line, A_PRIMARY_EXPR, TYPE_BOOL, temp);
                 kill_tree(node);
@@ -184,6 +190,9 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                         }
                         temp = arg1 / arg2;
                         break;
+                    default:
+                        printf("optimiser.c::AST_optimiser_constant_folding: Wrong binary_op\n");
+                        exit(1);
                 }
                 tmp = create_binary_node(node->pos.startchar, node->pos.line, A_PRIMARY_EXPR, TYPE_INT, temp);
                 kill_tree(node);

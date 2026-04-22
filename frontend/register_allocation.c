@@ -67,7 +67,7 @@ void graph_handle_operation(RA_graph *graph, IR_operation *op) {
     }
 }
 
-void connect_graph(RA_graph *graph, frame *frm) {
+void connect_graph(frame *frm) {
     linked_list *segments = linked_list_new();
     segment *seg;
     linked_list_append(segments, frm->segment);
@@ -85,9 +85,9 @@ void connect_graph(RA_graph *graph, frame *frm) {
                 int color = RDI;
                 param = ((IR_operation *) lln->data);
                 while (param->op == IR_VAR_DECL && param->arg2->type == P_VARIABLE) {
-                    graph->nodes[param->arg1->constant]->definition = param;
-                    graph->nodes[param->arg1->constant]->color = color++;
-                    graph_handle_operation(graph, param);
+                    glob_graph->nodes[param->arg1->constant]->definition = param;
+                    glob_graph->nodes[param->arg1->constant]->color = color++;
+                    graph_handle_operation(glob_graph, param);
                     lln = lln->next;
                     param = ((IR_operation *)lln->data);
                 }
@@ -96,11 +96,11 @@ void connect_graph(RA_graph *graph, frame *frm) {
             IR_operation *op = (IR_operation *) lln->data;
             if (op->arg1 && op->arg1->type == P_TEMP) {
                 int temp_num = op->arg1->constant;
-                if (!graph->nodes[temp_num]->definition) {
-                    graph->nodes[temp_num]->definition = op;
+                if (!glob_graph->nodes[temp_num]->definition) {
+                    glob_graph->nodes[temp_num]->definition = op;
                 }
             }
-            graph_handle_operation(graph, op);
+            graph_handle_operation(glob_graph, op);
         }
         if (seg->left) {
             linked_list_append(segments, seg->left);
@@ -111,7 +111,7 @@ void connect_graph(RA_graph *graph, frame *frm) {
     }
 
     for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
-        connect_graph(graph, (frame *) lln->data);
+        connect_graph((frame *) lln->data);
     }
 }
 
@@ -205,10 +205,12 @@ int RA_simplify(RA_graph *graph, int *simple, int *spill) {
     int spill_count, simple_count;
     spill_count = simple_count = 0;
     for (int i = 1; i <= graph->num_nodes; i++) {
+        printf("simplifying node %d:\n", i);
         if (graph->nodes[i]->color) {
             continue;
         }
         if (graph->nodes[i]->num_edges < MAX_REG) {
+            printf("disconnecting node\n");
             RA_disconnect_node(graph, i);
             simple[simple_count++] = i;
         } else {
@@ -250,29 +252,36 @@ void sort_nodes(RA_graph *graph, int *arr) {
     return new_arr;
 }*/
 
+void dummy() {
+    return;
+}
+
 /*
  * colour selection part of register allocation.
  * Returns the number of actual spill nodes
  */
-int RA_select(RA_graph *graph, int *simple, int *potential_spill, int *spill) {
+int RA_select(int *simple, int *potential_spill, int *spill) {
     printf("In RA_select\n");
-    int current_color = 1;
     int spill_count = 0;
-    RA_node *node, *tmp;
+    RA_node *node;
 
     int i = 0;
     int curr = 0;
     while ((curr = simple[i]) != 0) {
-        node = graph->nodes[curr];
-        int colors[MAX_REG + 1] = {};
+        dummy();
+        printf("Dealing with simple temp %d at index %d:\n", curr, i);
+        node = glob_graph->nodes[curr];
+        int colors[MAX_REG + 1] = {0};
         int j = curr;
         /*for (int i = 0; node->connections[i] != 0; i++) {
 
         }*/
+       // Maybe check entirety of adj_matrix
         while (j > 0) {
-            if (graph->adj_matrix[curr][j] == 1) {
-                connect_nodes(graph, curr, j);
-                colors[graph->nodes[j]->color]++;
+            if (glob_graph->adj_matrix[curr][j] == 1) {
+                printf("    %d, %d\n", curr, j);
+                connect_nodes(glob_graph, curr, j);
+                colors[glob_graph->nodes[j]->color]++;
             }
             j--;
         }
@@ -293,13 +302,17 @@ int RA_select(RA_graph *graph, int *simple, int *potential_spill, int *spill) {
     //i = (temp_c - 1) - i;
     i = 0;
     while (i >= 0 && (curr = potential_spill[i]) != 0) {
-        node = graph->nodes[curr];
-        int colors[MAX_REG + 1] = {};
-        int j = graph->num_nodes;
+        dummy();
+        printf("Dealing with temp %d at index %d:\n", curr, i);
+        node = glob_graph->nodes[curr];
+        int colors[MAX_REG + 1] = {0};
+        int j = glob_graph->num_nodes;
+        printf("    connecting:\n");
         while (j > 0) {
-            if (graph->adj_matrix[curr][j] == 1) {
-                connect_nodes(graph, curr, j);
-                colors[graph->nodes[j]->color]++;
+            if (glob_graph->adj_matrix[curr][j] == 1) {
+                printf("    %d, %d\n", curr, j);
+                connect_nodes(glob_graph, curr, j);
+                colors[glob_graph->nodes[j]->color]++;
             }
             j--;
         }
@@ -317,7 +330,10 @@ int RA_select(RA_graph *graph, int *simple, int *potential_spill, int *spill) {
         }
         i++;
     }
+    dummy();
     printf("RA_select finished, spill count is: %d\n", spill_count);
+    //print_graph(graph);
+    //print_adj_matrix(graph);
     return spill_count;
 }
 
@@ -325,13 +341,13 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
     if (!seg) {
         return;
     }
-    linked_list_node *new, *tmp;
-    IR_operand *op1, *op2, *op3;
+    linked_list_node *tmp;
+    IR_operand *op1, *op2;
     IR_operation *operation, *current_op;
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         current_op = (IR_operation *) lln->data;
         //print_operation(current_op);
-        linked_list_node *tmp = linked_list_find(current_op->in, spilled_node);
+        tmp = linked_list_find(current_op->in, spilled_node);
         if (tmp) {
             linked_list_remove(current_op->in, tmp);
         }
@@ -446,7 +462,6 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             int temp_num = spilled_nodes[count];
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
             segment *seg = op->in_seg;
-            int i = 0;
             name = (char *) calloc(9, sizeof(char));
             sprintf(name, "%d", temp_num);
             if (hash_map_insert(op->in_frame->locals, name, op)) {
@@ -496,9 +511,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     printf("graph created\n");
     glob_graph = graph;
 
-    connect_graph(graph, program);
-    //print_graph(graph);
-
+    connect_graph(program);
+    
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
     int *actual_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -517,11 +531,11 @@ RA_graph *register_allocation(int temps, frame *program) {
 
     RA_simplify(graph, simple_nodes, potential_spill);
     sort_nodes(graph, potential_spill);
-    int i = 0;
-    int spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
-    printf("got utta there\n");
+
+    int spill = RA_select(simple_nodes, potential_spill, actual_spill);
+    //printf("got utta there\n");
     count++;
-    printf("got outta* there\n");
+    //printf("got outta* there\n");
     print_graph(graph);
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
@@ -535,7 +549,7 @@ RA_graph *register_allocation(int temps, frame *program) {
         kill_graph(graph);
         graph = new_graph;
         glob_graph = graph;
-        connect_graph(graph, program);
+        connect_graph(program);
         simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
         actual_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));
@@ -543,7 +557,7 @@ RA_graph *register_allocation(int temps, frame *program) {
         RA_simplify(graph, simple_nodes, potential_spill);
         sort_nodes(graph, potential_spill);
 
-        spill = RA_select(graph, simple_nodes, potential_spill, actual_spill);
+        spill = RA_select(simple_nodes, potential_spill, actual_spill);
         //print_IR_tree(program);
         //print_graph(graph);
         count++;

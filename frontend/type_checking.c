@@ -105,7 +105,7 @@ data_type recurse_type(AST_node *node) {
             if (d_type != recurse_type(node->assign_expr.expression)) {
                 type_to_error("Trying to assign to a variable of a different type", node);
             }
-            return type;
+            return d_type;
         case A_LOGICAL_EXPR:
             d_type = recurse_type(node->binary_expr.left);
             d_type_right = recurse_type(node->binary_expr.right);
@@ -153,6 +153,7 @@ data_type recurse_type(AST_node *node) {
                     if(d_type != TYPE_BOOL){
                         type_to_error("Unary negation used on non-boolean", node);
                     }
+                    break;
                 case A_MINUS:
                     if(d_type != TYPE_INT){
                         type_to_error("Unary minus used on non-integer", node);

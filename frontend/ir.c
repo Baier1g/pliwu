@@ -86,6 +86,9 @@ enum IR_op_code AST_op_to_IR_op(binary_op op) {
             return IR_AND;
         case A_OR:
             return IR_OR;
+        default:
+            printf("ir.c::AST_op_to_IR_op: Unknown binary_op\n");
+            exit(-1);
     }
 }
 
@@ -142,15 +145,19 @@ IR_operand *create_operand(operand_type type, void *content) {
         case P_VARIABLE:
             op->variable_name = calloc(strlen((char *) content), sizeof(char));
             strcpy(op->variable_name, content);
+            break;
         case P_TEMP:
         case P_CONSTANT:
             op->constant = (int) content;
             break;
         case P_LABEL:
             op->dest = (segment *) content;
+            break;
         case P_FUNC_CALL:
             op->call = (frame *) content;
+            break;
     }
+    return op;
 }
 
 int recurse_IR_tree(AST_node *node) {
@@ -263,13 +270,19 @@ int recurse_IR_tree(AST_node *node) {
             name = node->var_decl.identifier->primary_expr.identifier_name;
             expr = NULL;
             if (node->var_decl.expr_stmt) {
-                int old_count = temp_counter;
+                //int old_count = temp_counter;
                 int new_count = recurse_IR_tree(node->var_decl.expr_stmt);
                 if (node->var_decl.expr_stmt->kind == A_PRIMARY_EXPR && node->var_decl.expr_stmt->primary_expr.type == TYPE_IDENTIFIER) {
-                    new_count = temp_counter++;
+                    id = create_operand(P_TEMP, temp_counter);
+                    temp_counter++;
+                    expr = create_operand(P_TEMP, new_count);
+                } else {
+                    id = create_operand(P_TEMP, temp_counter++);
+                    expr = create_operand(P_TEMP, new_count);
                 }
-                expr = create_operand(P_TEMP, new_count);
-                hash_map_insert(local_variables, name, expr);
+                op = create_op(IR_VAR_DECL, id, expr, NULL);
+                hash_map_insert(local_variables, name, id);
+                linked_list_append(current_segment->operations, op);
             } else {
                 id = create_operand(P_VARIABLE, name);
                 expr = create_operand(P_CONSTANT, 0);
@@ -416,6 +429,8 @@ int recurse_IR_tree(AST_node *node) {
                 case TYPE_BOOL:
                     val = node->primary_expr.bool_value;
                     break;
+                default:
+                    break;
             }
 
             IR_operand *tmp = create_operand(P_TEMP, temp_counter);
@@ -435,13 +450,9 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_CALL_EXPR:
             linked_list *ll = node->call_expr.arguments;
-            int on_register = 4;
             int on_register_params[4] = {0};
             
-            
             //push regs used in func (save)
-
-
             //params
             linked_list_node *lln = ll->tail;
             for (int i = ll->size; i > 0; i--) {
@@ -493,7 +504,6 @@ int recurse_IR_tree(AST_node *node) {
 }
 
 void print_operand(IR_operand *op) {
-    char *name = IR_op_code_to_string(op->type);
     switch (op->type) {
         case P_VARIABLE:
             printf("%s", op->variable_name);
@@ -591,11 +601,10 @@ void print_IR(segment *seg) {
     if (!seg) {
         return;
     }
-    linked_list *keys = get_keys(seg->table);
-    for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
-        var_info *vi = (var_info *) symbol_table_get(seg->table, (char *) lln->data);
-        //printf("variable: %s\n", (char *) lln->data);
-    }
+    //linked_list *keys = get_keys(seg->table);
+    /*for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
+        printf("variable: %s\n", (char *) lln->data);
+    }*/
     IR_operation *op;
     if (seg->name) {
         printf("%s:\n", seg->name);
@@ -737,6 +746,8 @@ void handle_def_set(IR_operation *op) {
                 linked_list_append(ll, op->arg1->constant);
             }
             break;
+        default:
+            break;
     }
 }
 
@@ -749,7 +760,6 @@ linked_list *copy_set(linked_list *ll_from) {
 }
 
 void liveness(frame *frm) {
-    IR_operation *op;
     segment *seg;
     int iteration = 0;
     linked_list *new_segments = linked_list_new();
@@ -808,7 +818,6 @@ void liveness(frame *frm) {
                 IR_operation *op = ((IR_operation *) lln->data);
                 int in_size = op->in->size;
                 int out_size = op->out->size;
-                IR_op_code code = op->op;
 
                 // In set work
                 //printf("In set work\n");

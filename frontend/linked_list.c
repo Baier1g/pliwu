@@ -124,6 +124,7 @@ linked_list_node *linked_list_put_next(linked_list *ll, linked_list_node *lln, v
     tmp->prev = lln;
     tmp->next = next;
     ll->size++;
+    return tmp;
 }
 
 void linked_list_copy_to(linked_list *source, linked_list *dest) {

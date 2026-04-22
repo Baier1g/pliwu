@@ -104,7 +104,7 @@ char *CG_IR_op_code_to_string(IR_op_code code) {
  * Performs static link traversal and leaves the address of the variable in question in rax
  */
 void CG_var_address(var_info *var) {
-    int depth = var->nesting_depth;
+    //int depth = var->nesting_depth;
     int var_offset = var->offset;
     if (var->nesting_depth == CG_frame_depth) {
         linked_list_append(CG_generated_code, "\tlea rax, [rbp]\n");

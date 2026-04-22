@@ -50,10 +50,10 @@ int main(int argc, char* argv[]) {
     int *count = calloc(1, sizeof(int));
 
     frame *root = create_IR_tree(count, prog);
+    print_IR_tree(root);
     
     RA_graph *graph = register_allocation(count[0], root);
     //print_graph(graph);
-    print_IR_tree(root);
     //codegen(linked_list_new(), root, graph);
 
 

@@ -48,6 +48,7 @@ AST_node *create_unary_node(int startchar, int line, kind node_kind, void *a) {
             break;
         case A_BLOCK_STMT:
             node->block.stmt_list = a;
+            break;
         case A_RETURN_STMT:
             node->return_stmt.expression = a;
             break;
@@ -82,6 +83,8 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
                     node->primary_expr.identifier_name = calloc(len + 1, sizeof(char));
                     //memset(node->primary_expr.identifier_name, 0, len + 1);
                     strncpy(node->primary_expr.identifier_name, b, len);
+                    break;
+                default:
                     break;
             }
             break;
@@ -248,7 +251,6 @@ void kill_tree(AST_node* node) {
         return;
     }
     kind type = node->kind;
-    linked_list_node *tmp;
     if (node->table) {
         destroy_symbol_table(node->table);
     }
@@ -414,6 +416,7 @@ void AST_printer(AST_node *node) {
             AST_printer(node->while_loop.condition);
             AST_printer(node->while_loop.block);
             indents--;
+            break;
         case A_PRINT_STMT:
             indents++;
             AST_printer(node->print_stmt.expression);

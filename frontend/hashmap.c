@@ -94,7 +94,6 @@ int hash_map_delete(hash_map *map, const char *key) {
                     map->size--;
                 } else {
                     prev->next = curr->next;
-                    curr->next == NULL;
                     linked_list_remove(map->keys, linked_list_find(map->keys, curr->key));
                     destroy_entry(curr);
                     map->size--;
@@ -122,7 +121,7 @@ void *hash_map_get(hash_map *map, const char *key) {
 
 int hash_function(hash_map *map, const char *key) {
     int sum = 0, factor = PRIME;
-    for (int i = 0; i < strlen(key); i++) {
+    for (int i = 0; i < (int) strlen(key); i++) {
         sum = ((sum % map->capacity) + (((int) key[i]) * factor) % map->capacity) % map->capacity;
         factor = ((factor % __INT16_MAX__) * (PRIME % __INT16_MAX__)) % __INT16_MAX__;
     }

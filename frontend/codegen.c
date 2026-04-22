@@ -41,6 +41,8 @@ char *op_code_to_string(op_code op) {
             return "jg";
         case JL:
             return "jl";
+        default:
+            return NULL;
     }
 }
 
@@ -141,7 +143,7 @@ void generate_code_helper(AST_node *node) {
     char *name = NULL;
     int i;
 
-    var_info *var, *func;
+    var_info *var;
     symbol_table *old_table;
 
     switch(node->kind) {
@@ -420,6 +422,8 @@ void generate_code_helper(AST_node *node) {
                     linked_list_append(generated_code,\
                         "\txor rdx, rdx\n\tpop rbx\n\tdiv rbx\n");
                     break;
+                default:
+                    printf("codegen.c::generate_code_helper: Wrong binary_op");
             }
             break;
         case A_UNARY_EXPR:
@@ -445,10 +449,10 @@ void generate_code_helper(AST_node *node) {
                     //printf("offset is at: %d for var %s in primary. We are at depth %d and var depth is %d\n", offset, node->primary_expr.identifier_name, frame_depth, depth);
                     //printf("identifer yo num bytes printed: %d\n", sprintf(op, "\tmov rax, qword[rbp-%d]\n", offset));
                     if (offset > 0) {
-                        if (var->nesting_depth == frame_depth) {
+                        if (depth == frame_depth) {
                             linked_list_append(generated_code, "\tlea rax, [rbp]\n");
                         } else {
-                            int depth_diff = frame_depth - var->nesting_depth;
+                            int depth_diff = frame_depth - depth;
                             linked_list_append(generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
                             depth_diff--;
                             //print_rax();
@@ -470,6 +474,8 @@ void generate_code_helper(AST_node *node) {
                 case TYPE_BOOL:
                     sprintf(op, "\tmov rax, %d\n", node->primary_expr.bool_value);
                     linked_list_append(generated_code, op);
+                    break;
+                default:
                     break;
             }       
             break;

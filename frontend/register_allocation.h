@@ -53,7 +53,7 @@ enum reg_color {
 RA_graph *create_graph(int);
 RA_node *create_graph_node(int);
 void connect_nodes(RA_graph *, int, int);
-void connect_graph(RA_graph *, frame *);
+void connect_graph(frame *);
 void print_graph(RA_graph *);
 void print_adj_matrix(RA_graph *);
 RA_graph *register_allocation(int, frame *);
