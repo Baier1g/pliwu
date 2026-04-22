@@ -205,12 +205,10 @@ int RA_simplify(RA_graph *graph, int *simple, int *spill) {
     int spill_count, simple_count;
     spill_count = simple_count = 0;
     for (int i = 1; i <= graph->num_nodes; i++) {
-        printf("simplifying node %d:\n", i);
         if (graph->nodes[i]->color) {
             continue;
         }
         if (graph->nodes[i]->num_edges < MAX_REG) {
-            printf("disconnecting node\n");
             RA_disconnect_node(graph, i);
             simple[simple_count++] = i;
         } else {
@@ -252,9 +250,6 @@ void sort_nodes(RA_graph *graph, int *arr) {
     return new_arr;
 }*/
 
-void dummy() {
-    return;
-}
 
 /*
  * colour selection part of register allocation.
@@ -264,26 +259,31 @@ int RA_select(int *simple, int *potential_spill, int *spill) {
     printf("In RA_select\n");
     int spill_count = 0;
     RA_node *node;
-
+    
     int i = 0;
     int curr = 0;
+    
     while ((curr = simple[i]) != 0) {
-        dummy();
-        printf("Dealing with simple temp %d at index %d:\n", curr, i);
+        //printf("Dealing with simple temp %d at index %d:\n", curr, i);
         node = glob_graph->nodes[curr];
-        int colors[MAX_REG + 1] = {0};
+        int colors[TOTAL_REG] = {0};
         int j = curr;
         /*for (int i = 0; node->connections[i] != 0; i++) {
-
         }*/
-       // Maybe check entirety of adj_matrix
+        
+        // Maybe check entirety of adj_matrix   
         while (j > 0) {
             if (glob_graph->adj_matrix[curr][j] == 1) {
-                printf("    %d, %d\n", curr, j);
+                //printf("    %d, %d\n", curr, j);
                 connect_nodes(glob_graph, curr, j);
                 colors[glob_graph->nodes[j]->color]++;
             }
             j--;
+        }
+
+        if (node->color > MAX_REG) {
+            i++;
+            continue;
         }
         int color = 0;
         for (int k = 1; k < MAX_REG + 1; k++) {
@@ -299,18 +299,19 @@ int RA_select(int *simple, int *potential_spill, int *spill) {
         }
         i++;
     }
+
+    
     //i = (temp_c - 1) - i;
     i = 0;
     while (i >= 0 && (curr = potential_spill[i]) != 0) {
-        dummy();
-        printf("Dealing with temp %d at index %d:\n", curr, i);
+        //printf("Dealing with temp %d at index %d:\n", curr, i);
         node = glob_graph->nodes[curr];
-        int colors[MAX_REG + 1] = {0};
+        int colors[TOTAL_REG] = {0};
         int j = glob_graph->num_nodes;
-        printf("    connecting:\n");
+        //printf("    connecting:\n");
         while (j > 0) {
             if (glob_graph->adj_matrix[curr][j] == 1) {
-                printf("    %d, %d\n", curr, j);
+                //printf("    %d, %d\n", curr, j);
                 connect_nodes(glob_graph, curr, j);
                 colors[glob_graph->nodes[j]->color]++;
             }
@@ -330,7 +331,6 @@ int RA_select(int *simple, int *potential_spill, int *spill) {
         }
         i++;
     }
-    dummy();
     printf("RA_select finished, spill count is: %d\n", spill_count);
     //print_graph(graph);
     //print_adj_matrix(graph);
