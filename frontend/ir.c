@@ -242,11 +242,13 @@ int recurse_IR_tree(AST_node *node) {
             // Add function parameters to local variables
             int param_counter = 0;
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
-                if (param_counter == 4) {
-                    break;
-                }
                 name = ((AST_node *) lln->data)->parameter.identifier->primary_expr.identifier_name;
-                printf("Temp %d is param: %s\n",temp_counter, name);
+                if (param_counter >= 4) {
+                    var_info *info = (var_info *) symbol_table_get(node->func_def.function_block->table, name);
+                    info->offset = -((param_counter - 1) * 8);
+                    hash_map_insert(local_variables, name, NULL);
+                    continue;
+                }
                 expr = create_operand(P_TEMP, temp_counter++);
                 id = create_operand(P_VARIABLE, name);
                 op = create_op(IR_VAR_DECL, expr, id, NULL);

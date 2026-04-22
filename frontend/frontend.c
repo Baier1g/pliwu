@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
     
     RA_graph *graph = register_allocation(count[0], root);
     //print_graph(graph);
-    //codegen(linked_list_new(), root, graph);
+    codegen(linked_list_new(), root, graph);
 
 
     /*printf("generating code\n");
