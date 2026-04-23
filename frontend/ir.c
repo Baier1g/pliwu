@@ -118,6 +118,8 @@ frame *create_frame() {
     tmp->name = NULL;
     tmp->nested_frames = linked_list_new();
     tmp->max_offset = 0;
+    tmp->func_params = 0;
+    tmp->regs_used = 0;
     return tmp;
 }
 
@@ -130,7 +132,7 @@ frame *create_named_frame(char *name) {
 }
 
 segment *create_segment(symbol_table *table) {
-    segment *tmp = malloc(sizeof(segment));
+    segment *tmp = (segment *) malloc(sizeof(segment));
     tmp->left = tmp->right = NULL;
     tmp->iteration = 0;
     tmp->table = table;
@@ -259,6 +261,7 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_segment->operations, op);
                 param_counter++;
             }
+            frm->func_params = param_counter;
 
             // Create segments of frame
             recurse_IR_tree(node->func_def.function_block);
@@ -449,43 +452,59 @@ int recurse_IR_tree(AST_node *node) {
         case A_CALL_EXPR:
             linked_list *ll = node->call_expr.arguments;
             int on_register_params[4] = {0};
-            
             //push regs used in func (save)
             //params
-            linked_list_node *lln = ll->tail;
-            for (int i = ll->size; i > 0; i--) {
-                IR_operand *arg = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
-                if (i<5) { //4, 3, 2, 1 to register
-                    op = create_op(IR_PARAM, create_operand(P_TEMP, temp_counter - 1), arg, NULL);
-                    on_register_params[i - 1] = arg->constant;
-                } else {
-                    op = create_op(IR_PARAM, arg, NULL, NULL);
+            linked_list_node *lln = ll->head;
+            for (int i = 0; i < 4; i++) {
+                if (i >= ll->size) { //4, 3, 2, 1 to register
+                    break;
                 }
+                IR_operand *arg = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
+                op = create_op(IR_PARAM, arg, NULL, NULL);
+                on_register_params[i] = arg->constant;
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
                 linked_list_append(current_segment->operations, op);
-                
+                print_operation(op);
+                lln = lln->next;
+            }
+            int i = ll->size - 4;
+            lln = ll->tail;
+            while (i > 0) {
+                op = create_op(IR_PARAM, create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data)), NULL, NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+                print_operation(op);
+                i--;
                 lln = lln->prev;
             }
-            
+
             //traverse function
             frame *called_func = (frame *) symbol_table_get(current_frame_table, node->call_expr.identifier->primary_expr.identifier_name);
             op = create_op(IR_CALL, create_operand(P_TEMP, temp_counter), create_operand(P_FUNC_CALL, called_func), NULL);
+            print_operation(op);
             op->in_frame = current_frame;
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
             //params pop
-            for (int i = 1; i <= ll->size; i++) {
-                if (i < 5){
-                    op = create_op(IR_POP_PARAM, create_operand(P_TEMP, on_register_params[i-1]), NULL, NULL);
-                } else {
-                    op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, ((ll->size - 4) * 8)), NULL, NULL);
-                    i = ll->size;
-                }
+            if (ll->size > 4) {
+                op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, ((ll->size - 4) * 8)), NULL, NULL);
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
                 linked_list_append(current_segment->operations, op);
+                print_operation(op);
+            }
+            for (int i = 3; i >= 0; i--) {
+                if (!on_register_params[i]) {
+                    continue;
+                }
+                op = create_op(IR_POP_PARAM, create_operand(P_TEMP, on_register_params[i]), NULL, NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+                print_operation(op);
             }
 
             //pop regs used in func (restore)

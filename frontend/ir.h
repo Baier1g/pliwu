@@ -68,6 +68,8 @@ frame *create_IR_tree(int *, AST_node *);
  */
 void print_IR_tree(frame *);
 
+void print_operation(IR_operation *);
+
 /*
  * Performs liveness analysis on the provided IR by populating the in- and out set of the each operation.
  */
@@ -143,6 +145,8 @@ struct frame {
     segment *segment, *last;
     linked_list *nested_frames;
     int max_offset;
+    int func_params;
+    int regs_used;
 };
 
 /*

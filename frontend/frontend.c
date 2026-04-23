@@ -53,8 +53,8 @@ int main(int argc, char* argv[]) {
     
     RA_graph *graph = register_allocation(count[0], root);
     //print_graph(graph);
-    print_IR_tree(root);
     codegen(linked_list_new(), root, graph);
+    //print_IR_tree(root);
 
 
     /*printf("generating code\n");

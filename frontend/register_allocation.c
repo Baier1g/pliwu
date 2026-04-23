@@ -94,6 +94,7 @@ void connect_graph(frame *frm) {
                 params_loaded = 1;
             } 
             IR_operation *op = (IR_operation *) lln->data;
+            //print_operation(op);
             if (op->arg1 && op->arg1->type == P_TEMP) {
                 int temp_num = op->arg1->constant;
                 if (!glob_graph->nodes[temp_num]->definition) {
@@ -361,7 +362,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
                 current_op->arg1->type = P_VARIABLE;
                 current_op->arg1->variable_name = var_name;
                 current_op->op = IR_VAR_DECL;
-                //printf("var_name: %s\n", var_name);
+                printf("var_name: %s\n", var_name);
                 //op1 = create_operand(P_VARIABLE, var_name);
                 //op2 = create_operand(P_TEMP, spilled_node);
                 //operation = create_op(IR_VAR_DECL, op1, op2, NULL);
@@ -458,7 +459,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
     //printf("in rewrite\n");
     while (!key_found) {
         if (!new_frames->size) {
-            printf("WE got here\n");
+            //printf("WE got here\n");
             // Spilled node is a temp, gotts fix that
             int temp_num = spilled_nodes[count];
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
@@ -470,6 +471,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             }
 
             var_info *var = create_var_info(-1);
+            var->kind = ID_VARIABLE;
             if (symbol_table_insert(seg->table, name, var)) {
                 printf("Alrady in there, cuh\n");
             }
@@ -507,7 +509,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
 RA_graph *register_allocation(int temps, frame *program) {
     int count = 0;
     temp_c = temps;
-    printf("in reg\n");
+    //printf("in reg\n");
     RA_graph *graph = create_graph(temp_c);
     printf("graph created\n");
     glob_graph = graph;
@@ -537,7 +539,7 @@ RA_graph *register_allocation(int temps, frame *program) {
     //printf("got utta there\n");
     count++;
     //printf("got outta* there\n");
-    print_graph(graph);
+    //print_graph(graph);
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
         printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
