@@ -117,6 +117,7 @@ frame *create_frame() {
     frame *tmp = (frame *) malloc(sizeof(frame));
     tmp->name = NULL;
     tmp->nested_frames = linked_list_new();
+    tmp->max_offset = 0;
     return tmp;
 }
 
@@ -274,15 +275,10 @@ int recurse_IR_tree(AST_node *node) {
             if (node->var_decl.expr_stmt) {
                 //int old_count = temp_counter;
                 int new_count = recurse_IR_tree(node->var_decl.expr_stmt);
-                if (node->var_decl.expr_stmt->kind == A_PRIMARY_EXPR && node->var_decl.expr_stmt->primary_expr.type == TYPE_IDENTIFIER) {
-                    id = create_operand(P_TEMP, temp_counter);
-                    temp_counter++;
-                    expr = create_operand(P_TEMP, new_count);
-                } else {
-                    id = create_operand(P_TEMP, temp_counter++);
-                    expr = create_operand(P_TEMP, new_count);
-                }
-                op = create_op(IR_VAR_DECL, id, expr, NULL);
+                id = create_operand(P_TEMP, temp_counter);
+                temp_counter++;
+                expr = create_operand(P_TEMP, new_count);
+                op = create_op(IR_ASSIGN, id, expr, NULL);
                 hash_map_insert(local_variables, name, id);
                 linked_list_append(current_segment->operations, op);
             } else {

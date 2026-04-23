@@ -118,8 +118,9 @@ char *CG_IR_op_code_to_string(IR_op_code code) {
 void CG_var_address(var_info *var) {
     //int depth = var->nesting_depth;
     int var_offset = var->offset;
-    if (var->nesting_depth == CG_frame_depth) {
-        linked_list_append(CG_generated_code, "\tlea rax, [rbp]\n");
+    int in_frame = 0;
+    if (var->nesting_depth == CG_frame_depth + 1) {
+        in_frame = 1;
     } else {
         int depth_diff = CG_frame_depth - var->nesting_depth;
         linked_list_append(CG_generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
@@ -133,7 +134,11 @@ void CG_var_address(var_info *var) {
     char *buffer = (char *) calloc(128, sizeof(char));
     if (var->kind == ID_VARIABLE) {
         // Local variable
-        sprintf(buffer, "\tmov rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
+        if (in_frame) {
+            sprintf(buffer, "\tmov rax, qword[rbp-%d]\t\t; Load the value of a variable into rax\n", var_offset);
+        } else {
+            sprintf(buffer, "\tmov rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
+        }
     } else {
         // Function parameter
         var_offset = -(var_offset);
@@ -185,15 +190,18 @@ void recurse_segment(segment *seg, RA_graph *graph) {
         IR_operation *operation = (IR_operation *) lln->data;
         IR_operation *prev;
         IR_op_code code = operation->op;
+        //printf("op_code: %s", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
-                name = operation->arg1->variable_name;
-                label = (char *) calloc(128, sizeof(char));
-                info = (var_info *) symbol_table_get(seg->table, name);
-                if (info->nesting_depth == CG_frame_depth) {
-                    //sprintf(label, "\tmov [rsp+%d]")
+                if (operation->arg1->type == P_TEMP) {
+                    continue;
                 }
+                name = operation->arg1->variable_name;
+                label = (char *) calloc(256, sizeof(char));
+                info = (var_info *) symbol_table_get(seg->table, name);
+                sprintf(label, "\tmov [rsp-%d], %d\t\t\t\t; Assign constant to variable %s\n", info->offset, operation->arg2->constant, name);
+                linked_list_append(CG_generated_code, label);
                 break;
             case IR_ASSIGN:
                 name = (char *) calloc(128, sizeof(char));
@@ -322,10 +330,13 @@ void CG_find_offset(segment *seg) {
     if (!seg) {
         return;
     }
+    printf("got\n");
     if (!seg->operations->size) {
         return;
     }
+    printf("yurr\n");
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
+        printf("Offset: %d\n", CG_offset);
         IR_operation *op = (IR_operation *) lln->data;
         if (op->op == IR_GOTO) {
             return;
@@ -335,6 +346,9 @@ void CG_find_offset(segment *seg) {
         }
         char *name = op->arg1->variable_name;
         var_info *info = (var_info *) symbol_table_get(seg->table, name);
+        if (info->kind == ID_FUNC_PARAM) {
+            continue;
+        }
         info->offset = 8 * CG_offset;
         CG_offset++;
     }
@@ -343,17 +357,22 @@ void CG_find_offset(segment *seg) {
     return;
 }
 
+void prologue(frame *frm) {
+    char *str = (char *) calloc(70, sizeof(char));
+    linked_list_append(CG_generated_code, frm->name);
+    linked_list_append(CG_generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n");
+    sprintf(str, "\tadd rsp, %d\t\t\t\t\t; Add max frame offset to stack pointer\n", frm->max_offset);
+    linked_list_append(CG_generated_code, str);
+}
+
 void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     if (program->name) {
         if (strncmp("main", program->name, 4) == 0) {
-            linked_list_append(CG_generated_code, program->name);
-            linked_list_append(CG_generated_code, ":\n");
-            recurse_segment(program->segment, graph);
-        } else {
-            linked_list_append(CG_generated_code, program->name);
-            linked_list_append(CG_generated_code, ":\n\tpush rbp\t\t\t\t\t; Save the old base pointer\n\tmov rbp, rsp\t\t\t\t; Set up base pointer for new stack frame\n");
-            recurse_segment(program->segment, graph);
+            //linked_list_append(CG_generated_code, \
+            //    "global _start\n_start:\n");        
         }
+        prologue(program);
+        recurse_segment(program->segment, graph);
     } else {
         CG_generated_code = module_level;
         recurse_segment(program->segment, graph);
@@ -363,6 +382,9 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
 
     CG_frame_depth++;
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
+        CG_offset = 1;
+        CG_find_offset(((frame *) lln->data)->segment);
+        ((frame *) lln->data)->max_offset = CG_offset * 8;
         code_emit(emitted_code, (frame *) lln->data, graph);
     }
     CG_frame_depth--;
@@ -372,9 +394,9 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
 
 void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     module_level = linked_list_new();
-    linked_list_append(module_level, \
-                "global _start\n_start:\n\tmov rbp, rsp\n");
     CG_generated_code = ll;
+    linked_list_append(module_level, \
+                "global _start\n_start:\n"); 
     IR_create_print_macro();
     linked_list_append(CG_generated_code, \
                 "section .bss\n\toutput resb 256\n");
@@ -383,8 +405,6 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     IR_create_print_int();
 
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
-        int offset = 1;
-        CG_find_offset((frame *) lln->data);
         code_emit(ll, (frame *) lln->data, graph);
     }
     linked_list_append(module_level, "\tcall main\n\tmov rax, 1\n\tsyscall 0x80\n\n");

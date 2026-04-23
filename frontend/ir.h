@@ -142,6 +142,7 @@ struct frame {
     hash_map *locals;
     segment *segment, *last;
     linked_list *nested_frames;
+    int max_offset;
 };
 
 /*

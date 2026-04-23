@@ -5,7 +5,7 @@ func main(int h, int i, int j, int k, int l, int m, int n) {
     int a1 = i;
     int bcc = j;
     int a = bcc;
-    a = ((7+5) * (7 - 3)) * ((50 - 20) * (2 + 4));
+    a = ((7+5) * (7 - 3)) * ((50 - 20) * (2 + 4)) + bcc - a1;
     j = 700;
     return;
 }

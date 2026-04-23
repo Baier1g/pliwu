@@ -360,6 +360,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
             if (!defined) {
                 current_op->arg1->type = P_VARIABLE;
                 current_op->arg1->variable_name = var_name;
+                current_op->op = IR_VAR_DECL;
                 //printf("var_name: %s\n", var_name);
                 //op1 = create_operand(P_VARIABLE, var_name);
                 //op2 = create_operand(P_TEMP, spilled_node);
