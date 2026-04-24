@@ -143,14 +143,14 @@ void CG_var_address(var_info *var) {
     if (var->kind == ID_VARIABLE) {
         // Local variable
         if (in_frame) {
-            sprintf(buffer, "\tmov rax, qword[rbp-%d]\t\t; Load the value of a variable into rax\n", var_offset);
+            sprintf(buffer, "\tlea rax, qword[rbp-%d]\t\t; Load the value of a variable into rax\n", var_offset);
         } else {
-            sprintf(buffer, "\tmov rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
+            sprintf(buffer, "\tlea rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
         }
     } else {
         // Function parameter
         var_offset = -(var_offset);
-        sprintf(buffer, "\tmov rax, qword[rbp+%d]\t\t; Load function argument from above base pointer\n", var_offset);
+        sprintf(buffer, "\tlea rax, qword[rbp+%d]\t\t; Load function argument from above base pointer\n", var_offset);
     }
     linked_list_append(CG_generated_code, buffer);
 }
@@ -215,7 +215,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s", IR_op_code_to_string(code));
@@ -242,7 +242,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     } else {
                         var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
                         CG_var_address(var);
-                        sprintf(name, "\tmov %s, rax\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                        sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
                     }
                 } else {
                     char *tmp = operation->arg1->variable_name;
@@ -265,14 +265,21 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         linked_list_append(CG_generated_code, name);
                         name = (char *) calloc(128, sizeof(char));
                     }
-                    if (operation->arg1 == P_TEMP) {
+                    if (operation->arg1->type == P_TEMP) {
                         sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
                     } else {
                         var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
-                        sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
+                        CG_var_address(info);
+                        sprintf(name, "\tmov %s, qword[rax]\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(param_count + 11));
                     }
                 } else {
-                    sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    if (operation->arg1->type == P_TEMP) {
+                        sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    } else {
+                        var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
+                        CG_var_address(info);
+                        sprintf(name, "\tmov rax, qword[rax]\t\t\t\t; Load value of variable into rax\n\tpush rax\t\t\t\t\t; Push argument to the stack");
+                    }
                 }
                 linked_list_append(CG_generated_code, name);
                 param_count++;
@@ -369,7 +376,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 if (operation->arg1->type == P_VARIABLE) {
                     var_info *info = symbol_table_get(operation->in_seg->table, operation->arg1->variable_name);
                     CG_var_address(info);
-                    sprintf(name, "\tmov rdi, rax\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
+                    sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
                 } else {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
@@ -553,7 +560,7 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     module_level = linked_list_new();
     CG_generated_code = ll;
     linked_list_append(module_level, \
-                "global _start\n_start:\n"); 
+                "global _start\n_start:\n\tmov rbp, rsp\n");
     IR_create_print_macro();
     linked_list_append(CG_generated_code, \
                 "section .bss\n\toutput resb 256\n");
@@ -562,6 +569,21 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     IR_create_print_int();
 
     CG_regs_used(program, graph);
+
+    /**
+     * THIS ONLY WORKS FOR ONE MODULE
+     * Ideally, the global scope holds all global variables from a single basepointer
+     */
+    CG_offset = ((frame *) program->nested_frames->head->data)->regs_used;
+    if (CG_offset == 0) {
+        CG_offset = 1;
+    }
+    CG_find_offset(((frame *) program->nested_frames->head->data)->segment);
+    ((frame *) program->nested_frames->head->data)->max_offset = CG_offset * 8;
+    char *stack_mov = (char *) calloc(128, sizeof(char));
+    sprintf(stack_mov, "\tsub rsp, %d\t\t\t\t; Move the stackpointer beyond the global variables\n", ((frame *) program->nested_frames->head->data)->max_offset);
+    linked_list_append(module_level, stack_mov);
+
     CG_frame_depth++;
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
         code_emit(ll, (frame *) lln->data, graph);

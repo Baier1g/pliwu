@@ -169,6 +169,9 @@ void recurse_scope(AST_node *node) {
                     to_error("Tried to access a function when variable was expected.", node);
                     break;
                 }
+                if (a->nesting_depth < nesting_depth) {
+                    a->escaping = 1;
+                }
             }
             break;
         case A_CALL_EXPR:
