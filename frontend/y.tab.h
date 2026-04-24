@@ -76,11 +76,13 @@ extern int yydebug;
     T_INT = 277,                   /* T_INT  */
     T_BOOL = 278,                  /* T_BOOL  */
     T_CHAR = 279,                  /* T_CHAR  */
-    T_INT_TYPE = 280,              /* T_INT_TYPE  */
-    T_BOOL_TYPE = 281,             /* T_BOOL_TYPE  */
-    T_CHAR_TYPE = 282,             /* T_CHAR_TYPE  */
-    T_VOID_TYPE = 283,             /* T_VOID_TYPE  */
-    T_IDENTIFIER = 284             /* T_IDENTIFIER  */
+    T_STRING = 280,                /* T_STRING  */
+    T_INT_TYPE = 281,              /* T_INT_TYPE  */
+    T_BOOL_TYPE = 282,             /* T_BOOL_TYPE  */
+    T_CHAR_TYPE = 283,             /* T_CHAR_TYPE  */
+    T_VOID_TYPE = 284,             /* T_VOID_TYPE  */
+    T_STRING_TYPE = 285,           /* T_STRING_TYPE  */
+    T_IDENTIFIER = 286             /* T_IDENTIFIER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -111,11 +113,13 @@ extern int yydebug;
 #define T_INT 277
 #define T_BOOL 278
 #define T_CHAR 279
-#define T_INT_TYPE 280
-#define T_BOOL_TYPE 281
-#define T_CHAR_TYPE 282
-#define T_VOID_TYPE 283
-#define T_IDENTIFIER 284
+#define T_STRING 280
+#define T_INT_TYPE 281
+#define T_BOOL_TYPE 282
+#define T_CHAR_TYPE 283
+#define T_VOID_TYPE 284
+#define T_STRING_TYPE 285
+#define T_IDENTIFIER 286
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -130,7 +134,7 @@ union YYSTYPE
     char cval;
     char* sval;
 
-#line 134 "y.tab.h"
+#line 138 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

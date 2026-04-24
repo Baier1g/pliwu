@@ -59,10 +59,12 @@
 
 %token <ival> T_INT T_BOOL
 %token <cval> T_CHAR
+%token <sval> T_STRING
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
 %token T_VOID_TYPE
+%token T_STRING_TYPE
 %token <sval> T_IDENTIFIER
 
 %type <nval> identifier primary postfixExpression unaryExpression castExpression
@@ -244,6 +246,7 @@ primary:
     T_INT           {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_INT, (void *) yylval.ival); /*printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);*/}
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
+|   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.sval, yylen); free(yylval.sval); printf("String literal: \"%s\" of length %d", $$->primary_expr.string.value, yylen);}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
 |   T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in grouping on line %d", line_number); yyerrok;}
 |   identifier      {$$ = $1;}
@@ -277,7 +280,7 @@ AST_node *run_bison(const char* filename) {
     return prog;
 }
 
-/*int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     FILE *fp;
     char *filename = argv[1];
 
@@ -291,6 +294,6 @@ AST_node *run_bison(const char* filename) {
     printf("\nNumber of characters in the file - %ld\n", current_character);
     AST_printer(prog);
     return 0;
-}*/
+}
 
 /* EPILOGUE */

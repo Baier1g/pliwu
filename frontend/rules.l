@@ -3,7 +3,7 @@
     //#include <string.h>
     #include "y.tab.h"
     #define NUM_KEYWORDS 6
-    #define NUM_TYPES    3
+    #define NUM_TYPES    4
     #define NUM_DIGRAPHS 7
 
     extern unsigned short line_number;
@@ -14,8 +14,8 @@
     const char keywords[NUM_KEYWORDS][10] = {"if", "else", "while", "return", "func", "print"};
     const int  key_tokens[NUM_KEYWORDS]   = {T_IF, T_ELSE, T_WHILE, T_RETURN, T_FUNC, T_PRINT};
 
-    const char types[NUM_TYPES][10]   = {"int", "char", "bool"};
-    const int  token_types[NUM_TYPES] = {T_INT_TYPE, T_CHAR_TYPE, T_BOOL_TYPE};
+    const char types[NUM_TYPES][10]   = {"int", "char", "bool", "string"};
+    const int  token_types[NUM_TYPES] = {T_INT_TYPE, T_CHAR_TYPE, T_BOOL_TYPE, T_STRING_TYPE};
 
     const char digraphs[NUM_DIGRAPHS][3] = {"->", "&&", "||", "<=", ">=", "==", "!="};
     const int  digraph_tokens[NUM_DIGRAPHS] = {T_ARROW, T_AND, T_OR, T_LESS_EQ, T_GREATER_EQ, T_EQUALS, T_NEQUALS};
@@ -40,10 +40,11 @@ FLOAT               {INTEGER}\.{INTEGER}
 IDENTIFIER          [a-zA-Z]([_a-zA-Z0-9]*)
 KEYWORD             if|else|while|func|return|print
 BOOL_VALUE          true|false
-TYPE                int|char|bool|void
+TYPE                int|char|bool|void|string
 SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
 OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
-CHARACTER           (.|\n)
+CHARACTER           (.|"\n")
+CHARACTERS          {CHARACTER}*\"
 WHITESPACES         [\t\r ]+
 ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
@@ -77,11 +78,16 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     return YYerror;
 }
 
-<STR>{CHARACTER} {
+<STR>{CHARACTERS} {
     //printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
-    yylval.cval = yytext[0];
-    return T_CHAR;
+    if (yyleng != 1) {
+        strncpy(yylval.sval, yytext, yyleng);
+        return T_STRING;
+    } else {
+        yylval.cval = yytext[0];
+        return T_CHAR;
+    }
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {

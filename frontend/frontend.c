@@ -12,7 +12,7 @@
 
 extern AST_node *run_bison(const char*);
 
-int main(int argc, char* argv[]) {
+/*int main(int argc, char* argv[]) {
     FILE *fp;
 
     AST_node *prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());
@@ -54,7 +54,6 @@ int main(int argc, char* argv[]) {
     RA_graph *graph = register_allocation(count[0], root);
     print_IR_tree(root);
     //print_graph(graph);
-
     linked_list *gen_asm = linked_list_new();
     codegen(gen_asm, root, graph);
 
@@ -70,4 +69,4 @@ int main(int argc, char* argv[]) {
     linked_list_delete(errors);
     kill_tree(prog);
     return 0;
-}
+}*/

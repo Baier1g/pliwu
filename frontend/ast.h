@@ -27,7 +27,7 @@ typedef enum {
     A_RELATIONAL_EXPR,   // expression, operator, expression
     A_ARITHMETIC_EXPR, // expression, operator, expression
     A_UNARY_EXPR,      // operator, expression
-    A_PRIMARY_EXPR,    // type, literal
+    A_PRIMARY_EXPR,    // type, (length for strings) ,literal
     A_CALL_EXPR,       // identifier, argument*
 } kind;
 
@@ -58,6 +58,7 @@ typedef enum {
     TYPE_CHAR,
     TYPE_BOOL,
     TYPE_IDENTIFIER,
+    TYPE_STRING,
 } data_type;
 
 typedef struct {
@@ -135,6 +136,7 @@ AST_node *create_binary_node(int, int, kind, void *, void *);
  * void *c: The third content of this node.
  *
  * The kinds of ternary node:
+ * Primary expression (string) (a: data_type, b: literal value, c: length)
  * If statement (a: condition, b: thenbranch, c: (optional) elsebranch)
  * Arithmetic expression (a: left operand, b: operator, c: right operand)
  * Logical expression (a: left operand, b: operator, c: right operand)
@@ -256,6 +258,10 @@ struct AST_node {
                 char char_value;
                 short bool_value;
                 char* identifier_name;
+                struct {
+                    int length;
+                    char *value;
+                } string;
             };
         } primary_expr;
 

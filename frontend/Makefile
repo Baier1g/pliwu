@@ -30,6 +30,11 @@ mem.%:
 	$(CC) $(WFLAGS) $(MEMFLAG) -o $(OUT) $(FILES)
 	./grammar.out tests/$*.oc
 
+flex.%:
+	flex rules.l
+	bison -vdy grammar.y
+	y.output tests/$*.oc
+
 .PHONY: clean
 clean:
 	rm -f out *.o *.out *.tab.c y.output grammar.out lex.yy.c gen_asm.asm

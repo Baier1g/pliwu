@@ -141,6 +141,11 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
             node->var_decl.identifier = b;
             node->var_decl.expr_stmt = c;
             break;
+        case A_PRIMARY_EXPR:
+            node->primary_expr.type = (data_type) a;
+            node->primary_expr.string.value = (char *) calloc((int) c, sizeof(char));
+            strncpy(node->primary_expr.string.value, (char *) b, c);
+            node->primary_expr.string.length = (int) c;
         default:
             printf("ast.c::create_ternary_node: Unexpected kind %d\n", node_kind);
             break;
