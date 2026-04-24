@@ -55,10 +55,10 @@ void IR_create_print_macro(void) {
 void IR_create_print_int(void) {
     // Print prelude
     linked_list_append(CG_generated_code, \
-    "print_int:\n\tpush rbp\n\tmov rbp, rsp\n\tpush rdi\n\tmov rdi, output\n\tlea r10, [rsp-1]\n\txor rcx, rcx\n");
+    "print_int:\n\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tpush r9\n\tpush r10\n\tpush rdi\n\tmov rdi, output\n\tlea r10, [rsp-1]\n\txor rcx, rcx\n");
     // prelude p2: newline and setup
     linked_list_append(CG_generated_code, \
-    "\tmov byte[r10], 0xa\n\tdec r10\n\tinc rcx\n\tmov rax, qword[rbp-8]\n\tmov r8, 10\n");
+    "\tmov byte[r10], 0xa\n\tdec r10\n\tinc rcx\n\tmov rax, qword[rbp-32]\n\tmov r8, 10\n");
     // Processing the integer
     linked_list_append(CG_generated_code, \
     "L1:\n\txor rdx, rdx\n\tdiv r8\n\tmov r9b, [table+rdx]\n\tmov [r10], r9b\n\tdec r10\n\tinc rcx\n\ttest rax, rax\n\tjnz L1\n");
@@ -67,7 +67,7 @@ void IR_create_print_int(void) {
     "\tlea rsi, [r10+1]\n\tcld\n_L1:\n\tmovsb\n\tcmp rsi, rsp\n\tjne _L1\n\tpop rdi\n\tsys_write 1, output, rcx\n");
     // Epilogue
     linked_list_append(CG_generated_code, \
-    "\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
+    "\tpop r10\n\tpop r9\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
 }
 
 char *IR_decide_branching(IR_operation *operation) {
@@ -182,6 +182,24 @@ CG_operand *CG_create_operand(CG_operand_type type, CG_operand_mode mode, void *
     return tmp;
 }
 
+void CG_create_static_link(IR_operation *operation) {
+    var_info *var = (var_info *) symbol_table_get(operation->in_seg->table, operation->arg2->call->name);
+    //printf("Calling %s, we are at frame depth %d and the called function has depth %d\n", node->call_expr.identifier->primary_expr.identifier_name, frame_depth, var->nesting_depth);
+    if (CG_frame_depth == var->nesting_depth) {
+        linked_list_append(CG_generated_code, "\tlea rax, [rbp]\t\t\t; Calling a nested function, static link is calling functions rbp\n");
+    } else {
+        linked_list_append(CG_generated_code, "\tlea rax, [rbp+16]\t\t\t; Load the address containing the address of the static link for link traversal\n\tmov rax, qword[rax]\t\t\t; Dereference rax to get the address of the static link\n");
+        //print_rax();
+        int depth_diff = (CG_frame_depth - 1) - var->nesting_depth;
+        while (depth_diff > 0) {                    //rax + 16
+            linked_list_append(CG_generated_code, "\tlea rax, [rax+16]\n\tmov rax, qword[rax]\t\t\t\t; Traversing static link\n");
+            //print_rax();
+            depth_diff--;
+        }
+    }
+    linked_list_append(CG_generated_code, "\tpush rax\t\t\t\t; Pushing static link to stack\n");
+}
+
 void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
@@ -197,6 +215,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
+        print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s", IR_op_code_to_string(code));
@@ -209,7 +228,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 name = operation->arg1->variable_name;
                 label = (char *) calloc(256, sizeof(char));
                 info = (var_info *) symbol_table_get(seg->table, name);
-                sprintf(label, "\tmov [rbp-%d], %d\t\t\t\t; Assign constant to variable %s\n", info->offset, operation->arg2->constant, name);
+                sprintf(label, "\tmov qword[rbp-%d], %s\t\t\t\t; Assign value to variable %s\n", info->offset, CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), name);
                 linked_list_append(CG_generated_code, label);
                 break;
             case IR_ASSIGN:
@@ -223,7 +242,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     } else {
                         var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
                         CG_var_address(var);
-                        sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                        sprintf(name, "\tmov %s, rax\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
                     }
                 } else {
                     char *tmp = operation->arg1->variable_name;
@@ -246,7 +265,12 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         linked_list_append(CG_generated_code, name);
                         name = (char *) calloc(128, sizeof(char));
                     }
-                    sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
+                    if (operation->arg1 == P_TEMP) {
+                        sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
+                    } else {
+                        var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
+                        sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
+                    }
                 } else {
                     sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
@@ -334,17 +358,40 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, (char *) operation->arg3->dest->name);
                 break;
             case IR_PRINT:
+                int counter = 0;
+                name = (char *) calloc(128, sizeof(char));
+                while (counter < CG_current_frame->func_params && counter < 4) {
+                    sprintf(name, "\tpush %s\t\t\t\t; Push function parameter %s to the stack (caller save)\n", CG_reg_color_to_string(counter + 11), CG_reg_color_to_string(counter + 11));
+                    linked_list_append(CG_generated_code, name);
+                    name = (char *) calloc(128, sizeof(char));
+                    counter++;
+                }
+                if (operation->arg1->type == P_VARIABLE) {
+                    var_info *info = symbol_table_get(operation->in_seg->table, operation->arg1->variable_name);
+                    CG_var_address(info);
+                    sprintf(name, "\tmov rdi, rax\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
+                } else {
+                    sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                }
+                linked_list_append(CG_generated_code, name);
+                while (counter > 0) {
+                    name = (char *) calloc(128, sizeof(char));
+                    sprintf(name, "\n\tpop %s\t\t\t\t; Restore function parameter %s", CG_reg_color_to_string(counter + 10), CG_reg_color_to_string(counter + 10));
+                    linked_list_append(CG_generated_code, name);
+                    counter--;
+                }
                 break;
             case IR_CALL:
                 name = (char *) calloc(128, sizeof(char));
                 int i = param_count;
-                print_operation(operation);
+                //print_operation(operation);
                 while (i < CG_current_frame->func_params && i < 4) {
                     sprintf(name, "\tpush %s\t\t\t\t; Push function parameter %s to the stack (caller save)\n", CG_reg_color_to_string(i + 11), CG_reg_color_to_string(i + 11));
                     linked_list_append(CG_generated_code, name);
                     name = (char *) calloc(128, sizeof(char));
                     i++;
                 }
+                CG_create_static_link(operation);
                 sprintf(name, "\tcall %s\t\t\t\t; Call function\n", operation->arg2->call->name);
                 linked_list_append(CG_generated_code, name);
                 while (i > param_count) {
@@ -364,7 +411,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     linked_list_append(CG_generated_code, name);
                 }
                 name = calloc(128, sizeof(char));
-                sprintf(name, "\tsub rsp, %d\n", CG_current_frame->max_offset - (CG_current_frame->regs_used * 8));
+                sprintf(name, "\tadd rsp, %d\n", CG_current_frame->max_offset - (CG_current_frame->regs_used * 8));
                 linked_list_append(CG_generated_code, name);
                 for (int i = 1; i <= CG_current_frame->regs_used; i++) {
                     name = (char *) calloc(128, sizeof(char));
@@ -469,7 +516,7 @@ void prologue(frame *frm) {
         sprintf(push, "\tpush %s\n", CG_reg_color_to_string(i));
         linked_list_append(CG_generated_code, push);
     }
-    sprintf(str, "\tadd rsp, %d\t\t\t\t\t; Add max frame offset to stack pointer\n", frm->max_offset - (frm->regs_used * 8));
+    sprintf(str, "\tsub rsp, %d\t\t\t\t\t; Add max frame offset to stack pointer\n", frm->max_offset - (frm->regs_used * 8));
     linked_list_append(CG_generated_code, str);
 }
 
@@ -521,12 +568,9 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     }
     CG_frame_depth--;
 
-    linked_list_append(module_level, "\tcall main\n\tmov rax, 1\n\tsyscall 0x80\n\n");
+    linked_list_append(module_level, "\tmov rax, 1\n\txor rbx, rbx\n\tint 0x80\n\n");
     ll->tail->next = module_level->head;
     module_level->head->prev = ll->tail;
     ll->size += module_level->size;
-    for (linked_list_node *lln = ll->head; lln != NULL; lln = lln->next) {
-        printf("%s", (char *) lln->data);
-    }
     return;
 }

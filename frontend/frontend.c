@@ -52,21 +52,21 @@ int main(int argc, char* argv[]) {
     frame *root = create_IR_tree(count, prog);
     
     RA_graph *graph = register_allocation(count[0], root);
+    print_IR_tree(root);
     //print_graph(graph);
-    codegen(linked_list_new(), root, graph);
-    //print_IR_tree(root);
+
+    linked_list *gen_asm = linked_list_new();
+    codegen(gen_asm, root, graph);
 
 
-    /*printf("generating code\n");
-    linked_list *ass = linked_list_new();
-    generate_code(ass, prog);
+    printf("generating code\n");
     fp = fopen("gen_asm.asm", "w");
-    for (linked_list_node *n = ass->head; n != NULL; n = n->next) {
+    for (linked_list_node *n = gen_asm->head; n != NULL; n = n->next) {
         char *tmp = (char*) n->data;
         fwrite(tmp, strlen(tmp), 1, fp);
     }
-    linked_list_delete(ass);
-    fclose(fp);*/
+    linked_list_delete(gen_asm);
+    fclose(fp);
     linked_list_delete(errors);
     kill_tree(prog);
     return 0;

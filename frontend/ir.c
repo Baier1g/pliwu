@@ -168,7 +168,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     char *name;
@@ -249,8 +249,6 @@ int recurse_IR_tree(AST_node *node) {
                 if (param_counter >= 4) {
                     var_info *info = (var_info *) symbol_table_get(node->func_def.function_block->table, name);
                     info->offset = -((param_counter - 1) * 8);
-                    hash_map_insert(local_variables, name, NULL);
-                    continue;
                 }
                 expr = create_operand(P_TEMP, temp_counter++);
                 id = create_operand(P_VARIABLE, name);
@@ -304,34 +302,46 @@ int recurse_IR_tree(AST_node *node) {
             condition = recurse_IR_tree(node->if_stmt.condition);
             current_segment->left = create_segment(node->if_stmt.if_branch->table);
             linked_list_append(current_segment->left->pred, current_segment);
-            current_segment->right = create_segment(node->if_stmt.else_branch->table);
-            current_segment->right->name = IR_generate_label("else", if_c);
-            linked_list_append(current_segment->right->pred, current_segment);
+            printf("We alive\n");
+            if (current_segment->right) {
+                current_segment->right = create_segment(node->if_stmt.else_branch->table);
+                current_segment->right->name = IR_generate_label("else", if_c);
+                linked_list_append(current_segment->right->pred, current_segment);
+            }
+            seg = create_segment(node->table);
+            seg->name = IR_generate_label("end_if", if_c);
             
             IR_operand *if_branch = create_operand(P_LABEL, current_segment->left);
-            IR_operand *else_branch = create_operand(P_LABEL, current_segment->right);
+            IR_operand *else_branch;
+            if (current_segment->right) {
+                else_branch = create_operand(P_LABEL, current_segment->right);
+            } else {
+                else_branch = create_operand(P_LABEL, seg);
+            }
             op = create_op(IR_IF, create_operand(P_TEMP, condition), if_branch, else_branch);
             op->in_frame = current_frame;
             op->in_seg = current_segment;
 
             linked_list_append(current_segment->operations, op);
-            seg = create_segment(node->table);
-            seg->name = IR_generate_label("end_if", if_c);
             linked_list_append(seg->pred, current_segment->left);
-            linked_list_append(seg->pred, current_segment->right);
+            if (current_segment->right) {
+                linked_list_append(seg->pred, current_segment->right);
+            }
             old_segment = current_segment;
 
             current_segment = current_segment->left;
             recurse_IR_tree(node->if_stmt.if_branch);
             current_segment->left = seg;
-            op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
-            op->in_frame = current_frame;
-            op->in_seg = current_segment;
-            linked_list_append(current_segment->operations, op);
+            if (current_segment->right) {
+                op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
 
-            current_segment = old_segment->right;
-            recurse_IR_tree(node->if_stmt.else_branch);
-            current_segment->left = seg;
+                current_segment = old_segment->right;
+                recurse_IR_tree(node->if_stmt.else_branch);
+                current_segment->left = seg;
+            }
             current_segment = seg;
             break;
         case A_WHILE_LOOP:
@@ -393,6 +403,7 @@ int recurse_IR_tree(AST_node *node) {
             name = node->assign_expr.identifier->primary_expr.identifier_name;
             if (hash_map_contains(local_variables, name)) {
                 id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(local_variables, name))->constant);
+                printf("%s\n", name);
                 op = create_op(IR_ASSIGN, id, expr, NULL);
             } else {
                 id = create_operand(P_VARIABLE, name);
@@ -408,7 +419,7 @@ int recurse_IR_tree(AST_node *node) {
             IR_operand *left = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.left));
             IR_operand *right = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.right));
             enum IR_op_code op_code = AST_op_to_IR_op(node->binary_expr.op);
-
+            
             op = create_op(op_code, create_operand(P_TEMP, temp_counter), left, right);
             op->in_frame = current_frame;
             op->in_seg = current_segment;
@@ -438,6 +449,7 @@ int recurse_IR_tree(AST_node *node) {
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
                 if (hash_map_contains(local_variables, name)) {
+                    printf("Prim done\n");
                     return ((IR_operand *) hash_map_get(local_variables, name))->constant; 
                 }
                 op = create_op(IR_ASSIGN, tmp, create_operand(P_VARIABLE, name), NULL);
@@ -447,6 +459,7 @@ int recurse_IR_tree(AST_node *node) {
             op->in_frame = current_frame;
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
+            printf("Prim done\n");
             return temp_counter++;
             break;
         case A_CALL_EXPR:
@@ -783,29 +796,29 @@ void liveness(frame *frm) {
     int change = 1;
 
     while (change) {
-        //printf("Iteration loop\n");
+        printf("Iteration loop\n");
         linked_list_append(new_segments, frm->last);
         change = 0;
         while (new_segments->size != 0) {
-            //printf("Segment loop\n");
+            printf("Segment loop\n");
             seg = (segment *) linked_list_pop_front(new_segments);
             if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op == IR_WHILE && seg->left->iteration == iteration) {
                 segment *tmp = seg;
-                //printf("tmp: %d, seg->left: %d\n", tmp, seg->left);
+                printf("tmp: %d, seg->left: %d\n", tmp, seg->left);
                 seg = seg->left;
                 while (tmp != seg->left) {
                     if (seg->operations->size == 0) {
                         seg = seg->left;
                         continue;
                     }
-                    //printf("tmp: %d, seg->left: %d, seg->right = %d\t i:%d, si:%d\n", tmp, seg->left, seg->right, iteration, seg->iteration);
+                    printf("tmp: %d, seg->left: %d, seg->right = %d\t i:%d, si:%d\n", tmp, seg->left, seg->right, iteration, seg->iteration);
                     if (((IR_operation *) seg->operations->tail->data)->op == IR_WHILE) {
                         seg = seg->right;
                     } else {
                         seg = seg->left;
                     }
                 }
-                //printf("tmp: %d, seg->left: %d\t i:%d, si:%d\n", tmp, seg->left, iteration, seg->iteration);
+                printf("tmp: %d, seg->left: %d\t i:%d, si:%d\n", tmp, seg->left, iteration, seg->iteration);
                 linked_list_append(new_segments, tmp);
             }
             if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op == IR_IF) {
@@ -813,7 +826,7 @@ void liveness(frame *frm) {
                 if (seg->left->iteration == iteration) {
                     linked_list_put_front(new_segments, seg->left);
                     t = 1;
-                } else if (seg->right->iteration == iteration) {
+                } else if (seg->right && seg->right->iteration == iteration) {
                     linked_list_put_front(new_segments, seg->right);
                     t = 1;
                 }
@@ -823,11 +836,11 @@ void liveness(frame *frm) {
                 }
             }
 
-            //printf("popped frunk seg->iteration: %d, iteration: %d\n", seg->iteration, iteration);
+            printf("popped frunk seg->iteration: %d, iteration: %d\n", seg->iteration, iteration);
             if (seg->iteration != iteration) {
                 continue;
             }
-            //printf("Correct iteration\n");
+            printf("Correct iteration\n");
             seg->iteration++;
 
             for (linked_list_node *lln = seg->operations->tail; lln != NULL; lln = lln->prev) {

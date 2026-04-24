@@ -83,12 +83,14 @@ void connect_graph(frame *frm) {
             if (!params_loaded && seg == frm->segment) {
                 IR_operation *param;
                 int color = RDI;
+                int i = 0;
                 param = ((IR_operation *) lln->data);
-                while (param->op == IR_VAR_DECL && param->arg2->type == P_VARIABLE) {
+                while (param->op == IR_VAR_DECL && param->arg2->type == P_VARIABLE && i < 4) {
                     glob_graph->nodes[param->arg1->constant]->definition = param;
                     glob_graph->nodes[param->arg1->constant]->color = color++;
                     graph_handle_operation(glob_graph, param);
                     lln = lln->next;
+                    i++;
                     param = ((IR_operation *)lln->data);
                 }
                 params_loaded = 1;

@@ -80,6 +80,7 @@ struct var_info {
     data_type type;
     int nesting_depth;
     int offset;
+    int escaping;
     // For functions
     AST_node *ast_node;
     short num_params;
