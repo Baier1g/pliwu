@@ -12,7 +12,7 @@
 
 extern AST_node *run_bison(const char*);
 
-/*int main(int argc, char* argv[]) {
+int main(int argc, char* argv[]) {
     FILE *fp;
 
     AST_node *prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());
@@ -69,4 +69,4 @@ extern AST_node *run_bison(const char*);
     linked_list_delete(errors);
     kill_tree(prog);
     return 0;
-}*/
+}

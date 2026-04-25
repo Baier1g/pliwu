@@ -33,7 +33,8 @@ mem.%:
 flex.%:
 	flex rules.l
 	bison -vdy grammar.y
-	y.output tests/$*.oc
+	$(CC) $(WFLAGS) -o flexer.out $(BISON) $(UTILS) $(SEMANTIC)
+	./flexer.out tests/$*.oc
 
 .PHONY: clean
 clean:

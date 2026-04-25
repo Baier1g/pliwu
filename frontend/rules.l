@@ -10,6 +10,8 @@
     extern long current_character;
     extern long start_current_character;
 
+    char* stringbuffer;
+    int stringptr;
 
     const char keywords[NUM_KEYWORDS][10] = {"if", "else", "while", "return", "func", "print"};
     const int  key_tokens[NUM_KEYWORDS]   = {T_IF, T_ELSE, T_WHILE, T_RETURN, T_FUNC, T_PRINT};
@@ -67,27 +69,27 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 <INITIAL>\" {;
     increment_counter(yyleng);
     BEGIN(STR);
+    stringbuffer = calloc(10000, sizeof(char));
+    stringptr = 0;
 }
 
 <STR>\" {
     increment_counter(yyleng);
+    strcpy(yylval.sval, stringbuffer);
     BEGIN(INITIAL);
+    return T_STRING;
 }
 
 <STR><<EOF>> {
     return YYerror;
 }
 
-<STR>{CHARACTERS} {
-    //printf("%s \tcharacter\n", yytext);
+<STR>{CHARACTER} {
+    puts("help");
+    printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
-    if (yyleng != 1) {
-        strncpy(yylval.sval, yytext, yyleng);
-        return T_STRING;
-    } else {
-        yylval.cval = yytext[0];
-        return T_CHAR;
-    }
+
+    stringbuffer[stringptr++] = yytext[0];
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
@@ -269,6 +271,7 @@ int find_digraph(char* digraph) {
 /***int main(int argc, char** argv) {   
     FILE *fp;
     char *filename = argv[1];
+    puts("hello world!");
 
     fp = fopen(filename,"r");
     if (!fp) {
@@ -280,4 +283,5 @@ int find_digraph(char* digraph) {
     printf("\nNumber of lines in the file - %u\n", line_number);
     printf("\nNumber of characters in the file - %ld\n", current_character);
     return 0;
-}***/
+}
+***/

@@ -1,0 +1,6 @@
+main();
+
+func main() {
+    string s = "hello world!";
+    return;
+}
