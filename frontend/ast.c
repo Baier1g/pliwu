@@ -146,6 +146,7 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
             node->primary_expr.string.value = (char *) calloc((int) c, sizeof(char));
             strncpy(node->primary_expr.string.value, (char *) b, c);
             node->primary_expr.string.length = (int) c;
+            break;
         default:
             printf("ast.c::create_ternary_node: Unexpected kind %d\n", node_kind);
             break;
@@ -324,6 +325,8 @@ void kill_tree(AST_node* node) {
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 free(node->primary_expr.identifier_name);
+            } else if (node->primary_expr.type == TYPE_STRING) {
+                free(node->primary_expr.string.value);
             }
             free(node);
             break;
@@ -477,6 +480,15 @@ void AST_printer(AST_node *node) {
                     break;
                 case TYPE_VOID:
                     printf("Literal: None\n");
+                    break;
+                case TYPE_STRING:
+                    printf("String:\n");
+                    indents++;
+                    print_indents();
+                    printf("Literal: \"%s\"\n", node->primary_expr.string.value);
+                    print_indents();
+                    printf("Length: %d\n", node->primary_expr.string.length);
+                    indents--;
                     break;
                 default:
                     printf("ast.c::AST_printer::primary: Unknown primary type\n");

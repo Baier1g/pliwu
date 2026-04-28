@@ -132,9 +132,12 @@ union YYSTYPE
     double fval;
     int ival;
     char cval;
-    char* sval;
+    struct {
+        int length;
+        char *sval;
+    } string;
 
-#line 138 "y.tab.h"
+#line 141 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

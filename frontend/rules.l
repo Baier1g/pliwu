@@ -46,7 +46,6 @@ TYPE                int|char|bool|void|string
 SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
 OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
 CHARACTER           (.|"\n")
-CHARACTERS          {CHARACTER}*\"
 WHITESPACES         [\t\r ]+
 ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
@@ -75,7 +74,15 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
 <STR>\" {
     increment_counter(yyleng);
-    strcpy(yylval.sval, stringbuffer);
+    if (stringptr == 1) {
+        yylval.cval = stringbuffer[0];
+        BEGIN(INITIAL);
+        return T_CHAR;
+    }
+    yylval.string.sval = (char *) calloc(stringptr + 1, sizeof(char));
+    yylval.string.length = stringptr + 1;
+    strncpy(yylval.string.sval, stringbuffer, yylval.string.length);
+    printf("%s\n", yylval.string.sval);
     BEGIN(INITIAL);
     return T_STRING;
 }
@@ -85,9 +92,9 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 }
 
 <STR>{CHARACTER} {
-    puts("help");
-    printf("%s \tcharacter\n", yytext);
+    //printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
+    //printf("%d\n", stringptr);
 
     stringbuffer[stringptr++] = yytext[0];
 }
@@ -166,10 +173,11 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 <INITIAL>{IDENTIFIER} {
     //printf("%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
-    yylval.sval = calloc(yyleng + 1, sizeof(char));
+    yylval.string.sval = calloc(yyleng + 1, sizeof(char));
+    yylval.string.length = yyleng;
     //memset(yylval.sval, 0, (yyleng + 1) *sizeof(char));
     //printf("%s \tyylval post memset, length: %ld\n", yylval.sval, strlen(yylval.sval) + 1);
-    strncpy(yylval.sval, yytext, yyleng);
+    strncpy(yylval.string.sval, yytext, yyleng);
     //printf("%s \tyylval efter copying, length: %ld\n", yylval.sval, strlen(yylval.sval));
     return T_IDENTIFIER;
 }

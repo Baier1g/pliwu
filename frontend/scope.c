@@ -191,6 +191,7 @@ void recurse_scope(AST_node *node) {
             break;
         default:
             printf("scope.c::recurse_scope: Unknown ast kind\n");
+            to_error("Unknown AST_kind", node);
             break;
     }    
     return;

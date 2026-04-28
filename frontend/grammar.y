@@ -29,7 +29,10 @@
     double fval;
     int ival;
     char cval;
-    char* sval;
+    struct {
+        int length;
+        char *sval;
+    } string;
 }
 
 /* TOKENS */
@@ -59,13 +62,13 @@
 
 %token <ival> T_INT T_BOOL
 %token <cval> T_CHAR
-%token <sval> T_STRING
+%token <string> T_STRING
 %token T_INT_TYPE
 %token T_BOOL_TYPE
 %token T_CHAR_TYPE
 %token T_VOID_TYPE
 %token T_STRING_TYPE
-%token <sval> T_IDENTIFIER
+%token <string> T_IDENTIFIER
 
 %type <nval> identifier primary postfixExpression unaryExpression castExpression
 %type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
@@ -101,6 +104,7 @@ type:
 |   T_CHAR_TYPE     {$$ = (int) TYPE_CHAR;}
 |   T_BOOL_TYPE     {$$ = (int) TYPE_BOOL;}
 |   T_VOID_TYPE     {$$ = (int) TYPE_VOID;}
+|   T_STRING_TYPE   {$$ = (int) TYPE_STRING;}
 ;
 
 funcDefinition:
@@ -238,7 +242,7 @@ postfixExpression:
 ;
 
 identifier:
-    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_IDENTIFIER, yylval.sval); free(yylval.sval);
+    T_IDENTIFIER {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_IDENTIFIER, yylval.string.sval); free(yylval.string.sval);
                     /*printf("%s identifier returned to bison at line %d it starts at %ld and ends at %ld\n", $$->primary_expr.identifier_name, line_number, start_current_character, current_character);*/}
 ;
 
@@ -246,7 +250,7 @@ primary:
     T_INT           {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_INT, (void *) yylval.ival); /*printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);*/}
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
-|   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.sval, yylen); free(yylval.sval); printf("String literal: \"%s\" of length %d", $$->primary_expr.string.value, yylen);}
+|   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.string.sval, yylval.string.length); free(yylval.string.sval); printf("String literal: \"%s\" of length %d", $$->primary_expr.string.value, yylval.string.length);}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
 |   T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in grouping on line %d", line_number); yyerrok;}
 |   identifier      {$$ = $1;}
@@ -280,7 +284,7 @@ AST_node *run_bison(const char* filename) {
     return prog;
 }
 
-int main(int argc, char* argv[]) {
+/*int main(int argc, char* argv[]) {
     FILE *fp;
     char *filename = argv[1];
 
@@ -294,6 +298,6 @@ int main(int argc, char* argv[]) {
     printf("\nNumber of characters in the file - %ld\n", current_character);
     AST_printer(prog);
     return 0;
-}
+}*/
 
 /* EPILOGUE */
