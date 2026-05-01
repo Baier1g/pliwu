@@ -35,6 +35,8 @@ LEFT_PAR            \(
 RIGHT_PAR           \)
 LEFT_BRACE          \{
 RIGHT_BRACE         \}
+LEFT_BRACKET        \[
+RIGHT_BRACKET       \]
 COMMA               \,
 DIGIT               [0-9]
 INTEGER             {DIGIT}+
@@ -131,6 +133,16 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     //printf("%s \tright brace\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_BRACE;
+}
+
+<INITIAL>{LEFT_BRACKET} {
+    increment_counter(yyleng);
+    return T_LEFT_BRACKET;
+}
+
+<INITIAL>{RIGHT_BRACKET} {
+    increment_counter(yyleng);
+    return T_RIGHT_BRACKET;
 }
 
 <INITIAL>{COMMA} {

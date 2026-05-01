@@ -40,6 +40,8 @@
 %token T_LEFT_BRACE
 %token T_RIGHT_PAREN
 %token T_LEFT_PAREN
+%token T_RIGHT_BRACKET
+%token T_LEFT_BRACKET
 %token T_COMMA
 %token T_ASSIGN
 %token ';'
@@ -96,7 +98,9 @@ declaration:
 
 varDeclaration:
     type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
+|   type identifer T_LEFT_BRACKET expression T_RIGHT_BRACKET {;}
 |   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
+|   type identifier br
 ;
 
 type:
