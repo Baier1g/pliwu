@@ -154,16 +154,35 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
     return node;
 }
 
-int define_sizes(linked_list *sizes, linked_list *values, int depth) {
-    if (depth == 0) {
-        return;
+void define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
+    ds_helper(anode, sizes, values, 0);
+}
+
+void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
+    if (sizes->size > depth){return;}
+
+    //check current dim
+    linked_list_node *s = sizes->head;
+    for (int i = 0; i < depth; i++) {
+        s->next;
     }
-    int max_length = -1;
+    if(s->data == -1){
+        //set 
+        s->data = values->size;
+    } else {
+        //validate
+        if (s->data != values->size) {
+            printf("ast.c::arr: wrong sizes for initialized array"); //anode err print
+        }
+    }
+    
+    if (sizes->size > depth+1){return;}
+    //check next dim
     for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
-        if (depth == 1) {
-            if (((linked_list *) lln->data)->size > max_length) {
-                
-            }
+        if (lln->data != NULL){
+            ds_helper(anode, sizes, lln->data, depth++);   
+        } else {
+            printf("ast.c::arr: Array missing from initializor"); //anode err print
         }
     }
 }
