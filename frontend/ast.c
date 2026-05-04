@@ -463,13 +463,19 @@ void AST_printer(AST_node *node) {
             print_indents();
             printf("Sizes:\n");
             indents++;
-            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
-                AST_printer((AST_node *) lln->data);
+            if (node->array_decl.values) {
+                print_indents();
+                for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                    (lln->next == NULL) ? printf("%d. ", lln->data) : printf("%d, ", lln->data);
+                }
+                puts("");
+            } else {
+                for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                    AST_printer((AST_node *) lln->data);
+                }
             }
             indents--;
-            if (node->array_decl.values) {
-                // DO WORK LATER
-            }
+            
             indents--;
             break;
         case A_BLOCK_STMT:
