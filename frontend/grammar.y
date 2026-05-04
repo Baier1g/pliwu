@@ -104,19 +104,19 @@ varDeclaration:
 ;
 
 initializerDim:
-    /*%empty*/                                      {$$ = linked_list_new();}
+    ///*%empty*/                                      {$$ = linked_list_new();}
     T_LEFT_BRACKET T_RIGHT_BRACKET                  {$$ = linked_list_new(); linked_list_append($$, -1);}
-|   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, -1);}
+|   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, -1); $$ = $1;}
 ;
 
 declarator:
-    /*%empty*/                                              {$$ = linked_list_new();}
-|   T_LEFT_BRACKET expression T_RIGHT_BRACKET               {$$ = linked_list_new(); linked_list_append($$, $2);}
+    ///*%empty*/                                              {$$ = linked_list_new();}
+   T_LEFT_BRACKET expression T_RIGHT_BRACKET               {$$ = linked_list_new(); linked_list_append($$, $2);}
 |   declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET    {linked_list_append($1, $3); $$ = $1;}
 ;
 
 arrayInitializer:
-    T_LEFT_BRACE initializerList T_RIGHT_BRACE  {$$ = $1;}
+    T_LEFT_BRACE initializerList T_RIGHT_BRACE  {$$ = $2;}
 ;
 
 initializerList:

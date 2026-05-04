@@ -156,11 +156,11 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
 
 void define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
     ds_helper(anode, sizes, values, 0);
+    printf("job done\n");
 }
 
 void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
-    if (sizes->size > depth){return;}
-
+    if (sizes->size <= depth){return;}
     //check current dim
     linked_list_node *s = sizes->head;
     for (int i = 0; i < depth; i++) {
@@ -172,17 +172,18 @@ void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int dep
     } else {
         //validate
         if (s->data != values->size) {
-            printf("ast.c::arr: wrong sizes for initialized array"); //anode err print
+            printf("ast.c::arr: wrong sizes for initialized array\n"); //anode err print
         }
     }
     
-    if (sizes->size > depth+1){return;}
+    if (sizes->size <= depth+1){return;}
     //check next dim
     for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
-        if (lln->data != NULL){
-            ds_helper(anode, sizes, lln->data, depth++);   
+        printf("hello\n");
+        if (lln && lln->data){
+            ds_helper(anode, sizes, (linked_list *) lln->data, depth++);
         } else {
-            printf("ast.c::arr: Array missing from initializor"); //anode err print
+            printf("ast.c::arr: Array missing from initializor\n"); //anode err print
         }
     }
 }
@@ -206,8 +207,11 @@ AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *
             node->array_decl.type = (data_type) a;
             node->array_decl.identifer = b;
             node->array_decl.sizes = c;
+            printf("size: %d\n", (int) node->array_decl.sizes->head->data);
+            printf("yurr\n");
             if (d) {
-
+                printf("we try\n");
+                //define_sizes(node, c, d);
             }
             node->array_decl.values = d;
             break;
