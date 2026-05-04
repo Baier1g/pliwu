@@ -58,31 +58,33 @@ extern int yydebug;
     T_LEFT_BRACE = 259,            /* T_LEFT_BRACE  */
     T_RIGHT_PAREN = 260,           /* T_RIGHT_PAREN  */
     T_LEFT_PAREN = 261,            /* T_LEFT_PAREN  */
-    T_COMMA = 262,                 /* T_COMMA  */
-    T_ASSIGN = 263,                /* T_ASSIGN  */
-    T_LESS_EQ = 264,               /* T_LESS_EQ  */
-    T_GREATER_EQ = 265,            /* T_GREATER_EQ  */
-    T_EQUALS = 266,                /* T_EQUALS  */
-    T_NEQUALS = 267,               /* T_NEQUALS  */
-    T_ARROW = 268,                 /* T_ARROW  */
-    T_OR = 269,                    /* T_OR  */
-    T_AND = 270,                   /* T_AND  */
-    T_IF = 271,                    /* T_IF  */
-    T_ELSE = 272,                  /* T_ELSE  */
-    T_WHILE = 273,                 /* T_WHILE  */
-    T_RETURN = 274,                /* T_RETURN  */
-    T_FUNC = 275,                  /* T_FUNC  */
-    T_PRINT = 276,                 /* T_PRINT  */
-    T_INT = 277,                   /* T_INT  */
-    T_BOOL = 278,                  /* T_BOOL  */
-    T_CHAR = 279,                  /* T_CHAR  */
-    T_STRING = 280,                /* T_STRING  */
-    T_INT_TYPE = 281,              /* T_INT_TYPE  */
-    T_BOOL_TYPE = 282,             /* T_BOOL_TYPE  */
-    T_CHAR_TYPE = 283,             /* T_CHAR_TYPE  */
-    T_VOID_TYPE = 284,             /* T_VOID_TYPE  */
-    T_STRING_TYPE = 285,           /* T_STRING_TYPE  */
-    T_IDENTIFIER = 286             /* T_IDENTIFIER  */
+    T_RIGHT_BRACKET = 262,         /* T_RIGHT_BRACKET  */
+    T_LEFT_BRACKET = 263,          /* T_LEFT_BRACKET  */
+    T_COMMA = 264,                 /* T_COMMA  */
+    T_ASSIGN = 265,                /* T_ASSIGN  */
+    T_LESS_EQ = 266,               /* T_LESS_EQ  */
+    T_GREATER_EQ = 267,            /* T_GREATER_EQ  */
+    T_EQUALS = 268,                /* T_EQUALS  */
+    T_NEQUALS = 269,               /* T_NEQUALS  */
+    T_ARROW = 270,                 /* T_ARROW  */
+    T_OR = 271,                    /* T_OR  */
+    T_AND = 272,                   /* T_AND  */
+    T_IF = 273,                    /* T_IF  */
+    T_ELSE = 274,                  /* T_ELSE  */
+    T_WHILE = 275,                 /* T_WHILE  */
+    T_RETURN = 276,                /* T_RETURN  */
+    T_FUNC = 277,                  /* T_FUNC  */
+    T_PRINT = 278,                 /* T_PRINT  */
+    T_INT = 279,                   /* T_INT  */
+    T_BOOL = 280,                  /* T_BOOL  */
+    T_CHAR = 281,                  /* T_CHAR  */
+    T_STRING = 282,                /* T_STRING  */
+    T_INT_TYPE = 283,              /* T_INT_TYPE  */
+    T_BOOL_TYPE = 284,             /* T_BOOL_TYPE  */
+    T_CHAR_TYPE = 285,             /* T_CHAR_TYPE  */
+    T_VOID_TYPE = 286,             /* T_VOID_TYPE  */
+    T_STRING_TYPE = 287,           /* T_STRING_TYPE  */
+    T_IDENTIFIER = 288             /* T_IDENTIFIER  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -95,31 +97,33 @@ extern int yydebug;
 #define T_LEFT_BRACE 259
 #define T_RIGHT_PAREN 260
 #define T_LEFT_PAREN 261
-#define T_COMMA 262
-#define T_ASSIGN 263
-#define T_LESS_EQ 264
-#define T_GREATER_EQ 265
-#define T_EQUALS 266
-#define T_NEQUALS 267
-#define T_ARROW 268
-#define T_OR 269
-#define T_AND 270
-#define T_IF 271
-#define T_ELSE 272
-#define T_WHILE 273
-#define T_RETURN 274
-#define T_FUNC 275
-#define T_PRINT 276
-#define T_INT 277
-#define T_BOOL 278
-#define T_CHAR 279
-#define T_STRING 280
-#define T_INT_TYPE 281
-#define T_BOOL_TYPE 282
-#define T_CHAR_TYPE 283
-#define T_VOID_TYPE 284
-#define T_STRING_TYPE 285
-#define T_IDENTIFIER 286
+#define T_RIGHT_BRACKET 262
+#define T_LEFT_BRACKET 263
+#define T_COMMA 264
+#define T_ASSIGN 265
+#define T_LESS_EQ 266
+#define T_GREATER_EQ 267
+#define T_EQUALS 268
+#define T_NEQUALS 269
+#define T_ARROW 270
+#define T_OR 271
+#define T_AND 272
+#define T_IF 273
+#define T_ELSE 274
+#define T_WHILE 275
+#define T_RETURN 276
+#define T_FUNC 277
+#define T_PRINT 278
+#define T_INT 279
+#define T_BOOL 280
+#define T_CHAR 281
+#define T_STRING 282
+#define T_INT_TYPE 283
+#define T_BOOL_TYPE 284
+#define T_CHAR_TYPE 285
+#define T_VOID_TYPE 286
+#define T_STRING_TYPE 287
+#define T_IDENTIFIER 288
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -137,7 +141,7 @@ union YYSTYPE
         char *sval;
     } string;
 
-#line 141 "y.tab.h"
+#line 145 "y.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

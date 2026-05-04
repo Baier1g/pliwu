@@ -154,6 +154,20 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
     return node;
 }
 
+int define_sizes(linked_list *sizes, linked_list *values, int depth) {
+    if (depth == 0) {
+        return;
+    }
+    int max_length = -1;
+    for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
+        if (depth == 1) {
+            if (((linked_list *) lln->data)->size > max_length) {
+                
+            }
+        }
+    }
+}
+
 AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *a, void *b, void *c, void *d) {
     AST_node *node = malloc(sizeof(AST_node));
     if (!node) {
@@ -168,6 +182,15 @@ AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *
             node->func_def.identifier = b;
             node->func_def.parameters = c;
             node->func_def.function_block = d;
+            break;
+        case A_ARRAY_DECL:
+            node->array_decl.type = (data_type) a;
+            node->array_decl.identifer = b;
+            node->array_decl.sizes = c;
+            if (d) {
+
+            }
+            node->array_decl.values = d;
             break;
         default:
             printf("ast.c::create_quaternary_node: Unexpected kind %d\n", node_kind);
@@ -186,6 +209,8 @@ char *kind_enum_to_string(kind type) {
             return "Function definition";
         case A_VAR_DECL:
             return "Variable declaration";
+        case A_ARRAY_DECL:
+            return "Array declaration";
         case A_BLOCK_STMT:
             return "Block statement";
         case A_IF_STMT:
@@ -279,6 +304,14 @@ void kill_tree(AST_node* node) {
             kill_tree(node->var_decl.identifier);
             kill_tree(node->var_decl.expr_stmt);
             free(node);
+            break;
+        case A_ARRAY_DECL:
+            kill_tree(node->array_decl.identifer);
+            kill_ll(node->array_decl.sizes);
+            if (node->array_decl.values) {
+                // MORE ROBUST FREEING NEEDED, doesn't work on multidimensional arrays
+                kill_ll(node->array_decl.values);
+            }
             break;
         case A_BLOCK_STMT:
             kill_ll(node->block.stmt_list);
@@ -378,7 +411,7 @@ void AST_printer(AST_node *node) {
         case A_FUNC_DEF:
             indents++;
             print_indents();
-            printf("return type: %d\n", node->func_def.return_type);
+            printf("Return type: %d\n", node->func_def.return_type);
             AST_printer(node->func_def.identifier);
             linked_list_node *ptrs = node->func_def.parameters->head;
             while (ptrs) {
@@ -391,16 +424,33 @@ void AST_printer(AST_node *node) {
         case A_PARAMETER_EXPR:
             indents++;
             print_indents();
-            printf("type: %d\n", node->parameter.type);
+            printf("Type: %d\n", node->parameter.type);
             AST_printer(node->parameter.identifier);
             indents--;
             break;
         case A_VAR_DECL:
             indents++;
             print_indents();
-            printf("type: %d\n", node->var_decl.type);
+            printf("Type: %d\n", node->var_decl.type);
             AST_printer(node->var_decl.identifier);
             AST_printer(node->var_decl.expr_stmt);
+            indents--;
+            break;
+        case A_ARRAY_DECL:
+            indents++;
+            print_indents();
+            printf("Type: %d\n", node->array_decl.type);
+            AST_printer(node->array_decl.identifer);
+            print_indents();
+            printf("Sizes:\n");
+            indents++;
+            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                AST_printer((AST_node *) lln->data);
+            }
+            indents--;
+            if (node->array_decl.values) {
+                // DO WORK LATER
+            }
             indents--;
             break;
         case A_BLOCK_STMT:

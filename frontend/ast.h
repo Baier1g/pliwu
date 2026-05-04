@@ -13,6 +13,7 @@ typedef enum {
 
     A_FUNC_DEF, // return_type, parameter*, function_block
     A_VAR_DECL, // type, identifier, expression+
+    A_ARRAY_DECL, // type, identifier, sizes, values?
 
     A_BLOCK_STMT,  // declaration*
     A_IF_STMT,     // condition, if_block, else_block
@@ -192,6 +193,14 @@ struct AST_node {
             struct AST_node *identifier;
             struct AST_node *expr_stmt;
         } var_decl;
+
+        // Array declaration
+        struct {
+            data_type type;
+            linked_list *sizes;
+            struct AST_node *identifer;
+            linked_list *values;
+        } array_decl;
 
         // Block statement
         struct {

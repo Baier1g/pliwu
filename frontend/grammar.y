@@ -76,11 +76,11 @@
 %type <nval> arithmeticExpression relationalExpression logicalAND logicalOR
 %type <nval> conditionalExpression assignExpression expression expressionStatement
 %type <nval> block returnStatement else ifStatement printStatement statement
-%type <nval> loopStatement whileLoop
+%type <nval> loopStatement whileLoop 
 %type <nval> function funcDefinition varDeclaration declaration multiplicativeExpression
 %type <nval> module 
-%type <llval> blockBody args parameters
-%type <ival> type returnType
+%type <llval> blockBody args parameters declarator initializerList initializerValue arrayInitializer initializerDim
+%type <ival> type returnType 
 
 
 /* GRAMMAR RULES */
@@ -98,9 +98,36 @@ declaration:
 
 varDeclaration:
     type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
-|   type identifer T_LEFT_BRACKET expression T_RIGHT_BRACKET {;}
+|   type identifier declarator ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, NULL);}
 |   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
-|   type identifier br
+|   type identifier initializerDim T_ASSIGN arrayInitializer ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5);}
+;
+
+initializerDim:
+    /*%empty*/                                      {$$ = linked_list_new();}
+    T_LEFT_BRACKET T_RIGHT_BRACKET                  {$$ = linked_list_new(); linked_list_append($$, -1);}
+|   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, -1);}
+;
+
+declarator:
+    /*%empty*/                                              {$$ = linked_list_new();}
+|   T_LEFT_BRACKET expression T_RIGHT_BRACKET               {$$ = linked_list_new(); linked_list_append($$, $2);}
+|   declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET    {linked_list_append($1, $3); $$ = $1;}
+;
+
+arrayInitializer:
+    T_LEFT_BRACE initializerList T_RIGHT_BRACE  {$$ = $1;}
+;
+
+initializerList:
+    /*%empty*/                                  {$$ = linked_list_new();}
+|   initializerValue                            {$$ = linked_list_new(); linked_list_append($$, $1);}
+|   initializerList T_COMMA initializerValue    {linked_list_append($1, $3); $$ = $1;}
+;
+
+initializerValue:
+    primary             {$$ = $1;}
+|   arrayInitializer    {$$ = $1;}
 ;
 
 type:
