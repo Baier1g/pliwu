@@ -84,7 +84,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     yylval.string.sval = (char *) calloc(stringptr + 1, sizeof(char));
     yylval.string.length = stringptr + 1;
     strncpy(yylval.string.sval, stringbuffer, yylval.string.length);
-    printf("%s\n", yylval.string.sval);
+    //printf("%s\n", yylval.string.sval);
     BEGIN(INITIAL);
     return T_STRING;
 }

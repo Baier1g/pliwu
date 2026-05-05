@@ -108,6 +108,10 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
             node->call_expr.identifier = a;
             node->call_expr.arguments = b;
             break;
+        case A_INDEX_EXPR:
+            node->indexing.identifier = a;
+            node->indexing.indices = (linked_list *) b;
+            break;
         default:
             printf("ast.c::create_binary_node: Unexpected kind %d\n", node_kind);
             break;
@@ -267,6 +271,8 @@ char *kind_enum_to_string(kind type) {
             return "Call expression";
         case A_PARAMETER_EXPR:
             return "Parameter expression";
+        case A_INDEX_EXPR:
+            return "Index expression";
         default:
             return "ast.c::kind_enum_to_string: Unknown kind";
     }
@@ -316,22 +322,18 @@ void kill_tree(AST_node* node) {
     switch (type) {
         case A_PROGRAM:
             kill_ll(node->program.modules);
-            free(node);
             break;
         case A_MODULE:
             kill_ll(node->module.module_declarations);
-            free(node);
             break;
         case A_FUNC_DEF:
             kill_tree(node->func_def.identifier);
             kill_ll(node->func_def.parameters);
             kill_tree(node->func_def.function_block);
-            free(node);
             break;
         case A_VAR_DECL:
             kill_tree(node->var_decl.identifier);
             kill_tree(node->var_decl.expr_stmt);
-            free(node);
             break;
         case A_ARRAY_DECL:
             kill_tree(node->array_decl.identifer);
@@ -343,13 +345,11 @@ void kill_tree(AST_node* node) {
             break;
         case A_BLOCK_STMT:
             kill_ll(node->block.stmt_list);
-            free(node);
             break;
         case A_IF_STMT:
             kill_tree(node->if_stmt.condition);
             kill_tree(node->if_stmt.if_branch);
             kill_tree(node->if_stmt.else_branch);
-            free(node);
             break;
         case A_WHILE_LOOP:
             kill_tree(node->while_loop.condition);
@@ -357,31 +357,25 @@ void kill_tree(AST_node* node) {
             break;
         case A_PRINT_STMT:
             kill_tree(node->print_stmt.expression);
-            free(node);
             break;
         case A_EXPR_STMT:
             kill_tree(node->expr_stmt.expression);
-            free(node);
             break;
         case A_RETURN_STMT:
             kill_tree(node->return_stmt.expression);
-            free(node);
             break;
         case A_ASSIGN_EXPR:
             kill_tree(node->assign_expr.identifier);
             kill_tree(node->assign_expr.expression);
-            free(node);
             break;
         case A_LOGICAL_EXPR:
         case A_RELATIONAL_EXPR:
         case A_ARITHMETIC_EXPR:
             kill_tree(node->binary_expr.left);
             kill_tree(node->binary_expr.right);
-            free(node);
             break;
         case A_UNARY_EXPR:
             kill_tree(node->unary_expr.expression);
-            free(node);
             break;
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
@@ -389,21 +383,23 @@ void kill_tree(AST_node* node) {
             } else if (node->primary_expr.type == TYPE_STRING) {
                 free(node->primary_expr.string.value);
             }
-            free(node);
             break;
         case A_CALL_EXPR:
             kill_tree(node->call_expr.identifier);
             kill_ll(node->call_expr.arguments);
-            free(node);
             break;
         case A_PARAMETER_EXPR:
             kill_tree(node->parameter.identifier);
-            free(node);
+            break;
+        case A_INDEX_EXPR:
+            kill_ll(node->indexing.indices);
+            kill_tree(node->indexing.identifier);
             break;
         default:
             printf("ast.c::kill_tree: Unknown AST kind\n");
-            break;
+            return;
     }
+    free(node);
     return;
 }
 
@@ -582,6 +578,18 @@ void AST_printer(AST_node *node) {
             }
             indents--;
             break;
+        case A_INDEX_EXPR:
+            indents++;
+            AST_printer(node->call_expr.identifier);
+            print_indents();
+            printf("indices:\n");
+            indents++;
+            for (linked_list_node *lln = node->indexing.indices->head; lln != NULL; lln = lln->next) {
+                AST_printer(lln->data);
+            }
+            indents--;
+            indents--;
+        break;
         default:
             printf("ast.c::AST_printer: Unknown AST kind\n");
             break;

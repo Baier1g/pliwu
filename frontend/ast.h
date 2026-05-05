@@ -29,6 +29,7 @@ typedef enum {
     A_ARITHMETIC_EXPR, // expression, operator, expression
     A_UNARY_EXPR,      // operator, expression
     A_PRIMARY_EXPR,    // type, (length for strings) ,literal
+    A_INDEX_EXPR,
     A_CALL_EXPR,       // identifier, argument*
 } kind;
 
@@ -279,6 +280,12 @@ struct AST_node {
             data_type type;
             struct AST_node *identifier;
         } parameter;
+
+        //array index
+        struct {
+            AST_node *identifier;
+            linked_list *indices;
+        } indexing;
     };
 };
 

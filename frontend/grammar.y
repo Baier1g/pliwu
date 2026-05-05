@@ -219,6 +219,7 @@ expression:
 assignExpression:
     conditionalExpression           {$$ = $1;}
 |   identifier T_ASSIGN expression  {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, $1, $3);}
+|   identifier declarator T_ASSIGN expression {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1,$2), $4);}
 ;
 
 conditionalExpression:
@@ -268,8 +269,9 @@ unaryExpression:
 
 postfixExpression:
     primary {$$ = $1;}
-|   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
-|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in negated grouping on line %d", line_number); yyerrok;}
+|   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN   {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
+|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN  {printf("error in negated grouping on line %d", line_number); yyerrok;}
+|   identifier declarator                               {$$ = create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1, $2);}
 ;
 
 identifier:
@@ -281,7 +283,7 @@ primary:
     T_INT           {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_INT, (void *) yylval.ival); /*printf("%d int value returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.ival, line_number, start_current_character, current_character);*/}
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
-|   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.string.sval, yylval.string.length); free(yylval.string.sval); printf("String literal: \"%s\" of length %d\n", $$->primary_expr.string.value, yylval.string.length);}
+|   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.string.sval, yylval.string.length); free(yylval.string.sval); /*printf("String literal: \"%s\" of length %d\n", $$->primary_expr.string.value, yylval.string.length);*/}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
 |   T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in grouping on line %d", line_number); yyerrok;}
 |   identifier      {$$ = $1;}
