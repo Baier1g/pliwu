@@ -154,36 +154,45 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
     return node;
 }
 
-void define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
-    ds_helper(anode, sizes, values, 0);
-}
-
 void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
-    if (sizes->size <= depth){return;}
+    //printf("depth %d, sizes.size %d, values.size %d\n", depth, sizes->size, values->size);
+    if (depth >= sizes->size){
+        return;
+    }
+    if (values->size <= 0) {
+        printf("ast.c::arr: wrong declared depth\n");
+        return;
+    }
 
     //check current dim
     linked_list_node *s = sizes->head;
     for (int i = 0; i < depth; i++) {
         s = s->next;
     }
-    if(s->data == -1){
+    if(s->data == NULL){
         //set 
         s->data = values->size;
     } else {
         //validate
-        if (s->data != values->size) {
+        if ((int) s->data != values->size) {
             printf("ast.c::arr: wrong sizes for initialized array\n"); //anode err print
         }
     }
     
-    if (sizes->size <= depth+1){return;}
     //check next dim
     for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
-        if (lln && lln->data){
+        if (1){
             ds_helper(anode, sizes, (linked_list *) lln->data, depth+1);
         } else {
             printf("ast.c::arr: Array missing from initializor\n"); //anode err print
         }
+    }
+}
+
+void define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
+    ds_helper(anode, sizes, values, 0);
+    for (linked_list_node *lln = sizes->head; lln != NULL; lln = lln->next) {
+        lln->data = create_binary_node(anode->pos.startchar, anode->pos.line, A_PRIMARY_EXPR, TYPE_INT, (int) lln->data);
     }
 }
 
@@ -463,16 +472,8 @@ void AST_printer(AST_node *node) {
             print_indents();
             printf("Sizes:\n");
             indents++;
-            if (node->array_decl.values) {
-                print_indents();
-                for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
-                    (lln->next == NULL) ? printf("%d. ", lln->data) : printf("%d, ", lln->data);
-                }
-                puts("");
-            } else {
-                for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
-                    AST_printer((AST_node *) lln->data);
-                }
+            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                AST_printer((AST_node *) lln->data);
             }
             indents--;
             

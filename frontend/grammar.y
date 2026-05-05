@@ -105,8 +105,8 @@ varDeclaration:
 
 initializerDim:
     ///*%empty*/                                      {$$ = linked_list_new();}
-    T_LEFT_BRACKET T_RIGHT_BRACKET                  {$$ = linked_list_new(); linked_list_append($$, -1);}
-|   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, -1); $$ = $1;}
+    T_LEFT_BRACKET T_RIGHT_BRACKET                  {$$ = linked_list_new(); linked_list_append($$, NULL);}
+|   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, NULL); $$ = $1;}
 ;
 
 declarator:
