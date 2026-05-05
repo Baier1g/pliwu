@@ -4,9 +4,24 @@ symbol_table *type_scope;
 linked_list *type_errors;
 data_type current_return_type = TYPE_VOID;
 
+data_type recurse_type(AST_node *);
 
 void type_to_error(char *error_msg, AST_node *node) {
     linked_list_append(type_errors, error_msg);
+}
+
+void recurse_type_array(linked_list *values, data_type type, int depth, int current_depth, AST_node* node) {
+    if (current_depth == depth) {
+        for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
+            if (type != recurse_type(lln->data)){
+                type_to_error("Array initialized with wrong type(s)", node);
+            }
+        }
+    } else {
+        for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
+            recurse_type_array(lln->data, type, depth, current_depth+1, node);
+        }
+    }
 }
 
 data_type recurse_type(AST_node *node) {
@@ -64,6 +79,23 @@ data_type recurse_type(AST_node *node) {
             }
             ((var_info *) symbol_table_get(type_scope, name))->type = node->var_decl.type;
             return node->var_decl.type;
+        case A_ARRAY_DECL:
+            //check brackets
+            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                if(recurse_type(lln->data) != TYPE_INT){
+                    type_to_error("Array dimensions must be integers", node);
+                }
+            }
+            //save array type
+            d_type = ((var_info *) (symbol_table_get(type_scope, node->primary_expr.identifier_name)))->type;
+            if(!(d_type == TYPE_INT || d_type == TYPE_CHAR || d_type == TYPE_BOOL || d_type == TYPE_STRING)){
+                type_to_error("Illegal array type", node);
+            }
+            //check values
+            if (node->array_decl.values) {
+                recurse_type_array(node->array_decl.values, d_type, node->array_decl.sizes->size, 1, node);
+            }
+            return d_type;
         case A_BLOCK_STMT:
             outer_table = type_scope;
             type_scope = node->table;
@@ -194,6 +226,15 @@ data_type recurse_type(AST_node *node) {
             name = node->parameter.identifier->primary_expr.identifier_name;
             d_type = node->parameter.type;
             ((var_info *) symbol_table_get(type_scope, name))->type = d_type;
+            return d_type;
+        case A_INDEX_EXPR:
+            d_type = ((var_info *) (symbol_table_get(type_scope, node->indexing.identifier->primary_expr.identifier_name)))->type;
+            //check brackets
+            for (linked_list_node *lln = node->indexing.indices->head; lln != NULL; lln = lln->next) {
+                if(TYPE_INT != recurse_type(lln->data)){
+                    type_to_error("Array dimensions must be integers", node);
+                }
+            }
             return d_type;
         default:
             printf("type_checking.c::recurse_type: Unrecognized ast node");
