@@ -217,7 +217,7 @@ AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *
             break;
         case A_ARRAY_DECL:
             node->array_decl.type = (data_type) a;
-            node->array_decl.identifer = b;
+            node->array_decl.identifier = b;
             node->array_decl.sizes = c;
             if (d) {
                 define_sizes(node, c, d);
@@ -336,7 +336,7 @@ void kill_tree(AST_node* node) {
             kill_tree(node->var_decl.expr_stmt);
             break;
         case A_ARRAY_DECL:
-            kill_tree(node->array_decl.identifer);
+            kill_tree(node->array_decl.identifier);
             kill_ll(node->array_decl.sizes);
             if (node->array_decl.values) {
                 // MORE ROBUST FREEING NEEDED, doesn't work on multidimensional arrays
@@ -464,7 +464,7 @@ void AST_printer(AST_node *node) {
             indents++;
             print_indents();
             printf("Type: %d\n", node->array_decl.type);
-            AST_printer(node->array_decl.identifer);
+            AST_printer(node->array_decl.identifier);
             print_indents();
             printf("Sizes:\n");
             indents++;

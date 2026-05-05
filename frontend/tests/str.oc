@@ -1,7 +1,6 @@
 main();
 
 func main() {
-    n[5]=30;
     string s = "hello world!";
     int a[5][10];
     a[1][1];

@@ -72,6 +72,7 @@ typedef enum {
     ID_FUNCTION,
     ID_VARIABLE,
     ID_FUNC_PARAM,
+    ID_ARRAY
 } id_type;
 
 /*
@@ -199,7 +200,7 @@ struct AST_node {
         struct {
             data_type type;
             linked_list *sizes;
-            struct AST_node *identifer;
+            struct AST_node *identifier;
             linked_list *values;
         } array_decl;
 
