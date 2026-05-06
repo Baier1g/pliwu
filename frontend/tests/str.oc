@@ -3,10 +3,11 @@ main();
 func main() {
     string s = "hello world!";
     int a[5][10];
-    int b[] = {1,2,3};
+    int b[][] = {{1},{2},{3}};
     int c[300];
-    // b[1][2] = 6, b[2][2] = 7
+    b[1][2] = 6; 
+    b[2][2] = 7;
     //int d[][] = b;
-    //b = a;
+    //b = c;
     return;
 }

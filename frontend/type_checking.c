@@ -28,10 +28,10 @@ data_type recurse_type(AST_node *node) {
     if (!node) {
         return TYPE_VOID;
     }
-    char* name;
+    char *name, *name2;
     data_type d_type, d_type_right;
     kind type = node->kind;
-    symbol_table* outer_table;
+    symbol_table *outer_table;
     
     switch (type) {
         case A_MODULE:
@@ -133,11 +133,43 @@ data_type recurse_type(AST_node *node) {
             }
             break;
         case A_ASSIGN_EXPR:
-            name = node->assign_expr.identifier->primary_expr.identifier_name;
+            if (node->assign_expr.identifier->kind == A_PRIMARY_EXPR && node->assign_expr.identifier->primary_expr.type == TYPE_IDENTIFIER) {
+                name = node->assign_expr.identifier->primary_expr.identifier_name;
+            } else if (node->assign_expr.identifier->kind == A_INDEX_EXPR) {
+                // ONLY WORKS WITH ARRAYS ATM
+                name = node->assign_expr.identifier->indexing.identifier->primary_expr.identifier_name;
+            }
+
+            printf("yippie\n");
             d_type = ((var_info *) symbol_table_get(type_scope, name))->type;
             if (d_type != recurse_type(node->assign_expr.expression)) {
                 type_to_error("Trying to assign to a variable of a different type", node);
             }
+
+            var_info *assignee = ((var_info *) symbol_table_get(type_scope, name));
+            if (assignee->kind == ID_ARRAY && node->assign_expr.identifier->kind != A_INDEX_EXPR) {
+                if (node->assign_expr.expression->kind == A_PRIMARY_EXPR && node->assign_expr.expression->primary_expr.type == TYPE_IDENTIFIER) {
+                    name2 = node->assign_expr.expression->primary_expr.identifier_name;
+                } else {
+                    type_to_error("Tring to assign non-variable to array variable", node);
+                    return d_type;
+                }
+                var_info *expr_info = ((var_info *) symbol_table_get(type_scope, name2));
+                if (expr_info->kind == ID_ARRAY) {
+                    if (expr_info->ast_node->array_decl.sizes->size != assignee->ast_node->array_decl.sizes->size) {
+                        type_to_error("Dimensionality mismatch between arrays", node);
+                    }
+                }
+            } else if (assignee->kind == ID_ARRAY) {
+                if (node->assign_expr.expression->kind == A_PRIMARY_EXPR && node->assign_expr.expression->primary_expr.type == TYPE_IDENTIFIER) {
+                    name2 = node->assign_expr.expression->primary_expr.identifier_name;
+                    var_info *expr_info = ((var_info *) symbol_table_get(type_scope, name2));
+                    if (expr_info->kind == ID_ARRAY) {
+                        type_to_error("Tring to assign array variable to non-array variable", node);
+                    }
+                }
+            }
+            
             return d_type;
         case A_LOGICAL_EXPR:
             d_type = recurse_type(node->binary_expr.left);

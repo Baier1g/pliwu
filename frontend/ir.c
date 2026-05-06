@@ -47,6 +47,8 @@ char *IR_op_code_to_string(IR_op_code op) {
             return "while";
         case IR_PRINT:
             return "print";
+        case IR_ALLOC:
+            return "alloc";
         case IR_CALL:
             return "call";
         case IR_RET:
@@ -300,6 +302,10 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_segment->operations, op);
             }
             //print_operation(op);
+            break;
+        case A_ARRAY_DECL:
+            name = node->array_decl.identifier->primary_expr.identifier_name;
+            
             break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
