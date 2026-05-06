@@ -80,6 +80,7 @@ data_type recurse_type(AST_node *node) {
             ((var_info *) symbol_table_get(type_scope, name))->type = node->var_decl.type;
             return node->var_decl.type;
         case A_ARRAY_DECL:
+            d_type = node->array_decl.type;
             //check brackets
             for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
                 if(recurse_type(lln->data) != TYPE_INT){
@@ -87,7 +88,7 @@ data_type recurse_type(AST_node *node) {
                 }
             }
             //save array type
-            d_type = ((var_info *) (symbol_table_get(type_scope, node->primary_expr.identifier_name)))->type;
+            ((var_info *) symbol_table_get(type_scope, node->array_decl.identifier->primary_expr.identifier_name))->type = d_type;
             if(!(d_type == TYPE_INT || d_type == TYPE_CHAR || d_type == TYPE_BOOL || d_type == TYPE_STRING)){
                 type_to_error("Illegal array type", node);
             }

@@ -15,6 +15,7 @@
     AST_node *relexp(void *, int, void *);
 
     AST_node *prog;
+    AST_node *node;
 
     extern FILE *yyin;
     unsigned short line_number = 1;
@@ -100,7 +101,7 @@ varDeclaration:
     type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
 |   type identifier declarator ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, NULL);}
 |   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
-|   type identifier initializerDim T_ASSIGN arrayInitializer ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5);}
+|   type identifier initializerDim T_ASSIGN arrayInitializer ';' {(node = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5)) ? $$ = node : yyerror("parse error: Wrong dimensionality on initialised array\n");}
 ;
 
 initializerDim:

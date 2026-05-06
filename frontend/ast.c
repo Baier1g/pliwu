@@ -158,14 +158,19 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
     return node;
 }
 
-void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
+int ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
     //printf("depth %d, sizes.size %d, values.size %d\n", depth, sizes->size, values->size);
+    //printf("values->head: %d\n", values->head);
     if (depth >= sizes->size){
-        return;
+        if ((unsigned int) values->head > 30) {
+            printf("ast.c::arr: initialisation array too deep\n");
+            return -1;
+        }
+        return 0;
     }
     if (values->size <= 0) {
         printf("ast.c::arr: wrong declared depth\n");
-        return;
+        return -1;
     }
 
     //check current dim
@@ -186,18 +191,25 @@ void ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int dep
     //check next dim
     for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
         if (1){
-            ds_helper(anode, sizes, (linked_list *) lln->data, depth+1);
+            if (ds_helper(anode, sizes, (linked_list *) lln->data, depth+1)) {
+                return -1;
+            }
         } else {
             printf("ast.c::arr: Array missing from initializor\n"); //anode err print
+            return -1;
         }
     }
+    return 0;
 }
 
-void define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
-    ds_helper(anode, sizes, values, 0);
+int define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
+    if (ds_helper(anode, sizes, values, 0)) {
+        return -1;
+    }
     for (linked_list_node *lln = sizes->head; lln != NULL; lln = lln->next) {
         lln->data = create_binary_node(anode->pos.startchar, anode->pos.line, A_PRIMARY_EXPR, TYPE_INT, (int) lln->data);
     }
+    return 0;
 }
 
 AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *a, void *b, void *c, void *d) {
@@ -220,7 +232,9 @@ AST_node *create_quaternary_node(int startchar, int line, kind node_kind, void *
             node->array_decl.identifier = b;
             node->array_decl.sizes = c;
             if (d) {
-                define_sizes(node, c, d);
+                if (define_sizes(node, c, d)) {
+                    return NULL;
+                }
             }
             node->array_decl.values = d;
             break;
