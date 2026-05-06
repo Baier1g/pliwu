@@ -232,6 +232,7 @@ void recurse_scope(AST_node *node) {
             break;
         case A_INDEX_EXPR:
             name = node->indexing.identifier->primary_expr.identifier_name;
+            recurse_scope(node->indexing.identifier);
             //check arrayname in scope
             v = (var_info *) symbol_table_get(current_scope, name);
             if(!v){

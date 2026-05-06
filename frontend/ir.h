@@ -132,6 +132,7 @@ enum IR_op_code {
 enum operand_type {
     P_CONSTANT,
     P_TEMP,
+    P_DEREFERENCE,
     P_LABEL,
     P_VARIABLE,
     P_FUNC_CALL,
@@ -145,6 +146,7 @@ struct frame {
     hash_map *locals;
     segment *segment, *last;
     linked_list *nested_frames;
+    linked_list *data;          //Contains AST_node with data to be initialised
     int max_offset;
     int func_params;
     int regs_used;

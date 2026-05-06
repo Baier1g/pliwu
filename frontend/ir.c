@@ -119,6 +119,7 @@ frame *create_frame() {
     frame *tmp = (frame *) malloc(sizeof(frame));
     tmp->name = NULL;
     tmp->nested_frames = linked_list_new();
+    tmp->data = linked_list_new();
     tmp->max_offset = 0;
     tmp->func_params = 0;
     tmp->regs_used = 0;
@@ -130,6 +131,10 @@ frame *create_named_frame(char *name) {
     tmp->name = calloc(strlen(name), sizeof(char));
     strcpy(tmp->name, name);
     tmp->nested_frames = linked_list_new();
+    tmp->data = linked_list_new();
+    tmp->max_offset = 0;
+    tmp->func_params = 0;
+    tmp->regs_used = 0;
     return tmp;
 }
 
@@ -152,6 +157,7 @@ IR_operand *create_operand(operand_type type, void *content) {
             strcpy(op->variable_name, content);
             break;
         case P_TEMP:
+        case P_DEREFERENCE:
         case P_CONSTANT:
             op->constant = (int) content;
             break;
@@ -170,7 +176,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     char *name;
@@ -278,11 +284,16 @@ int recurse_IR_tree(AST_node *node) {
             if (node->var_decl.expr_stmt) {
                 //int old_count = temp_counter;
                 int new_count = recurse_IR_tree(node->var_decl.expr_stmt);
+                if (new_count == 0) {
+                    // THIS IS A STRING, SHIT FUCKING SUCKS
+                    expr = create_operand(P_VARIABLE, name);
+                    id = create_operand(P_TEMP, temp_counter++);
+                    op = create_op(IR_VAR_DECL, id, expr, NULL);
+                    hash_map_insert(local_variables, name, id);
+                    linked_list_append(current_segment->operations, op);
+                    break;
+                } 
                 //printf("%s\n", name);
-                var_info *info = (var_info *) symbol_table_get(node->table, name);
-                if (!info) {
-                    printf("Not there :(\n");
-                }
                 if (((var_info *) symbol_table_get(current_segment->table, name))->escaping) {
                     id = create_operand(P_VARIABLE, name);
                 } else {
@@ -305,7 +316,24 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_ARRAY_DECL:
             name = node->array_decl.identifier->primary_expr.identifier_name;
-            
+            if (node->array_decl.values) {
+                linked_list_append(current_frame->data, node);
+            }
+
+            int temp = recurse_IR_tree((AST_node*)((linked_list_node *) node->array_decl.sizes->head)->data);
+            for (linked_list_node *lln = node->array_decl.sizes->head->next; lln != NULL; lln = lln->next) {
+                recurse_IR_tree((AST_node *) lln->data);
+                id = create_operand(P_TEMP, temp);
+                expr = create_operand(P_TEMP, temp_counter - 1);
+                op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), id, expr);
+                linked_list_append(current_segment->operations, op);
+                temp = temp_counter++;
+            }
+
+            id = create_operand(P_TEMP, temp_counter++);
+            op = create_op(IR_ALLOC, id, create_operand(P_TEMP, temp), NULL);
+            hash_map_insert(local_variables, name, id);
+            linked_list_append(current_segment->operations, op);
             break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
@@ -415,13 +443,18 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_ASSIGN_EXPR:
             expr = create_operand(P_TEMP, recurse_IR_tree(node->assign_expr.expression));
-            name = node->assign_expr.identifier->primary_expr.identifier_name;
-            if (hash_map_contains(local_variables, name)) {
-                id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(local_variables, name))->constant);
-                //printf("%s\n", name);
-                op = create_op(IR_ASSIGN, id, expr, NULL);
+            if (node->assign_expr.identifier->kind == A_PRIMARY_EXPR) {
+                name = node->assign_expr.identifier->primary_expr.identifier_name;
+                if (hash_map_contains(local_variables, name)) {
+                    id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(local_variables, name))->constant);
+                    //printf("%s\n", name);
+                    op = create_op(IR_ASSIGN, id, expr, NULL);
+                } else {
+                    id = create_operand(P_VARIABLE, name);
+                    op = create_op(IR_ASSIGN, id, expr, NULL);
+                }
             } else {
-                id = create_operand(P_VARIABLE, name);
+                id = create_operand(P_DEREFERENCE, recurse_IR_tree(node->assign_expr.identifier));
                 op = create_op(IR_ASSIGN, id, expr, NULL);
             }
             op->in_frame = current_frame;
@@ -444,7 +477,51 @@ int recurse_IR_tree(AST_node *node) {
             // TODO: VERY UNFINISHED
             recurse_IR_tree(node->unary_expr.expression);
             break;
+        case A_INDEX_EXPR:
+            name = node->indexing.identifier->primary_expr.identifier_name;
+            IR_operand **sizes = (IR_operand **) calloc(node->indexing.indices->size, sizeof(IR_operand *));
+            AST_node *array_node = (AST_node *) ((var_info *) symbol_table_get(current_segment->table, name))->ast_node;
+            int counter = node->indexing.indices->size - 1;
+            for (linked_list_node *lln = array_node->array_decl.sizes->tail; lln->prev != NULL; lln = lln->prev) {
+                if (counter == node->indexing.indices->size - 1) {
+                    sizes[counter--] = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
+                } else {
+                    expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
+                    id = create_operand(P_TEMP, temp_counter++);
+                    op = create_op(IR_MUL, id, expr, sizes[counter + 1]);
+                    linked_list_append(current_segment->operations, op);
+                    sizes[counter] = id;
+                    counter--;
+                }
+            }
+            counter = 1;
+            op = create_op(IR_ASSIGN, create_operand(P_TEMP, temp_counter), create_operand(P_CONSTANT, 0), NULL);
+            linked_list_append(current_segment->operations, op);
+            temp = temp_counter++;
+            for (linked_list_node *lln = node->indexing.indices->head; lln->next != NULL; lln = lln->next) {
+                id = create_operand(P_TEMP, recurse_IR_tree((AST_node*) lln->data));
+                expr = sizes[counter++];
+                op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), id, expr);
+                linked_list_append(current_segment->operations, op);
+                id = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), create_operand(P_TEMP, temp), id);
+                linked_list_append(current_segment->operations, op);
+                temp = temp_counter++;
+            }
+            expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *)((linked_list_node *) node->indexing.indices->tail)->data));
+            id = create_operand(P_TEMP, temp);
+            op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), id, expr);
+            linked_list_append(current_segment->operations, op);
+            temp = temp_counter++;
+            expr = hash_map_get(local_variables, name);
+            op = create_op(IR_ADD, create_operand(P_DEREFERENCE, temp_counter), create_operand(P_TEMP, temp), expr);
+            linked_list_append(current_segment->operations, op);
+            free(sizes);
+            return temp_counter++;
         case A_PRIMARY_EXPR:
+            if (node->primary_expr.type == TYPE_STRING) {
+                return 0;
+            } 
             int val = 0;
             switch (node->primary_expr.type) {
                 case TYPE_CHAR:
@@ -553,6 +630,9 @@ void print_operand(IR_operand *op) {
         case P_VARIABLE:
             printf("%s", op->variable_name);
             break;
+        case P_DEREFERENCE:
+            printf("[T%d]", op->constant);
+            break;
         case P_TEMP:
             printf("T");
         case P_CONSTANT:
@@ -602,6 +682,7 @@ void print_operation(IR_operation *op) {
             print_operand(op->arg2);
             break;
         case IR_CALL:
+        case IR_ALLOC:
             print_operand(op->arg1);
             printf(" <- ");
             printf("%s ", name);
@@ -761,6 +842,9 @@ void handle_use_set(IR_operation *op) {
                 linked_list_append(ll, op->arg2->constant);
             }
             break;
+        case IR_ALLOC:
+            linked_list_append(ll, op->arg2->constant);
+            break;
         default:
             break;
     }
@@ -784,6 +868,7 @@ void handle_def_set(IR_operation *op) {
         case IR_AND:
         case IR_OR:
         case IR_CALL:
+        case IR_ALLOC:
             linked_list_append(ll, op->arg1->constant);
             break;
         case IR_ASSIGN:

@@ -204,7 +204,7 @@ void RA_disconnect_node(RA_graph *graph, int t1) {
 }
 
 int RA_simplify(RA_graph *graph, int *simple, int *spill) {
-    printf("in RA_simplify\n");
+    //printf("in RA_simplify\n");
     int spill_count, simple_count;
     spill_count = simple_count = 0;
     for (int i = 1; i <= graph->num_nodes; i++) {
@@ -259,7 +259,7 @@ void sort_nodes(RA_graph *graph, int *arr) {
  * Returns the number of actual spill nodes
  */
 int RA_select(int *simple, int *potential_spill, int *spill) {
-    printf("In RA_select\n");
+    //printf("In RA_select\n");
     int spill_count = 0;
     RA_node *node;
     
@@ -361,10 +361,16 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
         
         if (current_op->arg1 && current_op->arg1->type == P_TEMP && current_op->arg1->constant == spilled_node) {
             if (!defined) {
-                current_op->arg1->type = P_VARIABLE;
-                current_op->arg1->variable_name = var_name;
-                current_op->op = IR_VAR_DECL;
-                printf("var_name: %s\n", var_name);
+                if (current_op->op == IR_ALLOC) {
+                    operation = create_op(IR_VAR_DECL, create_operand(P_VARIABLE, var_name), current_op->arg1, NULL);
+                    linked_list_put_next(seg->operations, lln, operation);
+                    lln = lln->next;
+                } else {
+                    current_op->arg1->type = P_VARIABLE;
+                    current_op->arg1->variable_name = var_name;
+                    current_op->op = IR_VAR_DECL;
+                    //printf("var_name: %s\n", var_name);
+                }
                 //op1 = create_operand(P_VARIABLE, var_name);
                 //op2 = create_operand(P_TEMP, spilled_node);
                 //operation = create_op(IR_VAR_DECL, op1, op2, NULL);

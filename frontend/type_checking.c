@@ -140,7 +140,6 @@ data_type recurse_type(AST_node *node) {
                 name = node->assign_expr.identifier->indexing.identifier->primary_expr.identifier_name;
             }
 
-            printf("yippie\n");
             d_type = ((var_info *) symbol_table_get(type_scope, name))->type;
             if (d_type != recurse_type(node->assign_expr.expression)) {
                 type_to_error("Trying to assign to a variable of a different type", node);
