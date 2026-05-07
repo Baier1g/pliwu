@@ -330,6 +330,7 @@ void kill_tree(AST_node* node) {
         return;
     }
     kind type = node->kind;
+    //printf("%s\n", kind_enum_to_string(type));
     if (node->table) {
         destroy_symbol_table(node->table);
     }
@@ -354,7 +355,8 @@ void kill_tree(AST_node* node) {
             kill_ll(node->array_decl.sizes);
             if (node->array_decl.values) {
                 // MORE ROBUST FREEING NEEDED, doesn't work on multidimensional arrays
-                kill_ll(node->array_decl.values);
+                // WHO ELSE UP SEGGING THEY FAULT RIGHT NOW, THIS KILLS THE COMPILER
+                //kill_ll(node->array_decl.values);
             }
             break;
         case A_BLOCK_STMT:

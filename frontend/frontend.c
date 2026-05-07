@@ -52,7 +52,7 @@ int main(int argc, char* argv[]) {
     frame *root = create_IR_tree(count, prog);
     print_IR_tree(root);
     RA_graph *graph = register_allocation(count[0], root);
-    print_IR_tree(root);
+    //print_IR_tree(root);
     //print_graph(graph);
     linked_list *gen_asm = linked_list_new();
     codegen(gen_asm, root, graph);
@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
 
     printf("generating code\n");
     fp = fopen("gen_asm.asm", "w");
+    int cou = 0;
     for (linked_list_node *n = gen_asm->head; n != NULL; n = n->next) {
         char *tmp = (char*) n->data;
         fwrite(tmp, strlen(tmp), 1, fp);

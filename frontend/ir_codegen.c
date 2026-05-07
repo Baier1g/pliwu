@@ -1,6 +1,6 @@
 #include "ir_codegen.h"
 
-linked_list *CG_generated_code, *module_level;
+linked_list *CG_generated_code, *module_level, *data_section;
 segment *CG_current_segment;
 frame *CG_current_frame;
 int CG_offset = 1;
@@ -9,6 +9,9 @@ int CG_frame_depth = 0;
 int relational_counter = 0;
 int logical_counter = 0;
 int epilogue_count = 0;
+int CG_string_counter = 0;
+int CG_array_counter = 0;
+
 //int offset_counter = 0;
 
 char *CG_reg_color_to_string(reg_color reg) {
@@ -48,7 +51,7 @@ char *CG_reg_color_to_string(reg_color reg) {
 }
 
 void IR_create_print_macro(void) {
-    linked_list_append(CG_generated_code, \
+    linked_list_append(data_section, \
     "%macro sys_write 3\n\tmov rdi, %1\n\tmov rsi, %2\n\tmov rdx, %3\n\tmov rax,1\n\tsyscall\n%endmacro\n\n");
 }
 
@@ -68,6 +71,17 @@ void IR_create_print_int(void) {
     // Epilogue
     linked_list_append(CG_generated_code, \
     "\tpop r10\n\tpop r9\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
+}
+
+void IR_create_int_alloc(void) {
+    linked_list_append(CG_generated_code,\
+    "_int_alloc:\n\t\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tpush r9\n\tpush r10\n\tmov rax, qword[heap_pointer]\t\t\t; Move start of allocated segment into rax\n");
+    linked_list_append(CG_generated_code,\
+    "\tmov qword[rax], rdi\t\t\t; put length of allocated memory segment at the heap pointer\n\tadd qword[heap_pointer], 8\t\t\t; Increment heap pointer to next available slot");
+    linked_list_append(CG_generated_code,\
+    "mov r8, rdi\t\t\t\t; Move number of elements into r8\n\timul r8, 8\t\t\t\t; Multiply r8 by 8 to get total number of bytes needed\n");
+    linked_list_append(CG_generated_code,\
+    "\tadd qword[heap_pointer], r8\t\t\t; Add r8 to the heap_pointer to get first free space past segment\n\tpop r10\n\tpop r9\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
 }
 
 char *IR_decide_branching(IR_operation *operation) {
@@ -215,10 +229,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        //print_operation(operation);
+        print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        //printf("op_code: %s", IR_op_code_to_string(code));
+        //printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
@@ -239,11 +253,22 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
                     } else if (operation->arg2->type == P_TEMP) {
                         sprintf(name, "\tmov %s, %s\t\t\t\t; Assign from register to register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
+                    } else if (operation->arg2->type == P_DEREFERENCE) {
+                        sprintf(name, "\tmov %s, qword[%s]\t\t\t\t; Assign from memory to register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
                     } else {
                         var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
-                        CG_var_address(var);
-                        sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                        if (operation->arg2->variable_name[0] == '_') {
+                            label = operation->arg2->variable_name;
+                            sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", CG_reg_color_to_string(reg), label, label, CG_reg_color_to_string(reg));
+                        } else {
+                            CG_var_address(var);
+                            sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                        }
                     }
+                } else if (operation->arg1->type == P_DEREFERENCE) {
+                    reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
+                    reg_color reg2 = (reg_color) graph->nodes[operation->arg2->constant]->color;
+                    sprintf(name, "\tmov qword[%s], %s\t\t\t\t; Move value of %s into memory address pointed to by %s\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg));
                 } else {
                     char *tmp = operation->arg1->variable_name;
                     var_info *var = (var_info *) symbol_table_get(seg->table, tmp);
@@ -364,6 +389,18 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, IR_decide_branching(prev));
                 linked_list_append(CG_generated_code, (char *) operation->arg3->dest->name);
                 break;
+            case IR_ALLOC:
+                arg1 = graph->nodes[operation->arg1->constant];
+                arg2 = graph->nodes[operation->arg2->constant];
+                linked_list_append(CG_generated_code, "\tpush rdi\n");
+                name = (char *) calloc(256, sizeof(char));
+                sprintf(name, "\tmov rdi, %s\t\t\t\t; Move number of elements to be allocated into %s\n", CG_reg_color_to_string(arg2->color), CG_reg_color_to_string(arg2->color));
+                linked_list_append(CG_generated_code, name);
+                name = (char *) calloc(128, sizeof(char));
+                sprintf(name, "\tcall _int_alloc\n\tpop rdi\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
+                printf("yurr\n");
+                linked_list_append(CG_generated_code, name);
+                break;
             case IR_PRINT:
                 int counter = 0;
                 name = (char *) calloc(128, sizeof(char));
@@ -377,6 +414,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     var_info *info = symbol_table_get(operation->in_seg->table, operation->arg1->variable_name);
                     CG_var_address(info);
                     sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
+                } else if (operation->arg1->type == P_DEREFERENCE) {
+                    sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 } else {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
@@ -434,7 +473,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, "\n");
                 return;
             default:
-                printf("ir_codegen.c::CG_create_operation: Unknown op code\n");
+                printf("ir_codegen.c::recurse_segment: Unknown op code\n");
                 return;
         }
         linked_list_append(CG_generated_code, "\n");
@@ -527,7 +566,39 @@ void prologue(frame *frm) {
     linked_list_append(CG_generated_code, str);
 }
 
+void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, int current_depth, AST_node* node) {
+    if (current_depth == depth) {
+        char *elem = (char *) calloc(10000, sizeof(char));
+        for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
+            if (((AST_node *) lln->data)->primary_expr.type == TYPE_INT) {
+                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.integer_value);
+                strcat(buffer, elem);
+            }
+        }
+        free(elem);
+    } else {
+        for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
+            CG_recurse_initialised_array(buffer, (linked_list *) lln->data, depth, current_depth + 1, node);
+        }
+    }
+}
+
 void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
+    for (linked_list_node *lln = program->data->head; lln != NULL; lln = lln->next) {
+        AST_node *node = (AST_node *) lln->data;
+        char *buffer = (char *)calloc(500000, sizeof(char));
+        if (node->kind == A_PRIMARY_EXPR) {
+            sprintf(buffer, "\t%s db \"%s\"\n", IR_generate_label("_string", CG_string_counter++), node->primary_expr.string.value);
+            printf("%s", buffer);
+            linked_list_append(data_section, buffer);
+        } else {
+            sprintf(buffer, "\t%s dq ", IR_generate_label("_array", CG_array_counter++));
+            CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
+            strcat(buffer, "\n");
+            printf("%s\n", buffer);
+            linked_list_append(data_section, buffer);
+        }
+    }
     if (program->name) {
         if (strncmp("main", program->name, 4) == 0) {
             //linked_list_append(CG_generated_code, \
@@ -558,15 +629,17 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
 
 void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     module_level = linked_list_new();
-    CG_generated_code = ll;
+    CG_generated_code = linked_list_new();
+    data_section = ll;
     linked_list_append(module_level, \
-                "global _start\n_start:\n\tmov rbp, rsp\n");
+                "global _start\n_start:\n\tlea rax, qword[heap]\t\t\t ; Move starting address of the heap into rax \n\tmov qword[heap_pointer], rax\t\t\t ; Set up the heap pointer to point at the start of the heap\n\tmov rbp, rsp\n");
     IR_create_print_macro();
-    linked_list_append(CG_generated_code, \
-                "section .bss\n\toutput resb 256\n");
-    linked_list_append(CG_generated_code, \
-                "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\nsection .text\n\n");
+    linked_list_append(data_section, \
+                "section .bss\n\toutput resb 256\n\theap resq 1000000\n\theap_pointer resq 1\n");
+    linked_list_append(data_section, \
+                "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\n");
     IR_create_print_int();
+    IR_create_int_alloc();
 
     CG_regs_used(program, graph);
 
@@ -586,13 +659,19 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
 
     CG_frame_depth++;
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
-        code_emit(ll, (frame *) lln->data, graph);
+        code_emit(CG_generated_code, (frame *) lln->data, graph);
     }
     CG_frame_depth--;
+    linked_list_append(data_section, "section .text\n\n");
+    ll->tail->next = CG_generated_code->head;
+    CG_generated_code->head->prev = ll->tail;
+    ll->tail = CG_generated_code->tail;
+    ll->size += CG_generated_code->size;
 
     linked_list_append(module_level, "\tmov rax, 1\n\txor rbx, rbx\n\tint 0x80\n\n");
     ll->tail->next = module_level->head;
     module_level->head->prev = ll->tail;
+    ll->tail = module_level->tail;
     ll->size += module_level->size;
     return;
 }
