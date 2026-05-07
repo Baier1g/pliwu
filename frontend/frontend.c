@@ -48,26 +48,29 @@ int main(int argc, char* argv[]) {
     //AST_optimiser_constant_folding(prog);
     //AST_printer(prog);
     int *count = calloc(1, sizeof(int));
-
+    printf("Converting to IR:\n");
     frame *root = create_IR_tree(count, prog);
     print_IR_tree(root);
+    printf("Register allocation\n");
     RA_graph *graph = register_allocation(count[0], root);
     //print_IR_tree(root);
-    //print_graph(graph);
+    print_graph(graph);
     linked_list *gen_asm = linked_list_new();
+    printf("generating code\n");
     codegen(gen_asm, root, graph);
 
-
-    printf("generating code\n");
+    printf("Writing to file\n");
     fp = fopen("gen_asm.asm", "w");
     int cou = 0;
     for (linked_list_node *n = gen_asm->head; n != NULL; n = n->next) {
         char *tmp = (char*) n->data;
+        printf("%s", tmp);
         fwrite(tmp, strlen(tmp), 1, fp);
     }
     linked_list_delete(gen_asm);
     fclose(fp);
     linked_list_delete(errors);
     kill_tree(prog);
+    printf("All done!\n");
     return 0;
 }

@@ -15,12 +15,23 @@ func main(int h, int i, int j, int k, int l, int m, int n) {
         int q = 4;
     }
     a = ((7+5) * (7 - 3)) * ((50 - 20) * (2 + 4)) + bcc - a1;
+    print(a);
     h = dummy(a, bcc) / dummy(bcc, a);
     n = 700 + gucci + grum + grim;
     print(n);
+    print(dum_rec(10));
     return;
 }
 
 func dummy(int a, int b) -> int {
     return a + b;
+}
+
+func dum_rec(int n) -> int {
+    if (n == 0) {
+        return 0;
+    }
+    int a = dum_rec(n-1);
+    print(a);
+    return n;
 }

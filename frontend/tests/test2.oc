@@ -3,7 +3,7 @@ main(5, "c");
 
 func main(int argv, char argc) {
     print(yarr);
-    int test;
+    //int test;
     int habibi = 30;
     print(habibi / 10);
     //bool sheeesh = id(habibi, 50, "f"); 

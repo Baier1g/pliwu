@@ -8,7 +8,8 @@ func fibbonaci(int n) -> int {
 }
 
 func main(int a, char c) {
-    fib_util(20);
+    fib_util(100);
+    return;
 }
 
 func fib_util(int n) -> void {
@@ -17,4 +18,5 @@ func fib_util(int n) -> void {
     }
     fib_util(n - 1);
     print(fibbonaci(n));
+    return;
 }

@@ -75,6 +75,8 @@ void print_operation(IR_operation *);
  */
 void liveness(frame *);
 
+int IR_get_type_size(data_type);
+
 /*
  * This enum describes the different types of operations in the intermediate representation
  */

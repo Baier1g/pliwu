@@ -96,6 +96,21 @@ enum IR_op_code AST_op_to_IR_op(binary_op op) {
     }
 }
 
+int IR_get_type_size(data_type type) {
+    switch(type) {
+        case TYPE_INT:
+        case TYPE_STRING:
+            return 8;
+        case TYPE_BOOL:
+        case TYPE_CHAR:
+            return 1;
+        default:
+            printf("ir.c::IR_get_type_size: Unexpected type %d", type);
+            return 0;
+        
+    }
+}
+
 char *IR_generate_label(char* string, int i) {
     char *tmp = calloc(strlen(string) + 5, sizeof(char));
     sprintf(tmp, "%s%d", string, i);
@@ -289,15 +304,18 @@ int recurse_IR_tree(AST_node *node) {
                 //printf("%s\n", name);
                 if (((var_info *) symbol_table_get(current_segment->table, name))->escaping) {
                     id = create_operand(P_VARIABLE, name);
+                    expr = create_operand(P_TEMP, new_count);
+                    temp_counter++;
+                    op = create_op(IR_VAR_DECL, id, expr, NULL);
                 } else {
                     id = create_operand(P_TEMP, temp_counter);
+                    expr = create_operand(P_TEMP, new_count);
+                    temp_counter++;
+                    op = create_op(IR_ASSIGN, id, expr, NULL);
+                    hash_map_insert(local_variables, name, id);
                 }
-                expr = create_operand(P_TEMP, new_count);
-                temp_counter++;
-                op = create_op(IR_VAR_DECL, id, expr, NULL);
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
-                hash_map_insert(local_variables, name, id);
                 linked_list_append(current_segment->operations, op);
             } else {
                 id = create_operand(P_VARIABLE, name);
@@ -315,7 +333,7 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_frame->data, node);
                 id = create_operand(P_TEMP, temp_counter++);
                 expr = create_operand(P_VARIABLE, IR_generate_label("_array", IR_array_counter++));
-                op = create_op(IR_VAR_DECL, id, expr, NULL);
+                op = create_op(IR_ASSIGN, id, expr, NULL);
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
                 hash_map_insert(local_variables, name, id);
@@ -334,7 +352,7 @@ int recurse_IR_tree(AST_node *node) {
             }
 
             id = create_operand(P_TEMP, temp_counter++);
-            op = create_op(IR_ALLOC, id, create_operand(P_TEMP, temp), NULL);
+            op = create_op(IR_ALLOC, id, create_operand(P_CONSTANT, IR_get_type_size(node->array_decl.type)), create_operand(P_TEMP, temp));
             hash_map_insert(local_variables, name, id);
             linked_list_append(current_segment->operations, op);
             break;
@@ -518,10 +536,28 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_segment->operations, op);
                 temp = temp_counter++;
             }
+
+            // Add final index offset 
             expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *)((linked_list_node *) node->indexing.indices->tail)->data));
             id = create_operand(P_TEMP, temp);
             op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), id, expr);
             linked_list_append(current_segment->operations, op);
+
+            // Multiply offset by element size
+            id = create_operand(P_TEMP, temp_counter++);
+            expr = create_operand(P_DEREFERENCE, ((IR_operand *) hash_map_get(local_variables, name))->constant);
+            op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), id, expr);
+            linked_list_append(current_segment->operations, op);
+
+            // Add 16 to offset 
+            temp = temp_counter++;
+            id = create_operand(P_TEMP, temp_counter++);
+            op = create_op(IR_ASSIGN, id, create_operand(P_CONSTANT, 16), NULL);
+            linked_list_append(current_segment->operations, op);
+            expr = create_operand(P_TEMP, temp);
+            op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), expr, id);
+            linked_list_append(current_segment->operations, op);
+
             temp = temp_counter++;
             expr = hash_map_get(local_variables, name);
             op = create_op(IR_ADD, create_operand(P_DEREFERENCE, temp_counter), create_operand(P_TEMP, temp), expr);
@@ -772,6 +808,7 @@ void print_IR_tree(frame *root) {
 }
 
 frame *create_IR_tree(int *count, AST_node *root) {
+    printf("hej\n");
     current_frame_table = create_symbol_table(NULL, NULL);
     local_variables = create_hash_map(128);
     frame *global_frame = create_named_frame("/PROGRAM");
@@ -787,6 +824,8 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
+    print_IR_tree(current_frame);
+    printf("liveness analysis:\n");
     liveness(current_frame);
     //print_graph(graph);
     printf("temp_counter: %d\n", temp_counter);
@@ -848,6 +887,9 @@ void handle_use_set(IR_operation *op) {
             }
             break;
         case IR_ASSIGN:
+            if (op->arg1->type == P_DEREFERENCE) {
+                linked_list_append(ll, op->arg1->constant);
+            }
             if (op->arg1->type != P_TEMP) {
                 linked_list_append(ll, op->arg2->constant);
             }
@@ -882,9 +924,9 @@ void handle_def_set(IR_operation *op) {
             linked_list_append(ll, op->arg1->constant);
             break;
         case IR_ASSIGN:
-            if (op->arg1->type == P_TEMP) {
+            if (op->arg1->type == P_TEMP || op->arg1->type == P_DEREFERENCE) {
                 linked_list_append(ll, op->arg1->constant);
-            }
+            } 
             break;
         default:
             break;
@@ -983,8 +1025,10 @@ void liveness(frame *frm) {
                 // Out set work
                 //printf("Out set work\n");
                 ll = linked_list_new();
+                //printf("%d\n", seg->operations->tail);
                 if (lln == seg->operations->tail) {
-                    if (seg->left) {
+                    //printf("yoo, %d\n", seg->left);
+                    if (seg->left->operations->size) {
                         IR_operation *next = (IR_operation *) seg->left->operations->head->data;
                         set_union(ll, next->in);
                         if (seg->right) {
@@ -993,6 +1037,7 @@ void liveness(frame *frm) {
                         }
                     }
                 } else {
+                    //printf("kill me\n");
                     set_union(ll, ((IR_operation *) lln->next->data)->in);
                 }
                 //printf("Out set done\n");
@@ -1002,10 +1047,10 @@ void liveness(frame *frm) {
                 if (in_size != op->in->size || out_size != op->out->size) {
                     change = 1;
                 }
-                //printf("oi: %d; oo: %d, ni: %d; no: %d\n", in_size, out_size, op->in->size, op->out->size);
+                printf("oi: %d; oo: %d, ni: %d; no: %d\n", in_size, out_size, op->in->size, op->out->size);
             }
 
-            //printf("Adding segments\n");
+            printf("Adding segments\n");
             for (linked_list_node *lln = seg->pred->head; lln != NULL; lln = lln->next) {
                 linked_list_append(new_segments, (segment *) lln->data);
             }
