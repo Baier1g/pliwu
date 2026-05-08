@@ -378,7 +378,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 name = (char *) calloc(128, sizeof(char));
                 label = IR_generate_label("false_rel", relational_counter);
                 label2 = IR_generate_label("end_rel", relational_counter++);
-                sprintf(name, "\t%s %s\n", IR_decide_branching(operation), label);
+                sprintf(name, "%s %s\n", IR_decide_branching(operation), label);
                 linked_list_append(CG_generated_code, name);
 
                 // The true case, move 1 into result register and jump to end_rel
@@ -393,13 +393,24 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, name);
                 break;
             case IR_AND:
-                break;
             case IR_OR:
+                arg1 = graph->nodes[operation->arg1->constant];
+                name = (char *) calloc(128, sizeof(char));
+                sprintf(name, "\ttest %s, %s\t\t\t\t; logical operation", CG_reg_color_to_string(arg1->color), CG_reg_color_to_string(arg1->color));
+                linked_list_append(CG_generated_code, name);
                 break;
             case IR_IF:
             case IR_WHILE:
                 prev = (IR_operation *) lln->prev->data;
-                linked_list_append(CG_generated_code, IR_decide_branching(prev));
+                if (prev->op < IR_EQUALS || IR_OR < prev->op) {
+                    // Previous operation is not relational or logical
+                    reg_color color = graph->nodes[prev->arg1->constant]->color;
+                    name = (char *) calloc(128, sizeof(char));
+                    sprintf(name, "\ttest %s, %s\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                    linked_list_append(CG_generated_code, name);
+                } else {
+                    linked_list_append(CG_generated_code, IR_decide_branching(prev));
+                }
                 linked_list_append(CG_generated_code, (char *) operation->arg3->dest->name);
                 break;
             case IR_ALLOC:
@@ -484,6 +495,17 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, "\tjmp ");
                 linked_list_append(CG_generated_code, (char *) operation->arg1->dest->name);
                 linked_list_append(CG_generated_code, "\n");
+                return;
+            case IR_LOGICAL_JUMP:
+                IR_operation *prev = (IR_operation *) lln->prev->data;
+                name = (char *) calloc(128, sizeof(char));
+                if (prev->op ==IR_ASSIGN) {
+                    sprintf(name, "\tjmp %s\n", operation->arg1->dest->name);
+                } else {
+                    sprintf(name, "%s %s\n", IR_decide_branching(prev), operation->arg1->dest->name);
+                }
+                linked_list_append(CG_generated_code, name);
+                recurse_segment(seg->left, graph);
                 return;
             default:
                 printf("ir_codegen.c::recurse_segment: Unknown op code\n");

@@ -95,6 +95,10 @@ void recurse_scope(AST_node *node) {
             }
             recurse_scope(node->func_def.function_block);
             
+            if (node->func_def.return_type == TYPE_VOID) {
+                linked_list_append(node->func_def.function_block->block.stmt_list, create_unary_node(0, 0, A_RETURN_STMT, NULL));
+            }
+            
             nesting_depth--;
             current_scope = outer_table;
             is_in_function = was_in;

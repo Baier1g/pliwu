@@ -26,7 +26,7 @@ int main(int argc, char* argv[]) {
         }
         linked_list_append(prog->program.modules, module);
     }
-    //AST_printer(prog);
+    AST_printer(prog);
 
     
     linked_list *errors = linked_list_new();
@@ -64,7 +64,7 @@ int main(int argc, char* argv[]) {
     int cou = 0;
     for (linked_list_node *n = gen_asm->head; n != NULL; n = n->next) {
         char *tmp = (char*) n->data;
-        printf("%s", tmp);
+        //printf("%s", tmp);
         fwrite(tmp, strlen(tmp), 1, fp);
     }
     linked_list_delete(gen_asm);

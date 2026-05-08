@@ -1,0 +1,7 @@
+main();
+
+func main() {
+    bool boo = false;
+    boo = 1 < 3 && 2 < 3 && 3 == 3 && 4 && boo && 6;
+    print(boo);
+}

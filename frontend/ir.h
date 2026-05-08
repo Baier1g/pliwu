@@ -16,7 +16,6 @@ typedef struct IR_operand IR_operand;
 typedef enum IR_op_code IR_op_code;
 typedef enum operand_type operand_type;
 
-
 /*
  * Most based and useful function in this entire compiler
  */
@@ -118,6 +117,7 @@ enum IR_op_code {
     // INT,
 
     IR_GOTO,
+    IR_LOGICAL_JUMP,
     /*JNC,
     JMP,
     JNE,

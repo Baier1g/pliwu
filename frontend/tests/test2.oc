@@ -42,7 +42,7 @@ func main(int argv, char argc) {
                 j = k + g;
                 if (1) {
                     j = j + j;
-                    if (1) {
+                    if (1 + 3) {
                         j = j + j;
                     } else {
                         j = j- j;
