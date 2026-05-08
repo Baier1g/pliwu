@@ -218,7 +218,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    printf("recursing segment\n");
+    //printf("recursing segment\n");
     CG_current_segment = seg;
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
@@ -229,10 +229,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        printf("op_code: %s\n", IR_op_code_to_string(code));
+        //printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
@@ -247,7 +247,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 break;
             case IR_ASSIGN:
                 name = (char *) calloc(128, sizeof(char));
-                printf("henlo\n");
+                //printf("henlo\n");
                 if (operation->arg1->type == P_TEMP) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
                     if (operation->arg2->type == P_CONSTANT) {

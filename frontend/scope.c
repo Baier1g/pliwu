@@ -16,7 +16,7 @@ struct call_info {
     symbol_table *called_scope;
 };
 
-void recurse_scope(AST_node*);
+short recurse_scope(AST_node*);
 
 
 call_info *create_call_info(AST_node *node, symbol_table *table) {
@@ -43,10 +43,12 @@ void recurse_scope_array(linked_list *values, int depth, int current_depth) {
     }
 }
 
-void recurse_scope(AST_node *node) {
+short recurse_scope(AST_node *node) {
     symbol_table *outer_table;
     char *name;
     var_info *v;
+    short l,r;
+    l = r = 0;
     switch(node->kind) {
         case A_PROGRAM:
             printf("scope.c::recurse_scope: entered with kind A_PROGRAM\n");
@@ -71,7 +73,7 @@ void recurse_scope(AST_node *node) {
             }*/
             if (node->func_def.parameters->size > MAX_ARGUMENTS){
                 to_error("funciton definition has too many parameters", node);
-                return;
+                return 0;
             }
 
             v = create_var_info(nesting_depth);
@@ -80,7 +82,7 @@ void recurse_scope(AST_node *node) {
             v->ast_node = node;
             if (symbol_table_insert(current_scope, node->func_def.identifier->primary_expr.identifier_name, v)){
                 to_error("function name already used", node);
-                return;
+                return 0;
             }
             
             outer_table = current_scope;
@@ -93,10 +95,13 @@ void recurse_scope(AST_node *node) {
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
             }
-            recurse_scope(node->func_def.function_block);
-            
+            l = recurse_scope(node->func_def.function_block);
             if (node->func_def.return_type == TYPE_VOID) {
                 linked_list_append(node->func_def.function_block->block.stmt_list, create_unary_node(0, 0, A_RETURN_STMT, NULL));
+            } else {
+                if (!l) {
+                    to_error("Function missing return statement", node);
+                }
             }
             
             nesting_depth--;
@@ -150,9 +155,11 @@ void recurse_scope(AST_node *node) {
             current_scope = create_symbol_table(current_scope, current_scope->global);
             node->table = current_scope;
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
-                recurse_scope(lln->data);
+                l = recurse_scope(lln->data);
+                if(l){r=1;}
             }
             current_scope = outer_table;
+            if (r) {return 1;}
             break;
         case A_IF_STMT:
             recurse_scope(node->if_stmt.condition);
@@ -168,6 +175,7 @@ void recurse_scope(AST_node *node) {
             }
             
             current_scope = outer_table;
+            if (l && r) {return 1;}
             break;
         case A_WHILE_LOOP:
             recurse_scope(node->while_loop.condition);
@@ -189,7 +197,7 @@ void recurse_scope(AST_node *node) {
             if (!is_in_function) {
                 to_error("returned outside of function", node);
             }
-            break;
+            return 1;
         case A_ASSIGN_EXPR:
             recurse_scope(node->assign_expr.identifier);
             recurse_scope(node->assign_expr.expression);
@@ -252,7 +260,7 @@ void recurse_scope(AST_node *node) {
             to_error("Unknown AST_kind", node);
             break;
     }    
-    return;
+    return 0;
 }
 
 

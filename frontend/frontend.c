@@ -50,11 +50,11 @@ int main(int argc, char* argv[]) {
     int *count = calloc(1, sizeof(int));
     printf("Converting to IR:\n");
     frame *root = create_IR_tree(count, prog);
-    print_IR_tree(root);
+    //print_IR_tree(root);
     printf("Register allocation\n");
     RA_graph *graph = register_allocation(count[0], root);
     //print_IR_tree(root);
-    print_graph(graph);
+    //print_graph(graph);
     linked_list *gen_asm = linked_list_new();
     printf("generating code\n");
     codegen(gen_asm, root, graph);

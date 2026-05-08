@@ -196,7 +196,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     char *name, *label1, *label2;
@@ -504,12 +504,12 @@ int recurse_IR_tree(AST_node *node) {
             // Recurse left side
             IR_operand *left = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.left));
             if (node->binary_expr.op == A_AND) {
-                printf("hello\n");
+                //printf("hello\n");
                 op = create_op(IR_AND, left, NULL, NULL);
             } else {
                 op = create_op(IR_OR, left, NULL, NULL);
             }
-            printf("please\n");
+            //printf("please\n");
             linked_list_append(current_segment->operations, op);
             op->in_frame = current_frame;
             op->in_seg = current_segment;
@@ -525,7 +525,7 @@ int recurse_IR_tree(AST_node *node) {
         
             // recurse right side
             IR_operand *right = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.right));
-            printf("made it\n");
+            //printf("made it\n");
             if (node->binary_expr.op == A_AND) {
                 op = create_op(IR_AND, right, NULL, NULL);
             } else {
@@ -586,7 +586,7 @@ int recurse_IR_tree(AST_node *node) {
             op->in_frame = current_frame;
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
-            printf("huh?\n");
+            //printf("huh?\n");
             return temp_counter++;
         case A_UNARY_EXPR:
             // TODO: VERY UNFINISHED
@@ -905,7 +905,7 @@ void print_IR_tree(frame *root) {
 }
 
 frame *create_IR_tree(int *count, AST_node *root) {
-    printf("hej\n");
+    //printf("hej\n");
     current_frame_table = create_symbol_table(NULL, NULL);
     local_variables = create_hash_map(128);
     frame *global_frame = create_named_frame("/PROGRAM");
@@ -921,7 +921,7 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    print_IR_tree(current_frame);
+    //print_IR_tree(current_frame);
     printf("liveness analysis:\n");
     liveness(current_frame);
     //print_graph(graph);
