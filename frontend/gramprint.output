@@ -1,0 +1,42 @@
+module: ε  | module declaration
+
+declaration: varDeclaration | Stmt | funcDefinition
+varDeclaration: type identifier ';' | type identifier declarator ';' | type identifier '=' conditionalExpr ';' | type identifier initializerDim '=' arrayInitializer ';'
+initializerDim: '[' ']' | initializerDim '[' ']'
+declarator: '[' Expr ']' | declarator '[' Expr ']'
+
+arrayInitializer: '{' initializerList '}'
+initializerList: ε | initializerValue | initializerList ',' initializerValue
+initializerValue: primary | arrayInitializer
+
+type: T_INT_TYPE | T_CHAR_TYPE | T_BOOL_TYPE | T_VOID_TYPE | T_STRING_TYPE
+funcDefinition: T_FUNC function
+function: identifier '(' parameters ')' returnType block
+returnType: ε | T_ARROW type
+parameters: ε | type identifier | parameters ',' type identifier
+args: ε | assignExpr | args ',' assignExpr
+
+Stmt: ifStmt | loopStmt | returnStmt | printStmt | ExprStmt
+ifStmt: T_IF '(' Expr ')' block else
+loopStmt: whileLoop
+whileLoop: T_WHILE '(' assignExpr ')' block
+else: ε | T_ELSE block
+returnStmt: T_RETURN Expr ';' | T_RETURN ';'
+printStmt: T_PRINT '(' Expr ')' ';'
+block: '{' blockBody '}'
+blockBody: ε | blockBody declaration
+
+ExprStmt: Expr ';' | error ';'
+Expr: assignExpr
+assignExpr: conditionalExpr | identifier '=' Expr | identifier declarator '=' Expr
+conditionalExpr: logicalAND
+logicalAND: logicalOR | logicalAND T_AND logicalOR
+logicalOR: relExpr | logicalOR T_OR relExpr
+relExpr: ariExpr | relExpr T_EQUALS ariExpr | relExpr T_NEQUALS ariExpr | relExpr '<' ariExpr | relExpr '>' ariExpr | relExpr T_LESS_EQ ariExpr | relExpr T_GREATER_EQ ariExpr
+ariExpr: mulExpr | ariExpr '+' mulExpr | ariExpr '-' mulExpr
+mulExpr: castExpr | mulExpr '*' castExpr | mulExpr '/' castExpr
+castExpr: unaryExpr
+unaryExpr: postfixExpr | '-' postfixExpr | '!' postfixExpr
+postfixExpr: primary | postfixExpr '(' args ')' | postfixExpr '(' error ')' | identifier declarator
+identifier: T_IDENTIFIER
+primary: T_INT | T_CHAR | T_BOOL | T_STRING | '(' Expr ')' | '(' error ')' | identifier
