@@ -420,10 +420,32 @@ int recurse_IR_tree(AST_node *node) {
             int while_c = while_counter++;
             seg = create_segment(node->table);
             seg->name = IR_generate_label("start_while", while_c);
-            current_segment->left = seg;
-            seg->left = create_segment(node->while_loop.block->table);
-            linked_list_append(seg->pred, current_segment);
-            current_segment = seg;
+            if (!current_segment->operations->size) {
+                // This segment is empty, remove it and connect predecessors to the new segment
+                for (linked_list_node *lln = current_segment->pred->head; lln != NULL; lln = lln->next) {
+                    segment *predecessor = (segment *) lln->data;
+                    IR_operation *last_op = (IR_operation *) predecessor->operations->tail->data;
+                    if (last_op->op == IR_GOTO || last_op->op == IR_LOGICAL_JUMP) {
+                        last_op->arg1->dest = seg;
+                    } else if (last_op->op == IR_WHILE) {
+                        last_op->arg3->dest = seg;
+                    }
+                    if (predecessor->left == current_segment) {
+                        predecessor->left = seg;
+                    } else {
+                        predecessor->right = seg;
+                    }
+                    linked_list_append(seg->pred, (segment *)lln->data);
+                }
+                seg->left = create_segment(node->while_loop.block->table);
+                linked_list_append(seg->left->pred, seg);
+                current_segment = seg;
+            } else {
+                current_segment->left = seg;
+                seg->left = create_segment(node->while_loop.block->table);
+                linked_list_append(seg->pred, current_segment);
+                current_segment = seg;
+            }
             //linked_list_append(current_segment->pred, seg);
             //current_segment->left->left = current_segment;
             current_segment->right = create_segment(node->table);
@@ -786,7 +808,7 @@ int recurse_IR_tree(AST_node *node) {
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
                 if (hash_map_contains(local_variables, name)) {
-                    //printf("Prim done\n");
+                    printf("Prim done\n");
                     return ((IR_operand *) hash_map_get(local_variables, name))->constant; 
                 }
                 op = create_op(IR_ASSIGN, tmp, create_operand(P_VARIABLE, name), NULL);
