@@ -548,7 +548,7 @@ int recurse_IR_tree(AST_node *node) {
             if (node->binary_expr.op == A_AND) {
                 op = create_op(IR_ASSIGN, create_operand(P_TEMP, temp_counter), create_operand(P_CONSTANT, 1), NULL);
             } else {
-                op = create_op(IR_ASSIGN, create_operand(P_TEMP, temp_counter++), create_operand(P_CONSTANT, 0), NULL);
+                op = create_op(IR_ASSIGN, create_operand(P_TEMP, temp_counter), create_operand(P_CONSTANT, 0), NULL);
             }
             linked_list_append(current_segment->operations, op);
             op->in_frame = current_frame;
@@ -604,6 +604,8 @@ int recurse_IR_tree(AST_node *node) {
                     expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
                     id = create_operand(P_TEMP, temp_counter++);
                     op = create_op(IR_MUL, id, expr, sizes[counter + 1]);
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
                     linked_list_append(current_segment->operations, op);
                     sizes[counter] = id;
                     counter--;
@@ -611,6 +613,8 @@ int recurse_IR_tree(AST_node *node) {
             }
             counter = 1;
             op = create_op(IR_ASSIGN, create_operand(P_TEMP, temp_counter), create_operand(P_CONSTANT, 0), NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
             temp = temp_counter++;
             for (linked_list_node *lln = node->indexing.indices->head; lln->next != NULL; lln = lln->next) {
@@ -784,6 +788,7 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
+    //printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -795,6 +800,7 @@ void print_operation(IR_operation *op) {
         case IR_GREATER:
         case IR_LESS_EQ:
         case IR_GREATER_EQ:
+        case IR_ALLOC:
             print_operand(op->arg1);
             printf(" <- %s ", name);
             print_operand(op->arg2);
@@ -819,7 +825,6 @@ void print_operation(IR_operation *op) {
             print_operand(op->arg2);
             break;
         case IR_CALL:
-        case IR_ALLOC:
             print_operand(op->arg1);
             printf(" <- ");
             printf("%s ", name);
@@ -986,6 +991,7 @@ void handle_use_set(IR_operation *op) {
             }
             break;
         case IR_ASSIGN:
+            //printf("arg1 type: %d, arg1 constant: %d, arg2 type: %d, arg2 constant: %d\n", op->arg1->type, op->arg1->constant, op->arg2->type, op->arg2->constant);
             if (op->arg1->type == P_DEREFERENCE) {
                 linked_list_append(ll, op->arg1->constant);
             }
@@ -995,6 +1001,7 @@ void handle_use_set(IR_operation *op) {
             break;
         case IR_ALLOC:
             linked_list_append(ll, op->arg2->constant);
+            linked_list_append(ll, op->arg3->constant);
             break;
         default:
             break;
@@ -1084,6 +1091,13 @@ void liveness(frame *frm) {
                     continue;
                 }
             }
+            if (seg->right) {
+                IR_operation *last_op = (IR_operation *) seg->right->operations->tail->data;
+                if (seg->right && (last_op->op == IR_LOGICAL_JUMP || last_op->op == IR_GOTO) && seg->left->iteration == iteration) {
+                    linked_list_append(new_segments, seg);
+                    continue;
+                }
+            }
 
             //printf("popped frunk seg->iteration: %d, iteration: %d, left: %d\n", seg->iteration, iteration, seg->pred->size);
             if (seg->iteration != iteration) {
@@ -1125,21 +1139,19 @@ void liveness(frame *frm) {
                 //printf("%d\n", seg->left);
                 // When left doesn't exist, we are at the last operation of the last segment of a frame
                 // This means that the out set is empty, so it shouldn't be filled in
-                if (seg->left) {
-                    if (lln == seg->operations->tail) {
-                        //printf("yoo, %d\n", seg->left);
-                        if (seg->left->operations->size) {
-                            IR_operation *next = (IR_operation *) seg->left->operations->head->data;
+                if (lln == seg->operations->tail) {
+                    //printf("yoo, %d\n", seg->left);
+                    if (seg->left && seg->left->operations->size) {
+                        IR_operation *next = (IR_operation *) seg->left->operations->head->data;
+                        set_union(ll, next->in);
+                        if (seg->right) {
+                            next = (IR_operation *) seg->right->operations->head->data;
                             set_union(ll, next->in);
-                            if (seg->right) {
-                                next = (IR_operation *) seg->right->operations->head->data;
-                                set_union(ll, next->in);
-                            }
                         }
-                    } else {
-                        //printf("kill me\n");
-                        set_union(ll, ((IR_operation *) lln->next->data)->in);
                     }
+                } else {
+                    //printf("kill me\n");
+                    set_union(ll, ((IR_operation *) lln->next->data)->in);
                 }
                 //printf("Out set done\n");
                 linked_list_delete(op->out);
@@ -1154,7 +1166,6 @@ void liveness(frame *frm) {
             //printf("Adding segments\n");
             //printf("size: %d\n", seg->pred->size);
             for (linked_list_node *lln = seg->pred->head; lln != NULL; lln = lln->next) {
-                //printf("yurr\n");
                 linked_list_append(new_segments, (segment *) lln->data);
             }
         }

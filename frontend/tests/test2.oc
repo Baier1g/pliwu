@@ -54,7 +54,7 @@ func main(int argv, char argc) {
                 i = j;
                 j = k - g;
             }
-            print(j);
+            print(g);
             g = g - 1;
         }
         g = 3;

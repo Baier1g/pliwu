@@ -279,6 +279,7 @@ struct AST_node {
         // Parameter expression
         struct {
             data_type type;
+            int array;
             struct AST_node *identifier;
         } parameter;
 

@@ -10,7 +10,11 @@ func main() {
     print(a[2]);
     int d[] = {1,2,3,4,5};
     d[0] = 30;
+    //insertion_sort(d);
     print(d[0]);
     print(d);
-    return;
 }
+
+/*func insertion_sort(int[] a) -> void {
+    return;
+}*/

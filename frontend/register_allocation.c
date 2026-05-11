@@ -107,7 +107,7 @@ void connect_graph(frame *frm) {
         }
         if (seg->left) {
             linked_list_append(segments, seg->left);
-            if (seg->right) {
+            if (((IR_operation *) seg->operations->tail->data)->op != IR_LOGICAL_JUMP && seg->right) {
                 linked_list_append(segments, seg->right);
             }
         }
@@ -349,7 +349,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
     IR_operation *operation, *current_op;
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         current_op = (IR_operation *) lln->data;
-        //print_operation(current_op);
+        print_operation(current_op);
         tmp = linked_list_find(current_op->in, spilled_node);
         if (tmp) {
             linked_list_remove(current_op->in, tmp);
@@ -444,9 +444,13 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
     //printf("In rewrite_segment\n");
     linked_list_node *bruh = seg->operations->tail;
     if (bruh && !(((IR_operation *) bruh->data)->op == IR_GOTO)) {
-        rewrite_segment(seg->left, spilled_node, defined, var_name);
+        if (((IR_operation *) bruh->data)->op == IR_LOGICAL_JUMP) {
+            rewrite_segment(seg->left, spilled_node, defined, var_name);
+        } else {
+            rewrite_segment(seg->left, spilled_node, defined, var_name);
+            rewrite_segment(seg->right, spilled_node, defined, var_name);
+        }
         //printf("recursing right\n");
-        rewrite_segment(seg->right, spilled_node, defined, var_name);
     }
 
     return;
@@ -464,14 +468,18 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
     linked_list_append(new_frames, frm);
     char *name;
     int key_found = 0;
-    //printf("in rewrite\n");
+    printf("in rewrite\n");
     while (!key_found) {
         if (!new_frames->size) {
-            //printf("WE got here\n");
             // Spilled node is a temp, gotts fix that
             int temp_num = spilled_nodes[count];
+            //printf("count: %d, temp: %d\n", count, temp_num);
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
+            if (!op) {
+                printf("shit\n");
+            }
             segment *seg = op->in_seg;
+            //printf("WE got here\n");
             name = (char *) calloc(9, sizeof(char));
             sprintf(name, "%d", temp_num);
             if (hash_map_insert(op->in_frame->locals, name, op)) {
@@ -551,6 +559,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
         printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
+        print_graph(graph);
+        print_IR_tree(program);
         rewrite_program(program, actual_spill, 0);
         free(simple_nodes);
         free(potential_spill);
