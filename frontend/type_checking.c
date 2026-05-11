@@ -252,6 +252,15 @@ data_type recurse_type(AST_node *node) {
                     type_to_error("Argument type does not match parameter type", node);
                     break;//to break or not to break
                 }
+                AST_node *var_node;
+                if ((var_node = (AST_node *) lln->data)->primary_expr.type == TYPE_IDENTIFIER) {
+                    var_info *var = (var_info *) symbol_table_get(type_scope, var_node->primary_expr.identifier_name);
+                    if (var->kind == ID_ARRAY) {
+                        if (var->ast_node->array_decl.sizes->size != ((AST_node *) param_node->data)->parameter.array) {
+                            type_to_error("Argument dimensionality doesn't match parameter dimensionality", node);
+                        }
+                    }
+                }
                 param_node = param_node->next;
             }
             return funcnode->func_def.return_type;

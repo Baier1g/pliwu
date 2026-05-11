@@ -376,14 +376,15 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, name);
 
                 name = (char *) calloc(128, sizeof(char));
-                label = IR_generate_label("false_rel", relational_counter);
+                label = IR_generate_label("false_rel", relational_counter++);
                 label2 = IR_generate_label("end_rel", relational_counter++);
                 sprintf(name, "%s %s\n", IR_decide_branching(operation), label);
                 linked_list_append(CG_generated_code, name);
 
                 // The true case, move 1 into result register and jump to end_rel
                 name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "\tmov %s, 1\n\tjmp %s", CG_reg_color_to_string((reg_color) arg1->color), label2);
+                sprintf(name, "\tmov %s, 1\n\tjmp %s\n", CG_reg_color_to_string((reg_color) arg1->color), label2);
+                linked_list_append(CG_generated_code, name);
                 
                 // The false case, move 0 into result register
                 linked_list_append(CG_generated_code, label);

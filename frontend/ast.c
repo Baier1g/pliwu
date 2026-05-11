@@ -103,6 +103,7 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
         case A_PARAMETER_EXPR:
             node->parameter.type = (data_type) a;
             node->parameter.identifier = b;
+            node->parameter.array = 0;
             break;
         case A_CALL_EXPR:
             node->call_expr.identifier = a;

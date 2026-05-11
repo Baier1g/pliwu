@@ -154,6 +154,7 @@ returnType:
 parameters:
     /*%empty*/                          {$$ = linked_list_new();}
 |   type identifier                     {$$ = linked_list_new(); linked_list_append($$, create_binary_node(start_current_character, line_number, A_PARAMETER_EXPR, $1, $2));}
+|   type initializerDim identifier      {$$ = linked_list_new(); linked_list_append($$, create_binary_node(start_current_character, line_number, A_PARAMETER_EXPR, $1, $3)); ((AST_node *)$$->tail->data)->parameter.array = $2->size; free($2);}
 |   parameters T_COMMA type identifier  {linked_list_append($1, create_binary_node(start_current_character, line_number, A_PARAMETER_EXPR, $3, $4)); $$ = $1;}
 ;
 
