@@ -196,7 +196,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     char *name, *label1, *label2;
@@ -348,6 +348,9 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->array_decl.sizes->head->next; lln != NULL; lln = lln->next) {
                 recurse_IR_tree((AST_node *) lln->data);
                 id = create_operand(P_TEMP, temp);
+                op = create_op(IR_PARAM, id, create_operand(P_CONSTANT, 0), NULL);
+
+                linked_list_append(current_segment->operations, op);
                 expr = create_operand(P_TEMP, temp_counter - 1);
                 op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), id, expr);
                 linked_list_append(current_segment->operations, op);
@@ -357,6 +360,8 @@ int recurse_IR_tree(AST_node *node) {
             id = create_operand(P_TEMP, temp_counter++);
             op = create_op(IR_ALLOC, id, create_operand(P_CONSTANT, IR_get_type_size(node->array_decl.type)), create_operand(P_TEMP, temp));
             hash_map_insert(local_variables, name, id);
+            linked_list_append(current_segment->operations, op);
+            op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, node->array_decl.sizes->size * 8), create_operand(P_CONSTANT, 0), NULL);
             linked_list_append(current_segment->operations, op);
             break;
         case A_BLOCK_STMT:
@@ -594,7 +599,7 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_INDEX_EXPR:
             name = node->indexing.identifier->primary_expr.identifier_name;
-            IR_operand **sizes = (IR_operand **) calloc(node->indexing.indices->size, sizeof(IR_operand *));
+            /*IR_operand **sizes = (IR_operand **) calloc(node->indexing.indices->size, sizeof(IR_operand *));
             AST_node *array_node = (AST_node *) ((var_info *) symbol_table_get(current_segment->table, name))->ast_node;
             int counter = node->indexing.indices->size - 1;
             for (linked_list_node *lln = array_node->array_decl.sizes->tail; lln->prev != NULL; lln = lln->prev) {
@@ -626,34 +631,140 @@ int recurse_IR_tree(AST_node *node) {
                 op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), create_operand(P_TEMP, temp), id);
                 linked_list_append(current_segment->operations, op);
                 temp = temp_counter++;
+            }*/
+            IR_operand *base = create_operand(P_TEMP, recurse_IR_tree(node->indexing.identifier));
+
+            int index_size = node->indexing.indices->size;
+            int counter = 1;
+            int base_offset = 8;
+
+            IR_operand *accumulator = create_operand(P_TEMP, recurse_IR_tree((AST_node *) node->indexing.indices->head->data));
+            int inner = counter + 1;
+            while (inner <= index_size) {
+                int offset = base_offset + inner * 8;
+                IR_operand *offset_op = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_ASSIGN, offset_op, create_operand(P_CONSTANT, offset), NULL);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+
+                expr = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_ADD, expr, offset_op, base);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+
+                expr = create_operand(P_DEREFERENCE, expr->constant);
+                offset_op = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_MUL, offset_op, accumulator, expr);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+                
+                accumulator = offset_op;
+                inner++;
+            }
+            counter++;
+            
+            for (linked_list_node *lln = node->indexing.indices->head->next; lln != NULL; lln = lln->next) {
+                id = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
+                int inner = counter + 1;
+                linked_list_node *next = lln->next;
+                while (inner <= index_size) {
+                    int offset = base_offset + inner * 8;
+                    IR_operand *offset_op = create_operand(P_TEMP, temp_counter++);
+                    op = create_op(IR_ASSIGN, offset_op, create_operand(P_CONSTANT, offset), NULL);
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
+                    linked_list_append(current_segment->operations, op);
+                    
+                    expr = create_operand(P_TEMP, temp_counter++);
+                    op = create_op(IR_ADD, expr, offset_op, base);
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
+                    linked_list_append(current_segment->operations, op);
+                    
+                    expr = create_operand(P_DEREFERENCE, expr->constant);
+                    offset_op = create_operand(P_TEMP, temp_counter++);
+                    op = create_op(IR_MUL, offset_op, id, expr);
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
+                    linked_list_append(current_segment->operations, op);
+
+                    id = offset_op;
+                    next = next->next;
+                    inner++;
+                }
+                expr = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_ADD, expr, accumulator, id);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                linked_list_append(current_segment->operations, op);
+                accumulator = expr;
+                counter++;
             }
 
             // Add final index offset 
+            printf("yes\n");
             expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *)((linked_list_node *) node->indexing.indices->tail)->data));
-            id = create_operand(P_TEMP, temp);
-            op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), id, expr);
+            op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), accumulator, expr);
+            int acc = temp_counter++;
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
             // Multiply offset by element size
-            id = create_operand(P_TEMP, temp_counter++);
-            expr = create_operand(P_DEREFERENCE, ((IR_operand *) hash_map_get(local_variables, name))->constant);
-            op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), id, expr);
+            expr = create_operand(P_TEMP, temp_counter);
+            op = create_op(IR_ASSIGN, expr, base, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
-            // Add 16 to offset 
-            temp = temp_counter++;
-            id = create_operand(P_TEMP, temp_counter++);
-            op = create_op(IR_ASSIGN, id, create_operand(P_CONSTANT, 16), NULL);
+            expr = create_operand(P_DEREFERENCE, expr->constant);
+            op = create_op(IR_MUL, create_operand(P_TEMP, temp_counter), create_operand(P_TEMP, acc), expr);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
+
+            temp = temp_counter++;
+            // Add 32 + dimensionality * 8 to offset
+            /* RUNTIME VERSION
+            // add 8 to base_address to get address of dimensionality
+            expr = create_operand(P_TEMP, temp_counter);
+            op = create_op(IR_ADD, expr, base, create_operand(P_CONSTANT, 8));
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
+            linked_list_append(current_segment->operations, op);
+
+            // dereference the address to get value of dimensionality
+            id = create_operand(P_TEMP, temp_counter++);
+            op = create_op(IR_ASSIGN, create_operand(P_DEREFERENCE, temp_counter), id, NULL);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
+            linked_list_append(current_segment->operations, op);
+
+            // Multiply dimensionality by 8 to get number of bytes holding dimensions*/
+            int offset_from_base = 32 + (node->indexing.indices->size * 8);
+            id = create_operand(P_TEMP, temp_counter++);
+            op = create_op(IR_ADD, id, base, create_operand(P_CONSTANT, offset_from_base));
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
+            linked_list_append(current_segment->operations, op);
+
+            // Add offset from base to index
             expr = create_operand(P_TEMP, temp);
             op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), expr, id);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
-            temp = temp_counter++;
-            expr = hash_map_get(local_variables, name);
-            op = create_op(IR_ADD, create_operand(P_DEREFERENCE, temp_counter), create_operand(P_TEMP, temp), expr);
+            // Add final offset to base to get the address of element
+            expr = create_operand(P_TEMP, temp_counter++);
+            op = create_op(IR_ADD, create_operand(P_DEREFERENCE, temp_counter), base, expr);
+            op->in_frame = current_frame;
+            op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
-            free(sizes);
+            //free(sizes);
             return temp_counter++;
         case A_PRIMARY_EXPR:
             int val = 0;
@@ -788,7 +899,7 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
-    //printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
+    printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -896,6 +1007,11 @@ void print_IR(segment *seg) {
         }
         print_IR(seg->left);
         print_IR(seg->right);
+    } else if (seg->left) {
+        print_IR(seg->left);
+        if (seg->right) {
+            print_IR(seg->right);
+        }
     }
 }
 
@@ -1052,11 +1168,20 @@ void liveness(frame *frm) {
     int change = 1;
 
     while (change) {
-        //printf("Iteration loop\n");
+        printf("Iteration loop\n");
         linked_list_append(new_segments, frm->last);
         change = 0;
         while (new_segments->size != 0) {
             seg = (segment *) linked_list_pop_front(new_segments);
+            if (!seg->operations->size) {
+                if (seg->name) {
+                    printf("%s\n", seg->name);
+                }
+                for (linked_list_node *lln = seg->pred->head; lln != NULL; lln = lln->next) {
+                    linked_list_append(new_segments, (segment *) lln->data);
+                }
+                continue;
+            }
             //printf("Segment loop size: %d\n", seg->operations->size);
             if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op == IR_WHILE && seg->left->iteration == iteration) {
                 segment *tmp = seg;
@@ -1092,12 +1217,14 @@ void liveness(frame *frm) {
                 }
             }
             if (seg->right) {
+                printf("%d\n", seg->right->operations->size);
                 IR_operation *last_op = (IR_operation *) seg->right->operations->tail->data;
-                if (seg->right && (last_op->op == IR_LOGICAL_JUMP || last_op->op == IR_GOTO) && seg->left->iteration == iteration) {
+                if (seg->right && last_op->op == IR_LOGICAL_JUMP && seg->left->iteration == iteration) {
                     linked_list_append(new_segments, seg);
                     continue;
                 }
             }
+            printf("hi\n");
 
             //printf("popped frunk seg->iteration: %d, iteration: %d, left: %d\n", seg->iteration, iteration, seg->pred->size);
             if (seg->iteration != iteration) {

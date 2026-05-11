@@ -74,6 +74,7 @@ void IR_create_print_int(void) {
 }
 
 void IR_create_alloc(void) {
+    /*old alloc
     linked_list_append(CG_generated_code,\
     "_alloc:\n\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tmov rax, qword[heap_pointer]\t\t\t; Move start of allocated segment into rax\n");
     linked_list_append(CG_generated_code,\
@@ -82,6 +83,43 @@ void IR_create_alloc(void) {
     "\tmov r8, rsi\t\t\t\t; Move number of elements into r8\n\timul r8, 8\t\t\t\t; Multiply r8 by 8 to get total number of bytes needed\n");
     linked_list_append(CG_generated_code,\
     "\tadd qword[heap_pointer], r8\t\t\t; Add r8 to the heap_pointer to get first free space past segment\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
+     */
+    linked_list_append(CG_generated_code,\
+"_alloc:\n\
+    push rbp\n\
+    mov rbp, rsp\n\
+    push r8\n\
+    push r9\n\
+    push r10\n\
+\n\
+    mov rax, qword[heap_pointer]; move base address of memory segment into rax\n\
+    mov qword[rax], rdi         ; move element size onto the heap\n\
+    lea r8, [rax + 8]            ; r15 = address of dimensionality of a\n\
+    mov qword[r8], rsi         ; move dimensionality of a onto the heap\n\
+    mov r9, 16                 ; r14 = offset from base_address of first dim_size\n\
+    mov rbx, 1                  ; accumulator register\n\
+_alloc_loop:\n\
+    mov r10, r9                ; r13 = current offset from base_address\n\
+    mov r10, qword[rbp + r10]   ; r13 = value of dimension size\n\
+    mov qword[rax + r9], r10   ; set dimension size on the heap\n\
+    imul rbx, r10               ; rbx = accumulates total dimension size\n\
+    dec rsi                     ; decrement rsi (dimensionality)\n\
+    add r9, 8                  ; add 8 to the running offset\n\
+    test rsi, rsi               ; test whether dimension sizes have been added\n\
+    jnz _alloc_loop\n\
+    mov qword[rax + r9], rbx   ; move total element size onto the heap\n\
+    add r9, 8\n\
+    mov qword[rax + r9], 1     ; reference count, move 1 on allocation\n\
+    add rbx, 1\n\
+    imul rbx, qword[rax]        ; calculate actual byte size of the array\n\
+    add qword[heap_pointer], rbx\n\
+\n\
+    pop r10\n\
+    pop r9\n\
+    pop r8\n\
+    mov rsp, rbp\n\
+    pop rbp\n\
+    ret\n\n");
 }
 
 char *IR_decide_branching(IR_operation *operation) {
@@ -274,7 +312,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         label = (char *) calloc(128, sizeof(char));
                         sprintf(label, "\tmov rax, qword[%s]\t\t\t\t; Move the value of the address in %s into rax\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
                         linked_list_append(CG_generated_code, label);
-                        sprintf(name, "\tmov qword[%s], rax\t\t\t\t; Move value of rax into memory address pointed to by %s\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
+                        sprintf(name, "\tmov qword[%s], rax\t\t\t\t; Move value of rax into memory address pointed to by %s", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
                     } else {
                         sprintf(name, "\tmov qword[%s], %s\t\t\t\t; Move value of %s into memory address pointed to by %s\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg));
                     }
@@ -307,7 +345,11 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         sprintf(name, "\tmov %s, qword[rax]\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(param_count + 11));
                     }
                 } else {
-                    if (operation->arg1->type == P_TEMP) {
+                    if (operation->arg2) {
+                        sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                        linked_list_append(CG_generated_code, name);
+                        break;
+                    } else if (operation->arg1->type == P_TEMP) {
                         sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                     } else {
                         var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
@@ -323,6 +365,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 if (param_count > 4) {
                     sprintf(name, "\tsub rsp, %d\t\t\t\t\t; Reset stack pointer after function call", operation->arg1->constant);
                     param_count = 4;
+                } else if (operation->arg2) {
+                    sprintf(name, "\tsub rsp, %d\t\t\t\t\t; Reset stack pointer after alloc call", operation->arg1->constant);
                 } else {
                     if (param_count <= CG_current_frame->func_params) {
                         sprintf(name, "\tpop %s\t\t\t\t\t; Pop current function parameter %s from the stack", CG_reg_color_to_string(param_count + 10), CG_reg_color_to_string(param_count + 10));
@@ -629,10 +673,23 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
             linked_list_append(data_section, buffer);
         } else {
             int total_length = 1;
-            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
-                total_length *= (int) ((AST_node*) lln->data)->primary_expr.integer_value;
+            char* name = IR_generate_label("_array", CG_array_counter++);
+            if (node->array_decl.type == TYPE_INT || node->array_decl.type == TYPE_STRING) {
+                sprintf(buffer, "\t%s dq 8,%d,", name, node->array_decl.sizes->size);
+            } else {
+                sprintf(buffer, "\t%s dq 1,%d,", name, node->array_decl.sizes->size);
             }
-            sprintf(buffer, "\t%s dq %d,%d, ", IR_generate_label("_array", CG_array_counter++), IR_get_type_size(node->array_decl.type), total_length);
+            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                name = (char *) calloc(128, sizeof(char));
+                sprintf(name, "%d,", ((AST_node *)lln->data)->primary_expr.integer_value);
+                strcat(buffer, name);
+                total_length *= (int) ((AST_node*) lln->data)->primary_expr.integer_value;
+                free(name);
+            }
+            name = (char *) calloc(128, sizeof(char));
+            sprintf(name, "%d,1, ", total_length);
+            strcat(buffer, name);
+            free(name);
 
             CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             strcat(buffer, "\n");

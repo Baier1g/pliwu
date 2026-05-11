@@ -96,7 +96,7 @@ void connect_graph(frame *frm) {
                 params_loaded = 1;
             } 
             IR_operation *op = (IR_operation *) lln->data;
-            //print_operation(op);
+            print_operation(op);
             if (op->arg1 && op->arg1->type == P_TEMP) {
                 int temp_num = op->arg1->constant;
                 if (!glob_graph->nodes[temp_num]->definition) {
@@ -107,7 +107,7 @@ void connect_graph(frame *frm) {
         }
         if (seg->left) {
             linked_list_append(segments, seg->left);
-            if (((IR_operation *) seg->operations->tail->data)->op != IR_LOGICAL_JUMP && seg->right) {
+            if (seg->operations->size && ((IR_operation *) seg->operations->tail->data)->op != IR_LOGICAL_JUMP && seg->right) {
                 linked_list_append(segments, seg->right);
             }
         }
@@ -342,6 +342,12 @@ int RA_select(int *simple, int *potential_spill, int *spill) {
 
 void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name) {
     if (!seg) {
+        return;
+    }
+    if (!seg->operations->size) {
+        if (seg->left) {
+            rewrite_segment(seg->left, spilled_node, defined, var_name);
+        }
         return;
     }
     linked_list_node *tmp;
