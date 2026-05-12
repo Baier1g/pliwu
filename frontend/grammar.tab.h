@@ -35,8 +35,8 @@
    especially those whose name start with YY_ or yy_.  They are
    private implementation details that can be changed or removed.  */
 
-#ifndef YY_YY_Y_TAB_H_INCLUDED
-# define YY_YY_Y_TAB_H_INCLUDED
+#ifndef YY_YY_GRAMMAR_TAB_H_INCLUDED
+# define YY_YY_GRAMMAR_TAB_H_INCLUDED
 /* Debug traces.  */
 #ifndef YYDEBUG
 # define YYDEBUG 0
@@ -88,42 +88,6 @@ extern int yydebug;
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
-/* Token kinds.  */
-#define YYEMPTY -2
-#define YYEOF 0
-#define YYerror 256
-#define YYUNDEF 257
-#define T_RIGHT_BRACE 258
-#define T_LEFT_BRACE 259
-#define T_RIGHT_PAREN 260
-#define T_LEFT_PAREN 261
-#define T_RIGHT_BRACKET 262
-#define T_LEFT_BRACKET 263
-#define T_COMMA 264
-#define T_ASSIGN 265
-#define T_LESS_EQ 266
-#define T_GREATER_EQ 267
-#define T_EQUALS 268
-#define T_NEQUALS 269
-#define T_ARROW 270
-#define T_OR 271
-#define T_AND 272
-#define T_IF 273
-#define T_ELSE 274
-#define T_WHILE 275
-#define T_RETURN 276
-#define T_FUNC 277
-#define T_PRINT 278
-#define T_INT 279
-#define T_BOOL 280
-#define T_CHAR 281
-#define T_STRING 282
-#define T_INT_TYPE 283
-#define T_BOOL_TYPE 284
-#define T_CHAR_TYPE 285
-#define T_VOID_TYPE 286
-#define T_STRING_TYPE 287
-#define T_IDENTIFIER 288
 
 /* Value type.  */
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
@@ -141,7 +105,7 @@ union YYSTYPE
         char *sval;
     } string;
 
-#line 145 "y.tab.h"
+#line 109 "grammar.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
@@ -156,4 +120,4 @@ extern YYSTYPE yylval;
 int yyparse (void);
 
 
-#endif /* !YY_YY_Y_TAB_H_INCLUDED  */
+#endif /* !YY_YY_GRAMMAR_TAB_H_INCLUDED  */

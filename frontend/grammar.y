@@ -10,12 +10,14 @@
     extern int yylex(void);
     void yyerror(char const*);
     extern void yyrestart(FILE*);
-    AST_node *run_bison(const char*);
+    AST_node *run_bison(const char*, int*);
     AST_node *binexp(void *, int, void *);
     AST_node *relexp(void *, int, void *);
 
     AST_node *prog;
     AST_node *node;
+
+    int* bison_errors;
 
     extern FILE *yyin;
     unsigned short line_number = 1;
@@ -83,6 +85,7 @@
 %type <llval> blockBody args parameters declarator initializerList initializerValue arrayInitializer initializerDim
 %type <ival> type returnType 
 
+%define parse.error detailed
 
 /* GRAMMAR RULES */
 %%
@@ -102,6 +105,7 @@ varDeclaration:
 |   type identifier declarator ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, NULL);}
 |   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
 |   type identifier initializerDim T_ASSIGN arrayInitializer ';' {(node = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5)) ? $$ = node : yyerror("parse error: Wrong dimensionality on initialised array\n");}
+|   error ';' {/*yyerror("error in varDeclaration");*/ yyerrok;}
 ;
 
 initializerDim:
@@ -211,7 +215,7 @@ blockBody:
 
 expressionStatement:
     expression ';' {$$ = $1;}
-|   error ';' {printf("error in expression on line %d", line_number); yyerrok;}
+/*|   error ';' {printf("error in expression on line %d", line_number); yyerrok;}*/
 ;
 
 expression:
@@ -272,7 +276,7 @@ unaryExpression:
 postfixExpression:
     primary {$$ = $1;}
 |   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN   {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
-|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN  {printf("error in negated grouping on line %d", line_number); yyerrok;}
+|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN  {/*printf("error in negated grouping on line %d", line_number);*/ yyerrok;}
 |   identifier declarator                               {$$ = create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1, $2);}
 ;
 
@@ -287,14 +291,15 @@ primary:
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
 |   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.string.sval, yylval.string.length); free(yylval.string.sval); /*printf("String literal: \"%s\" of length %d\n", $$->primary_expr.string.value, yylval.string.length);*/}
 |   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
-|   T_LEFT_PAREN error T_RIGHT_PAREN {printf("error in grouping on line %d", line_number); yyerrok;}
+|   T_LEFT_PAREN error T_RIGHT_PAREN {/*printf("error in grouping on line %d", line_number);*/ yyerrok;}
 |   identifier      {$$ = $1;}
 ;
 
 %%
 
 void yyerror(char const* err) {
-    printf("%s: line: %d, character: %ld, token: %s\n", err, line_number, start_current_character, "skill issue");
+    (*bison_errors)++;
+    printf("bison_error: %s; line %d, character %ld, tokentype: %d\n", err, line_number, start_current_character, yychar);
 }
 
 AST_node* binexp(void* left, int op, void* right) {
@@ -305,11 +310,12 @@ AST_node* relexp(void* left, int op, void* right) {
     return create_ternary_node(start_current_character, line_number, A_RELATIONAL_EXPR, left, (void*) op, right);
 }
 
-AST_node *run_bison(const char* filename) {
+AST_node* run_bison(const char* filename, int* errors) {
     yyin = fopen(filename,"r");
     if (!yyin) {
         return NULL;
     }
+    bison_errors = errors;
 
     yyparse();
     printf("\nNumber of lines in the file - %u\n", line_number);
