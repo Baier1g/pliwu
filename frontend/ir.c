@@ -196,7 +196,7 @@ int recurse_IR_tree(AST_node *node) {
         return 0;
     }
 
-    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    //printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
 
     int condition;
     char *name, *label1, *label2;
@@ -359,15 +359,15 @@ int recurse_IR_tree(AST_node *node) {
             }
             
             id = create_operand(P_TEMP, temp_counter++);
-            printf("hi\n");
+            //printf("hi\n");
             op = create_op(IR_ALLOC, id, NULL, NULL);
             hash_map_insert(local_variables, name, id);
             linked_list_append(current_segment->operations, op);
             op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, node->array_decl.sizes->size * 8), create_operand(P_CONSTANT, 0), NULL);
 
-            op = create_op(IR_POP_PARAM, create_operand(P_TEMP, 12), NULL, NULL);
+            op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, 0), NULL, NULL);
             linked_list_append(current_segment->operations, op);
-            op = create_op(IR_POP_PARAM, create_operand(P_TEMP, 11), NULL, NULL);
+            op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, 0), NULL, NULL);
             linked_list_append(current_segment->operations, op);
 
             linked_list_append(current_segment->operations, op);
@@ -664,7 +664,31 @@ int recurse_IR_tree(AST_node *node) {
             }*/
             IR_operand *base = create_operand(P_TEMP, recurse_IR_tree(node->indexing.identifier));
 
-            int index_size = node->indexing.indices->size;
+            for (linked_list_node *lln = node->indexing.indices->head; lln != NULL; lln = lln->next) {
+                expr = create_operand(P_CONSTANT, 32);
+                op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), base, expr);
+                linked_list_append(current_segment->operations, op);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+                int temp = temp_counter++;
+
+                expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
+                id = create_operand(P_TEMP, temp_counter++);
+                op = create_op(IR_ADD, id, create_operand(P_TEMP, temp), expr);
+                linked_list_append(current_segment->operations, op);
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;
+
+                id = create_operand(P_DEREFERENCE, id->constant);
+                base = create_operand(P_TEMP, temp_counter);
+                op = create_op(IR_ASSIGN, base, id, NULL);
+                linked_list_append(current_segment->operations, op);   
+                op->in_frame = current_frame;
+                op->in_seg = current_segment;             
+            }
+
+            /*int index_size = node->indexing.indices->size;
+            printf("%d\n", index_size);
             int counter = 1;
             int base_offset = 8;
 
@@ -696,7 +720,7 @@ int recurse_IR_tree(AST_node *node) {
             }
             counter++;
             
-            for (linked_list_node *lln = node->indexing.indices->head->next; lln != NULL; lln = lln->next) {
+            for (linked_list_node *lln = node->indexing.indices->head->next; (lln != NULL && lln->next != NULL); lln = lln->next) {
                 id = create_operand(P_TEMP, recurse_IR_tree((AST_node *) lln->data));
                 int inner = counter + 1;
                 linked_list_node *next = lln->next;
@@ -735,7 +759,7 @@ int recurse_IR_tree(AST_node *node) {
             }
 
             // Add final index offset 
-            printf("yes\n");
+            //printf("yes\n");
             expr = create_operand(P_TEMP, recurse_IR_tree((AST_node *)((linked_list_node *) node->indexing.indices->tail)->data));
             op = create_op(IR_ADD, create_operand(P_TEMP, temp_counter), accumulator, expr);
             int acc = temp_counter++;
@@ -758,7 +782,7 @@ int recurse_IR_tree(AST_node *node) {
 
             int temp = temp_counter++;
             // Add 32 + dimensionality * 8 to offset
-            /* RUNTIME VERSION
+            RUNTIME VERSION
             // add 8 to base_address to get address of dimensionality
             expr = create_operand(P_TEMP, temp_counter);
             op = create_op(IR_ADD, expr, base, create_operand(P_CONSTANT, 8));
@@ -773,7 +797,7 @@ int recurse_IR_tree(AST_node *node) {
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
 
-            // Multiply dimensionality by 8 to get number of bytes holding dimensions*/
+            // Multiply dimensionality by 8 to get number of bytes holding dimensions
             int offset_from_base = 32 + (node->indexing.indices->size * 8);
             id = create_operand(P_TEMP, temp_counter++);
             op = create_op(IR_ADD, id, base, create_operand(P_CONSTANT, offset_from_base));
@@ -793,9 +817,9 @@ int recurse_IR_tree(AST_node *node) {
             op = create_op(IR_ADD, create_operand(P_DEREFERENCE, temp_counter), base, expr);
             op->in_frame = current_frame;
             op->in_seg = current_segment;
-            linked_list_append(current_segment->operations, op);
+            linked_list_append(current_segment->operations, op);*/
             //free(sizes);
-            return temp_counter++;
+            return temp_counter - 1;
         case A_PRIMARY_EXPR:
             int val = 0;
             switch (node->primary_expr.type) {
@@ -816,7 +840,7 @@ int recurse_IR_tree(AST_node *node) {
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
                 if (hash_map_contains(local_variables, name)) {
-                    printf("Prim done\n");
+                    //printf("Prim done\n");
                     return ((IR_operand *) hash_map_get(local_variables, name))->constant; 
                 }
                 op = create_op(IR_ASSIGN, tmp, create_operand(P_VARIABLE, name), NULL);
@@ -929,7 +953,7 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
-    printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
+    //printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -1072,7 +1096,7 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    //print_IR_tree(current_frame);
+    print_IR_tree(current_frame);
     printf("liveness analysis:\n");
     liveness(current_frame);
     //print_graph(graph);
@@ -1194,14 +1218,14 @@ void liveness(frame *frm) {
     int change = 1;
 
     while (change) {
-        printf("Iteration loop\n");
+        //printf("Iteration loop\n");
         linked_list_append(new_segments, frm->last);
         change = 0;
         while (new_segments->size != 0) {
             seg = (segment *) linked_list_pop_front(new_segments);
             if (!seg->operations->size) {
                 if (seg->name) {
-                    printf("%s\n", seg->name);
+                    //printf("%s\n", seg->name);
                 }
                 for (linked_list_node *lln = seg->pred->head; lln != NULL; lln = lln->next) {
                     linked_list_append(new_segments, (segment *) lln->data);
@@ -1243,7 +1267,7 @@ void liveness(frame *frm) {
                 }
             }
             if (seg->right) {
-                printf("%d\n", seg->right->operations->size);
+                //printf("%d\n", seg->right->operations->size);
                 IR_operation *last_op = (IR_operation *) seg->right->operations->tail->data;
                 if (seg->right && last_op->op == IR_LOGICAL_JUMP && seg->left->iteration == iteration) {
                     linked_list_append(new_segments, seg);
@@ -1262,6 +1286,7 @@ void liveness(frame *frm) {
             for (linked_list_node *lln = seg->operations->tail; lln != NULL; lln = lln->prev) {
                 //printf("Operation loop\n");
                 IR_operation *op = ((IR_operation *) lln->data);
+                //print_operation(op);
                 int in_size = op->in->size;
                 int out_size = op->out->size;
 

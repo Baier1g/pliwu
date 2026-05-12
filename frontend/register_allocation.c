@@ -96,7 +96,7 @@ void connect_graph(frame *frm) {
                 params_loaded = 1;
             } 
             IR_operation *op = (IR_operation *) lln->data;
-            print_operation(op);
+            //print_operation(op);
             if (op->arg1 && op->arg1->type == P_TEMP) {
                 int temp_num = op->arg1->constant;
                 if (!glob_graph->nodes[temp_num]->definition) {
@@ -355,7 +355,7 @@ void rewrite_segment(segment *seg, int spilled_node, int defined, char *var_name
     IR_operation *operation, *current_op;
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         current_op = (IR_operation *) lln->data;
-        print_operation(current_op);
+        //print_operation(current_op);
         tmp = linked_list_find(current_op->in, spilled_node);
         if (tmp) {
             linked_list_remove(current_op->in, tmp);
@@ -482,7 +482,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             //printf("count: %d, temp: %d\n", count, temp_num);
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
             if (!op) {
-                printf("shit\n");
+                //("shit\n");
             }
             segment *seg = op->in_seg;
             //printf("WE got here\n");
@@ -495,7 +495,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             var_info *var = create_var_info(-1);
             var->kind = ID_VARIABLE;
             if (symbol_table_insert(seg->table, name, var)) {
-                printf("Alrady in there, cuh\n");
+                //printf("Alrady in there, cuh\n");
             }
             rewrite_segment(seg, spilled_nodes[count], 0, name);
             count++;
@@ -565,8 +565,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     while (spill) {
         printf("Spills: %d, runs: %d\n", spill, count);
         printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
-        print_graph(graph);
-        print_IR_tree(program);
+        //print_graph(graph);
+        //print_IR_tree(program);
         rewrite_program(program, actual_spill, 0);
         free(simple_nodes);
         free(potential_spill);

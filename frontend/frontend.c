@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
         }
         linked_list_append(prog->program.modules, module);
     }
-    
-    AST_printer(prog);
+    //AST_printer(prog);
+
     
     printf("scope checking: \n");
     if (scopecheck(prog, errors)) {
@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
     int *count = calloc(1, sizeof(int));
     printf("Converting to IR:\n");
     frame *root = create_IR_tree(count, prog);
-    print_IR_tree(root);
+    //print_IR_tree(root);
     printf("Register allocation\n");
     RA_graph *graph = register_allocation(count[0], root);
     //print_IR_tree(root);

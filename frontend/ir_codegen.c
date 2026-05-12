@@ -84,7 +84,7 @@ void IR_create_alloc(void) {
     linked_list_append(CG_generated_code,\
     "\tadd qword[heap_pointer], r8\t\t\t; Add r8 to the heap_pointer to get first free space past segment\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
      */
-    linked_list_append(CG_generated_code,\
+   /* linked_list_append(CG_generated_code,\
 "_alloc:\n\
     push rbp\n\
     mov rbp, rsp\n\
@@ -187,7 +187,64 @@ _alloc_loop:\n\
     pop r8\n\
     mov rsp, rbp\n\
     pop rbp\n\
-    ret\n\n");
+    ret\n\n");*/
+    linked_list_append(CG_generated_code,\
+"_better_alloc:\n\
+	push rbp						;\n\
+	mov rbp, rsp					;\n\
+	push r8							;\n\
+	push r9							; PROLOGUE\n\
+	push r10						;\n\
+	push r11						;\n\
+	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8\n\
+	push r8							; Save the base address on the stack\n\
+	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array\n\
+	mov r9, qword[r10]				; Move the size of this array into r9\n\
+	mov qword[r8], rdi				; Move element size onto the heap at the base address\n\
+	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
+	mov qword[r8], rsi				; Move dimensionality of this array onto the heap at base_addres + 8\n\
+	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
+	mov qword[r8], r9				; Move number of elements in this array onto the heap at base_address + 16\n\
+	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
+	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter\n\
+	imul r9, rdi					; Multiply the number of elements by the element size to get the actual amount of space needed\n\
+	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array\n\
+	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size\n\
+	mov qword[heap_pointer], r10	; Move the newly calculated address into the heap_pointer to make it point at the new first free space\n\
+	cmp rsi, 1						; Check the dimensionality of the array\n\
+	je _end_alloc					; If it is 1, this array has no subarrays and base_address can be returned\n\
+	mov rbx, 0						; Move 0 into rbx, as it will be used as counter\n\
+	sub rsi, 1						; Decrement dimensionality for sub-array allocation calls\n\
+	mov rax, 8						; Move 8 into rax\n\
+	imul rax, rsi					; Multiply rax by the dimensionality to get offset of the last stack variable from the first\n\
+	add rax, 16						; Add 16 to rax to get the actual offset of the last stack variable from the base pointer\n\
+	mov r9, rax						; Move the offset of the next stack variable into r9\n\
+_get_stack_variables:\n\
+	lea r10, [rbp + r9]				; Get the address of a stack variable\n\
+	mov r11, qword[r10]				; Move stack variable into r11\n\
+	push r11						; Push stack variable\n\
+	add rbx, 1						; Increment counter\n\
+	sub r9, 8						; Decrement offset\n\
+	cmp rbx, rsi					; Compare counter to dimensionality\n\
+	jne _get_stack_variables		; If not equal, loop to load the rest of the stack variables\n\
+_allocate_sub_arrays:\n\
+	call _better_alloc				; Call alloc recursively, element size is the same and dimensionality has already been decremented\n\
+	mov qword[r8], rax				; Move address of allocated array onto the heap\n\
+	add r8, rdi						; Increment r8 by the element size to point it at the next element\n\
+	cmp r8, qword[heap_pointer]		; Compare r8 to the heap_pointer\n\
+	jne _allocate_sub_arrays		; If not equal, more subarrays need to be allocated\n\
+	mov r9, rsi						; Move dimensionality into r9\n\
+	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack\n\
+	sub rsp, r9						; Decrement rsp to reset the stack pointer\n\
+_end_alloc:\n\
+	pop rax							; Restore base_address to rax\n\
+	pop r11							;\n\
+	pop r10							;\n\
+	pop r9							;\n\
+	pop r8							; EPILOGUE\n\
+	mov rsp, rbp					;\n\
+	pop rbp							;\n\
+	ret								;\n");
 }
 
 char *IR_decide_branching(IR_operation *operation) {
@@ -335,10 +392,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        printf("op_code: %s\n", IR_op_code_to_string(code));
+        //printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
@@ -536,7 +593,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_ALLOC:
                 arg1 = graph->nodes[operation->arg1->constant];
                 name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "\tcall _alloc\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
+                sprintf(name, "\tcall _better_alloc\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
                 linked_list_append(CG_generated_code, name);
                 break;
             case IR_PRINT:
