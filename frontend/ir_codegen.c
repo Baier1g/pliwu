@@ -91,29 +91,97 @@ void IR_create_alloc(void) {
     push r8\n\
     push r9\n\
     push r10\n\
+    push r11\n\
 \n\
     mov rax, qword[heap_pointer]; move base address of memory segment into rax\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, rax\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     mov qword[rax], rdi         ; move element size onto the heap\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[rax]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     lea r8, [rax + 8]            ; r15 = address of dimensionality of a\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, r8\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     mov qword[r8], rsi         ; move dimensionality of a onto the heap\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[r8]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     mov r9, 16                 ; r14 = offset from base_address of first dim_size\n\
     mov rbx, 1                  ; accumulator register\n\
+    mov r11, rsi\n\
 _alloc_loop:\n\
     mov r10, r9                ; r13 = current offset from base_address\n\
-    mov r10, qword[rbp + r10]   ; r13 = value of dimension size\n\
+    lea r11, [rbp + r10]\n\
+    mov r10, qword[r11]   ; r13 = value of dimension size\n\
     mov qword[rax + r9], r10   ; set dimension size on the heap\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[rax + r9]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     imul rbx, r10               ; rbx = accumulates total dimension size\n\
-    dec rsi                     ; decrement rsi (dimensionality)\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, rsi\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
+    sub rsi, 1                    ; decrement rsi (dimensionality)\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, rsi\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
     add r9, 8                  ; add 8 to the running offset\n\
-    test rsi, rsi               ; test whether dimension sizes have been added\n\
-    jnz _alloc_loop\n\
+    cmp rsi, 0               ; test whether dimension sizes have been added\n\
+    jne _alloc_loop\n\
     mov qword[rax + r9], rbx   ; move total element size onto the heap\n\
+    ;push rdi\n\
+    ;push rsi\n\
+    ;push rax\n\
+    ;mov rdi, qword[rax + r9]\n\
+    ;call print_int\n\
+    ;pop rax\n\
+    ;pop rsi\n\
+    ;pop rdi\n\
     add r9, 8\n\
     mov qword[rax + r9], 1     ; reference count, move 1 on allocation\n\
-    add rbx, 1\n\
+    add rbx, 8\n\
     imul rbx, qword[rax]        ; calculate actual byte size of the array\n\
     add qword[heap_pointer], rbx\n\
 \n\
+    pop r11\n\
     pop r10\n\
     pop r9\n\
     pop r8\n\
@@ -267,10 +335,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        //print_operation(operation);
+        print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        //printf("op_code: %s\n", IR_op_code_to_string(code));
+        printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
@@ -332,6 +400,11 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_PARAM:
                 name = (char *) calloc(128, sizeof(char));
                 if (param_count < 4) {
+                    if (operation->arg2) {
+                        sprintf(name, "\tpush %s\t\t\t\t\t; Push function argument to the stack", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                        linked_list_append(CG_generated_code, name);
+                        break;
+                    }
                     if (param_count <= CG_current_frame->func_params) {
                         sprintf(name, "\tpush %s\t\t\t\t; Push current function parameter %s to the stack\n", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(param_count + 11));
                         linked_list_append(CG_generated_code, name);
@@ -339,6 +412,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     }
                     if (operation->arg1->type == P_TEMP) {
                         sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
+                    } else if (operation->arg1->type == P_CONSTANT) {
+                        sprintf(name, "\tmov %s, %d\t\t\t\t; Move constant function argument into %s", CG_reg_color_to_string(param_count + 11), operation->arg1->constant, CG_reg_color_to_string(param_count + 11));
                     } else {
                         var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
                         CG_var_address(info);
@@ -460,14 +535,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 break;
             case IR_ALLOC:
                 arg1 = graph->nodes[operation->arg1->constant];
-                arg2 = graph->nodes[operation->arg2->constant];
-                arg3 = graph->nodes[operation->arg3->constant];
-                linked_list_append(CG_generated_code, "\tpush rdi\n\tpush rsi\n");
-                name = (char *) calloc(256, sizeof(char));
-                sprintf(name, "\tmov rdi, %s\t\t\t\t; move size of elements into rdi\n\tmov rsi, %s\t\t\t\t; Move number of elements to be allocated into %s\n", CG_reg_color_to_string(arg2->color),CG_reg_color_to_string(arg3->color), CG_reg_color_to_string(arg3->color));
-                linked_list_append(CG_generated_code, name);
                 name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "\tcall _alloc\n\tpop rdi\n\tpop rsi\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
+                sprintf(name, "\tcall _alloc\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
                 linked_list_append(CG_generated_code, name);
                 break;
             case IR_PRINT:
@@ -759,14 +828,15 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
         code_emit(CG_generated_code, (frame *) lln->data, graph);
     }
+
     CG_frame_depth--;
     linked_list_append(data_section, "section .text\n\n");
     ll->tail->next = CG_generated_code->head;
     CG_generated_code->head->prev = ll->tail;
     ll->tail = CG_generated_code->tail;
     ll->size += CG_generated_code->size;
-
-    linked_list_append(module_level, "\tmov rax, 1\n\txor rbx, rbx\n\tint 0x80\n\n");
+    
+    linked_list_append(module_level, "\tlea rax, [rbp]\n\tpush rax\n\tcall main\n\tmov rax, 1\n\txor rbx, rbx\n\tint 0x80\n\n");
     ll->tail->next = module_level->head;
     module_level->head->prev = ll->tail;
     ll->tail = module_level->tail;
