@@ -10,6 +10,7 @@ symbol_table *current_scope; // string name -> ast_node
 linked_list *calls;          // list->data = ast_node
 short is_in_function = 0;
 short nesting_depth = 0;
+int main_def = 0;
 
 struct call_info {
     AST_node *node;
@@ -83,6 +84,13 @@ short recurse_scope(AST_node *node) {
             if (symbol_table_insert(current_scope, node->func_def.identifier->primary_expr.identifier_name, v)){
                 to_error("function name already used", node);
                 return 0;
+            }
+            if (strcmp(node->func_def.identifier->primary_expr.identifier_name, "main") == 0) {
+                if (nesting_depth != 1) {
+                    to_error("Main definition in nested scope", node);
+                    return 0;
+                }
+                main_def++;
             }
             
             outer_table = current_scope;
@@ -296,6 +304,11 @@ int scopecheck(AST_node *root, linked_list *ll){
         }
     }
     //printf("calls done\n");
+    if (main_def == 0) {
+        to_error("Missing main function definition", NULL);
+    } else if (main_def > 1) {
+        to_error("Multiple definitions of main", NULL);
+    }
 
     return ll->size;
 }
