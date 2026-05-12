@@ -335,10 +335,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        printf("op_code: %s\n", IR_op_code_to_string(code));
+        //printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
