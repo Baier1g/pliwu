@@ -197,20 +197,60 @@ _alloc_loop:\n\
 	push r10						;\n\
 	push r11						;\n\
 	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, r8\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
 	push r8							; Save the base address on the stack\n\
 	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array\n\
 	mov r9, qword[r10]				; Move the size of this array into r9\n\
 	mov qword[r8], rdi				; Move element size onto the heap at the base address\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[r8]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], rsi				; Move dimensionality of this array onto the heap at base_addres + 8\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[r8]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], r9				; Move number of elements in this array onto the heap at base_address + 16\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[r8]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter\n\
 	imul r9, rdi					; Multiply the number of elements by the element size to get the actual amount of space needed\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array\n\
 	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size\n\
 	mov qword[heap_pointer], r10	; Move the newly calculated address into the heap_pointer to make it point at the new first free space\n\
+    push rdi\n\
+    push rsi\n\
+    push rax\n\
+    mov rdi, qword[heap_pointer]\n\
+    call print_int\n\
+    pop rax\n\
+    pop rsi\n\
+    pop rdi\n\
 	cmp rsi, 1						; Check the dimensionality of the array\n\
 	je _end_alloc					; If it is 1, this array has no subarrays and base_address can be returned\n\
 	mov rbx, 0						; Move 0 into rbx, as it will be used as counter\n\
@@ -438,6 +478,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         sprintf(label, "\tmov rax, qword[%s]\t\t\t\t; Move the value of the address in %s into rax\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
                         linked_list_append(CG_generated_code, label);
                         sprintf(name, "\tmov qword[%s], rax\t\t\t\t; Move value of rax into memory address pointed to by %s", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
+                    } else if (operation->arg2->type == P_CONSTANT) {
+                        sprintf(name, "\tmov qword[%s], %d\t\t\t\t; Move value of a constant into memory address pointed to by %s", CG_reg_color_to_string(reg), operation->arg2->constant, CG_reg_color_to_string(reg));
                     } else {
                         sprintf(name, "\tmov qword[%s], %s\t\t\t\t; Move value of %s into memory address pointed to by %s\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg));
                     }
@@ -526,6 +568,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 } else {
                     if (operation->arg3->type == P_DEREFERENCE) {
                         sprintf(label, "%s rax, qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
+                    } else if (operation->arg3->type == P_CONSTANT) {
+                        sprintf(label, "%s rax, %d\n", CG_IR_op_code_to_string(code), operation->arg3->constant);
                     } else {
                         sprintf(label, "%s rax, %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
                     }
@@ -611,6 +655,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
                 } else if (operation->arg1->type == P_DEREFERENCE) {
                     sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                } else if (operation->arg1->type == P_CONSTANT) {
+                    sprintf(name, "\tmov rdi, %d\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", operation->arg1->constant);
                 } else {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }

@@ -481,7 +481,8 @@ int recurse_IR_tree(AST_node *node) {
             expr = NULL;
             if (node->print_stmt.expression) {
                 if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
-                    expr = create_operand(P_DEREFERENCE, recurse_IR_tree(node->print_stmt.expression));
+                    // possibly schizo...
+                    expr = create_operand(P_TEMP, recurse_IR_tree(node->print_stmt.expression));
                 } else {
                     expr = create_operand(P_TEMP, recurse_IR_tree(node->print_stmt.expression));
                 }
@@ -678,13 +679,25 @@ int recurse_IR_tree(AST_node *node) {
                 linked_list_append(current_segment->operations, op);
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
-
-                id = create_operand(P_DEREFERENCE, id->constant);
-                base = create_operand(P_TEMP, temp_counter);
-                op = create_op(IR_ASSIGN, base, id, NULL);
-                linked_list_append(current_segment->operations, op);   
-                op->in_frame = current_frame;
-                op->in_seg = current_segment;             
+                
+                if (lln->next != NULL) {
+                    id = create_operand(P_DEREFERENCE, id->constant);
+                    base = create_operand(P_TEMP, temp_counter);
+                    op = create_op(IR_ASSIGN, base, id, NULL);
+                    linked_list_append(current_segment->operations, op);   
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
+                } else {
+                    expr = create_operand(P_TEMP, id->constant);
+                    id = create_operand(P_DEREFERENCE, temp_counter);
+                    // PROBLEM IS HERE, codegen sets value of id to expr, fucking everything up.
+                    // possible solution: new operand type, reference, which is dereferenced on use but not definition or new IR_op, IR_INDEX_ADR, which will generate code with intended behaviour
+                    // Or just leave the address in a temp and let all cases check if sub-expression is and index expression when IR is created
+                    op = create_op(IR_ASSIGN, id, expr, NULL);
+                    linked_list_append(current_segment->operations, op);
+                    op->in_frame = current_frame;
+                    op->in_seg = current_segment;
+                }           
             }
 
             /*int index_size = node->indexing.indices->size;
@@ -819,7 +832,7 @@ int recurse_IR_tree(AST_node *node) {
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);*/
             //free(sizes);
-            return temp_counter - 1;
+            return temp_counter++;
         case A_PRIMARY_EXPR:
             int val = 0;
             switch (node->primary_expr.type) {
@@ -1096,7 +1109,7 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    print_IR_tree(current_frame);
+    //print_IR_tree(current_frame);
     printf("liveness analysis:\n");
     liveness(current_frame);
     //print_graph(graph);
