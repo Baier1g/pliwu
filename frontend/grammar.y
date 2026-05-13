@@ -21,8 +21,8 @@
 
     extern FILE *yyin;
     unsigned short line_number = 1;
-    long current_character = 1;
-    long start_current_character = 1;
+    unsigned long current_character = 1;
+    unsigned long start_current_character = 1;
 %}
 
 /* DECLARATIONS */
@@ -92,6 +92,7 @@
 module:
     /*%empty*/          {prog = create_unary_node(0, 0, A_MODULE, linked_list_new());}
 |   module declaration  {linked_list_append(prog->module.module_declarations, $2);}
+|   module error        {yyerrok;}
 ;
 
 declaration:
@@ -101,22 +102,22 @@ declaration:
 ;
 
 varDeclaration:
-    type identifier ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
-|   type identifier declarator ';' {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, NULL);}
-|   type identifier T_ASSIGN conditionalExpression ';' {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
-|   type identifier initializerDim T_ASSIGN arrayInitializer ';' {(node = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5)) ? $$ = node : yyerror("parse error: Wrong dimensionality on initialised array\n");}
-|   error ';' {/*yyerror("error in varDeclaration");*/ yyerrok;}
+    type identifier ';'             {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, (void *) NULL);}
+|   type identifier declarator ';'  {$$ = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, NULL);}
+|   type identifier T_ASSIGN conditionalExpression ';'              {$$ = create_ternary_node(start_current_character, line_number, A_VAR_DECL, $1, $2, $4);}
+|   type identifier initializerDim T_ASSIGN arrayInitializer ';'    {(node = create_quaternary_node(start_current_character, line_number, A_ARRAY_DECL, $1, $2, $3, $5)) ? $$ = node : yyerror("parse error: Wrong dimensionality on initialised array\n");}
+|   error ';'   {yyerrok;}
 ;
 
 initializerDim:
-    ///*%empty*/                                      {$$ = linked_list_new();}
+    ///*%empty*/                                    {$$ = linked_list_new();}
     T_LEFT_BRACKET T_RIGHT_BRACKET                  {$$ = linked_list_new(); linked_list_append($$, NULL);}
 |   initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET   {linked_list_append($$, NULL); $$ = $1;}
 ;
 
 declarator:
-    ///*%empty*/                                              {$$ = linked_list_new();}
-   T_LEFT_BRACKET expression T_RIGHT_BRACKET               {$$ = linked_list_new(); linked_list_append($$, $2);}
+    ///*%empty*/                                            {$$ = linked_list_new();}
+   T_LEFT_BRACKET expression T_RIGHT_BRACKET                {$$ = linked_list_new(); linked_list_append($$, $2);}
 |   declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET    {linked_list_append($1, $3); $$ = $1;}
 ;
 
@@ -135,6 +136,7 @@ initializerValue:
 |   arrayInitializer    {$$ = $1;}
 ;
 
+
 type:
     T_INT_TYPE      {$$ = (int) TYPE_INT;}
 |   T_CHAR_TYPE     {$$ = (int) TYPE_CHAR;}
@@ -148,7 +150,7 @@ funcDefinition:
 
 function:
     identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block {$$ = create_quaternary_node(start_current_character, line_number, A_FUNC_DEF, $5, $1, $3, $6);}
-; 
+;
 
 returnType:
     /*%empty*/      {$$ = (int) TYPE_VOID;}
@@ -167,6 +169,7 @@ args:
 |   assignExpression                {$$ = linked_list_new(); linked_list_append($$, $1);}
 |   args T_COMMA assignExpression   {linked_list_append($1, $3); $$ = $1;}
 ;
+
 
 statement:
     ifStatement         {$$ = $1;}
@@ -193,8 +196,6 @@ else:
 |   T_ELSE block    {$$ = $2;}
 ;
 
-
-
 returnStatement:
     T_RETURN expression ';' {$$ = create_unary_node(start_current_character, line_number, A_RETURN_STMT, $2);}
 |   T_RETURN ';'            {$$ = create_unary_node(start_current_character, line_number, A_RETURN_STMT, NULL);}
@@ -205,36 +206,37 @@ printStatement:
 ;
 
 block:
-    T_LEFT_BRACE blockBody T_RIGHT_BRACE {$$ = create_unary_node(start_current_character, line_number, A_BLOCK_STMT, $2);}
+    T_LEFT_BRACE blockBody T_RIGHT_BRACE    {$$ = create_unary_node(start_current_character, line_number, A_BLOCK_STMT, $2);}
 ;
 
 blockBody:
     /*%empty*/              {$$ = linked_list_new();}
 |   blockBody declaration   {linked_list_append($1, $2); $$ = $1;}
+|   blockBody error         {}
 ;
 
 expressionStatement:
-    expression ';' {$$ = $1;}
-/*|   error ';' {printf("error in expression on line %d", line_number); yyerrok;}*/
+    expression ';'  {$$ = $1;}
 ;
 
+
 expression:
-    assignExpression {$$ = $1;}
+    assignExpression    {$$ = $1;}
 ;
 
 assignExpression:
-    conditionalExpression           {$$ = $1;}
-|   identifier T_ASSIGN expression  {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, $1, $3);}
-|   identifier declarator T_ASSIGN expression {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1,$2), $4);}
+    conditionalExpression                       {$$ = $1;}
+|   identifier T_ASSIGN expression              {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, $1, $3);}
+|   identifier declarator T_ASSIGN expression   {$$ = create_binary_node(start_current_character, line_number, A_ASSIGN_EXPR, create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1,$2), $4);}
 ;
 
 conditionalExpression:
-    logicalAND {$$ = $1;}
+    logicalAND  {$$ = $1;}
 ;
 
 logicalAND:
-    logicalOR                               {$$ = $1;}
-|   logicalAND T_AND logicalOR   {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void*) A_AND, $3);}
+    logicalOR                   {$$ = $1;}
+|   logicalAND T_AND logicalOR  {$$ = create_ternary_node(start_current_character, line_number, A_LOGICAL_EXPR, $1, (void*) A_AND, $3);}
 ;
 
 logicalOR:
@@ -243,7 +245,7 @@ logicalOR:
 ;
 
 relationalExpression:
-    arithmeticExpression {$$ = $1;}
+    arithmeticExpression                                    {$$ = $1;}
 |   relationalExpression T_EQUALS arithmeticExpression      {$$ = relexp($1, A_EQUALS, $3);}
 |   relationalExpression T_NEQUALS arithmeticExpression     {$$ = relexp($1, A_NEQUALS, $3);}
 |   relationalExpression '<' arithmeticExpression           {$$ = relexp($1, A_LESS, $3);}
@@ -276,7 +278,7 @@ unaryExpression:
 postfixExpression:
     primary {$$ = $1;}
 |   postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN   {$$ = create_binary_node(start_current_character, line_number, A_CALL_EXPR, $1, $3);}
-|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN  {/*printf("error in negated grouping on line %d", line_number);*/ yyerrok;}
+|   postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN  {yyerrok;}
 |   identifier declarator                               {$$ = create_binary_node(start_current_character, line_number, A_INDEX_EXPR, $1, $2);}
 ;
 
@@ -290,16 +292,17 @@ primary:
 |   T_CHAR          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_CHAR, (void *) yylval.cval); /*printf("%c character returned to bison at line %d it starts at %ld and ends at %ld\n", yylval.cval, line_number, start_current_character, current_character);*/}
 |   T_BOOL          {$$ = create_binary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_BOOL, (void *) yylval.ival); /*yylval.ival ? printf("true returned to bison\n") : printf("false returned to bison\n");*/}
 |   T_STRING        {$$ = create_ternary_node(start_current_character, line_number, A_PRIMARY_EXPR, TYPE_STRING, (void *) yylval.string.sval, yylval.string.length); free(yylval.string.sval); /*printf("String literal: \"%s\" of length %d\n", $$->primary_expr.string.value, yylval.string.length);*/}
-|   T_LEFT_PAREN expression T_RIGHT_PAREN {$$ = $2;}
-|   T_LEFT_PAREN error T_RIGHT_PAREN {/*printf("error in grouping on line %d", line_number);*/ yyerrok;}
+|   T_LEFT_PAREN expression T_RIGHT_PAREN   {$$ = $2;}
+|   T_LEFT_PAREN error T_RIGHT_PAREN        {/*printf("error in grouping on line %d", line_number);*/ yyerrok;}
 |   identifier      {$$ = $1;}
 ;
 
 %%
+/* EPILOGUE */
 
 void yyerror(char const* err) {
     (*bison_errors)++;
-    printf("bison_error: %s; line %d, character %ld, tokentype: %d\n", err, line_number, start_current_character, yychar);
+    printf("bison_error in line %d, character %ld: %s;\n", line_number, start_current_character, err);
 }
 
 AST_node* binexp(void* left, int op, void* right) {
@@ -318,12 +321,13 @@ AST_node* run_bison(const char* filename, int* errors) {
     bison_errors = errors;
 
     yyparse();
-    printf("\nNumber of lines in the file - %u\n", line_number);
-    printf("\nNumber of characters in the file - %ld\n", current_character);
+    printf("Number of lines in the file - %u\n", line_number);
+    printf("Number of characters in the file - %ld\n", current_character);
     yyrestart(yyin);
     fclose(yyin);
     return prog;
 }
+
 
 /*int main(int argc, char* argv[]) {
     FILE *fp;
@@ -340,5 +344,3 @@ AST_node* run_bison(const char* filename, int* errors) {
     AST_printer(prog);
     return 0;
 }*/
-
-/* EPILOGUE */

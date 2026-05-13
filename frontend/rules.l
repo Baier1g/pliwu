@@ -220,6 +220,10 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
 <INITIAL,COMMENT>"\n"    {
     line_number++;
+    if (line_number == 0) {
+        //overflow case
+        puts("flex_error: file has too many lines"); 
+        exit(-1);}
     increment_counter(yyleng);
 }
 
@@ -242,14 +246,15 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
 /***CODE***/
 
-/***yywrap idk bro***/
+//unsupported
 int yywrap(void) {return 1;}
 
-void non_dogshit_memset() {
-    ;
-}
-
 void increment_counter(int len) {
+    if (current_character+len < current_character) {
+        //overflow case
+        puts("flex_error: file has too many characters");
+        exit(-1);
+    }
     if (current_character == start_current_character) {
         current_character += len;
     } else {
@@ -258,8 +263,7 @@ void increment_counter(int len) {
     }
 }
 
-/*  This function returns the specific keyword 
-    token from a string */
+/* This function returns the specific keyword token from a string */
 int find_keyword(char* keywrd) {
     for (int i = 0; i < NUM_KEYWORDS; i++) {
         if (!strcmp(keywords[i], keywrd)) {

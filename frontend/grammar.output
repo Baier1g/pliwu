@@ -4,176 +4,178 @@ Grammar
 
     1 module: ε
     2       | module declaration
+    3       | module error
 
-    3 declaration: varDeclaration
-    4            | statement
-    5            | funcDefinition
+    4 declaration: varDeclaration
+    5            | statement
+    6            | funcDefinition
 
-    6 varDeclaration: type identifier ';'
-    7               | type identifier declarator ';'
-    8               | type identifier T_ASSIGN conditionalExpression ';'
-    9               | type identifier initializerDim T_ASSIGN arrayInitializer ';'
-   10               | error ';'
+    7 varDeclaration: type identifier ';'
+    8               | type identifier declarator ';'
+    9               | type identifier T_ASSIGN conditionalExpression ';'
+   10               | type identifier initializerDim T_ASSIGN arrayInitializer ';'
+   11               | error ';'
 
-   11 initializerDim: T_LEFT_BRACKET T_RIGHT_BRACKET
-   12               | initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET
+   12 initializerDim: T_LEFT_BRACKET T_RIGHT_BRACKET
+   13               | initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET
 
-   13 declarator: T_LEFT_BRACKET expression T_RIGHT_BRACKET
-   14           | declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET
+   14 declarator: T_LEFT_BRACKET expression T_RIGHT_BRACKET
+   15           | declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET
 
-   15 arrayInitializer: T_LEFT_BRACE initializerList T_RIGHT_BRACE
+   16 arrayInitializer: T_LEFT_BRACE initializerList T_RIGHT_BRACE
 
-   16 initializerList: ε
-   17                | initializerValue
-   18                | initializerList T_COMMA initializerValue
+   17 initializerList: ε
+   18                | initializerValue
+   19                | initializerList T_COMMA initializerValue
 
-   19 initializerValue: primary
-   20                 | arrayInitializer
+   20 initializerValue: primary
+   21                 | arrayInitializer
 
-   21 type: T_INT_TYPE
-   22     | T_CHAR_TYPE
-   23     | T_BOOL_TYPE
-   24     | T_VOID_TYPE
-   25     | T_STRING_TYPE
+   22 type: T_INT_TYPE
+   23     | T_CHAR_TYPE
+   24     | T_BOOL_TYPE
+   25     | T_VOID_TYPE
+   26     | T_STRING_TYPE
 
-   26 funcDefinition: T_FUNC function
+   27 funcDefinition: T_FUNC function
 
-   27 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+   28 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
 
-   28 returnType: ε
-   29           | T_ARROW type
+   29 returnType: ε
+   30           | T_ARROW type
 
-   30 parameters: ε
-   31           | type identifier
-   32           | type initializerDim identifier
-   33           | parameters T_COMMA type identifier
+   31 parameters: ε
+   32           | type identifier
+   33           | type initializerDim identifier
+   34           | parameters T_COMMA type identifier
 
-   34 args: ε
-   35     | assignExpression
-   36     | args T_COMMA assignExpression
+   35 args: ε
+   36     | assignExpression
+   37     | args T_COMMA assignExpression
 
-   37 statement: ifStatement
-   38          | loopStatement
-   39          | returnStatement
-   40          | printStatement
-   41          | expressionStatement
+   38 statement: ifStatement
+   39          | loopStatement
+   40          | returnStatement
+   41          | printStatement
+   42          | expressionStatement
 
-   42 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
+   43 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else
 
-   43 loopStatement: whileLoop
+   44 loopStatement: whileLoop
 
-   44 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN block
+   45 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN block
 
-   45 else: ε
-   46     | T_ELSE block
+   46 else: ε
+   47     | T_ELSE block
 
-   47 returnStatement: T_RETURN expression ';'
-   48                | T_RETURN ';'
+   48 returnStatement: T_RETURN expression ';'
+   49                | T_RETURN ';'
 
-   49 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN ';'
+   50 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN ';'
 
-   50 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE
+   51 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE
 
-   51 blockBody: ε
-   52          | blockBody declaration
+   52 blockBody: ε
+   53          | blockBody declaration
+   54          | blockBody error
 
-   53 expressionStatement: expression ';'
+   55 expressionStatement: expression ';'
 
-   54 expression: assignExpression
+   56 expression: assignExpression
 
-   55 assignExpression: conditionalExpression
-   56                 | identifier T_ASSIGN expression
-   57                 | identifier declarator T_ASSIGN expression
+   57 assignExpression: conditionalExpression
+   58                 | identifier T_ASSIGN expression
+   59                 | identifier declarator T_ASSIGN expression
 
-   58 conditionalExpression: logicalAND
+   60 conditionalExpression: logicalAND
 
-   59 logicalAND: logicalOR
-   60           | logicalAND T_AND logicalOR
+   61 logicalAND: logicalOR
+   62           | logicalAND T_AND logicalOR
 
-   61 logicalOR: relationalExpression
-   62          | logicalOR T_OR relationalExpression
+   63 logicalOR: relationalExpression
+   64          | logicalOR T_OR relationalExpression
 
-   63 relationalExpression: arithmeticExpression
-   64                     | relationalExpression T_EQUALS arithmeticExpression
-   65                     | relationalExpression T_NEQUALS arithmeticExpression
-   66                     | relationalExpression '<' arithmeticExpression
-   67                     | relationalExpression '>' arithmeticExpression
-   68                     | relationalExpression T_LESS_EQ arithmeticExpression
-   69                     | relationalExpression T_GREATER_EQ arithmeticExpression
+   65 relationalExpression: arithmeticExpression
+   66                     | relationalExpression T_EQUALS arithmeticExpression
+   67                     | relationalExpression T_NEQUALS arithmeticExpression
+   68                     | relationalExpression '<' arithmeticExpression
+   69                     | relationalExpression '>' arithmeticExpression
+   70                     | relationalExpression T_LESS_EQ arithmeticExpression
+   71                     | relationalExpression T_GREATER_EQ arithmeticExpression
 
-   70 arithmeticExpression: multiplicativeExpression
-   71                     | arithmeticExpression '+' multiplicativeExpression
-   72                     | arithmeticExpression '-' multiplicativeExpression
+   72 arithmeticExpression: multiplicativeExpression
+   73                     | arithmeticExpression '+' multiplicativeExpression
+   74                     | arithmeticExpression '-' multiplicativeExpression
 
-   73 multiplicativeExpression: castExpression
-   74                         | multiplicativeExpression '*' castExpression
-   75                         | multiplicativeExpression '/' castExpression
+   75 multiplicativeExpression: castExpression
+   76                         | multiplicativeExpression '*' castExpression
+   77                         | multiplicativeExpression '/' castExpression
 
-   76 castExpression: unaryExpression
+   78 castExpression: unaryExpression
 
-   77 unaryExpression: postfixExpression
-   78                | '-' postfixExpression
-   79                | '!' postfixExpression
+   79 unaryExpression: postfixExpression
+   80                | '-' postfixExpression
+   81                | '!' postfixExpression
 
-   80 postfixExpression: primary
-   81                  | postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
-   82                  | postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN
-   83                  | identifier declarator
+   82 postfixExpression: primary
+   83                  | postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN
+   84                  | postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN
+   85                  | identifier declarator
 
-   84 identifier: T_IDENTIFIER
+   86 identifier: T_IDENTIFIER
 
-   85 primary: T_INT
-   86        | T_CHAR
-   87        | T_BOOL
-   88        | T_STRING
-   89        | T_LEFT_PAREN expression T_RIGHT_PAREN
-   90        | T_LEFT_PAREN error T_RIGHT_PAREN
-   91        | identifier
+   87 primary: T_INT
+   88        | T_CHAR
+   89        | T_BOOL
+   90        | T_STRING
+   91        | T_LEFT_PAREN expression T_RIGHT_PAREN
+   92        | T_LEFT_PAREN error T_RIGHT_PAREN
+   93        | identifier
 
 
 Terminals, with rules where they appear
 
     $end (0) 0
-    '!' (33) 79
-    '*' (42) 74
-    '+' (43) 71
-    '-' (45) 72 78
-    '/' (47) 75
-    ';' (59) 6 7 8 9 10 47 48 49 53
-    '<' (60) 66
-    '>' (62) 67
-    error (256) 10 82 90
-    T_RIGHT_BRACE (258) 15 50
-    T_LEFT_BRACE (259) 15 50
-    T_RIGHT_PAREN (260) 27 42 44 49 81 82 89 90
-    T_LEFT_PAREN (261) 27 42 44 49 81 82 89 90
-    T_RIGHT_BRACKET (262) 11 12 13 14
-    T_LEFT_BRACKET (263) 11 12 13 14
-    T_COMMA (264) 18 33 36
-    T_ASSIGN (265) 8 9 56 57
-    T_LESS_EQ (266) 68
-    T_GREATER_EQ (267) 69
-    T_EQUALS (268) 64
-    T_NEQUALS (269) 65
-    T_ARROW (270) 29
-    T_OR (271) 62
-    T_AND (272) 60
-    T_IF (273) 42
-    T_ELSE (274) 46
-    T_WHILE (275) 44
-    T_RETURN (276) 47 48
-    T_FUNC (277) 26
-    T_PRINT (278) 49
-    T_INT <ival> (279) 85
-    T_BOOL <ival> (280) 87
-    T_CHAR <cval> (281) 86
-    T_STRING <string> (282) 88
-    T_INT_TYPE (283) 21
-    T_BOOL_TYPE (284) 23
-    T_CHAR_TYPE (285) 22
-    T_VOID_TYPE (286) 24
-    T_STRING_TYPE (287) 25
-    T_IDENTIFIER <string> (288) 84
+    '!' (33) 81
+    '*' (42) 76
+    '+' (43) 73
+    '-' (45) 74 80
+    '/' (47) 77
+    ';' (59) 7 8 9 10 11 48 49 50 55
+    '<' (60) 68
+    '>' (62) 69
+    error (256) 3 11 54 84 92
+    T_RIGHT_BRACE (258) 16 51
+    T_LEFT_BRACE (259) 16 51
+    T_RIGHT_PAREN (260) 28 43 45 50 83 84 91 92
+    T_LEFT_PAREN (261) 28 43 45 50 83 84 91 92
+    T_RIGHT_BRACKET (262) 12 13 14 15
+    T_LEFT_BRACKET (263) 12 13 14 15
+    T_COMMA (264) 19 34 37
+    T_ASSIGN (265) 9 10 58 59
+    T_LESS_EQ (266) 70
+    T_GREATER_EQ (267) 71
+    T_EQUALS (268) 66
+    T_NEQUALS (269) 67
+    T_ARROW (270) 30
+    T_OR (271) 64
+    T_AND (272) 62
+    T_IF (273) 43
+    T_ELSE (274) 47
+    T_WHILE (275) 45
+    T_RETURN (276) 48 49
+    T_FUNC (277) 27
+    T_PRINT (278) 50
+    T_INT <ival> (279) 87
+    T_BOOL <ival> (280) 89
+    T_CHAR <cval> (281) 88
+    T_STRING <string> (282) 90
+    T_INT_TYPE (283) 22
+    T_BOOL_TYPE (284) 24
+    T_CHAR_TYPE (285) 23
+    T_VOID_TYPE (286) 25
+    T_STRING_TYPE (287) 26
+    T_IDENTIFIER <string> (288) 86
 
 
 Nonterminals, with rules where they appear
@@ -181,116 +183,116 @@ Nonterminals, with rules where they appear
     $accept (42)
         on left: 0
     module <nval> (43)
-        on left: 1 2
-        on right: 0 2
+        on left: 1 2 3
+        on right: 0 2 3
     declaration <nval> (44)
-        on left: 3 4 5
-        on right: 2 52
+        on left: 4 5 6
+        on right: 2 53
     varDeclaration <nval> (45)
-        on left: 6 7 8 9 10
-        on right: 3
-    initializerDim <llval> (46)
-        on left: 11 12
-        on right: 9 12 32
-    declarator <llval> (47)
-        on left: 13 14
-        on right: 7 14 57 83
-    arrayInitializer <llval> (48)
-        on left: 15
-        on right: 9 20
-    initializerList <llval> (49)
-        on left: 16 17 18
-        on right: 15 18
-    initializerValue <llval> (50)
-        on left: 19 20
-        on right: 17 18
-    type <ival> (51)
-        on left: 21 22 23 24 25
-        on right: 6 7 8 9 29 31 32 33
-    funcDefinition <nval> (52)
-        on left: 26
-        on right: 5
-    function <nval> (53)
-        on left: 27
-        on right: 26
-    returnType <ival> (54)
-        on left: 28 29
-        on right: 27
-    parameters <llval> (55)
-        on left: 30 31 32 33
-        on right: 27 33
-    args <llval> (56)
-        on left: 34 35 36
-        on right: 36 81
-    statement <nval> (57)
-        on left: 37 38 39 40 41
+        on left: 7 8 9 10 11
         on right: 4
+    initializerDim <llval> (46)
+        on left: 12 13
+        on right: 10 13 33
+    declarator <llval> (47)
+        on left: 14 15
+        on right: 8 15 59 85
+    arrayInitializer <llval> (48)
+        on left: 16
+        on right: 10 21
+    initializerList <llval> (49)
+        on left: 17 18 19
+        on right: 16 19
+    initializerValue <llval> (50)
+        on left: 20 21
+        on right: 18 19
+    type <ival> (51)
+        on left: 22 23 24 25 26
+        on right: 7 8 9 10 30 32 33 34
+    funcDefinition <nval> (52)
+        on left: 27
+        on right: 6
+    function <nval> (53)
+        on left: 28
+        on right: 27
+    returnType <ival> (54)
+        on left: 29 30
+        on right: 28
+    parameters <llval> (55)
+        on left: 31 32 33 34
+        on right: 28 34
+    args <llval> (56)
+        on left: 35 36 37
+        on right: 37 83
+    statement <nval> (57)
+        on left: 38 39 40 41 42
+        on right: 5
     ifStatement <nval> (58)
-        on left: 42
-        on right: 37
-    loopStatement <nval> (59)
         on left: 43
         on right: 38
-    whileLoop <nval> (60)
+    loopStatement <nval> (59)
         on left: 44
-        on right: 43
-    else <nval> (61)
-        on left: 45 46
-        on right: 42
-    returnStatement <nval> (62)
-        on left: 47 48
         on right: 39
-    printStatement <nval> (63)
-        on left: 49
+    whileLoop <nval> (60)
+        on left: 45
+        on right: 44
+    else <nval> (61)
+        on left: 46 47
+        on right: 43
+    returnStatement <nval> (62)
+        on left: 48 49
         on right: 40
-    block <nval> (64)
+    printStatement <nval> (63)
         on left: 50
-        on right: 27 42 44 46
-    blockBody <llval> (65)
-        on left: 51 52
-        on right: 50 52
-    expressionStatement <nval> (66)
-        on left: 53
         on right: 41
+    block <nval> (64)
+        on left: 51
+        on right: 28 43 45 47
+    blockBody <llval> (65)
+        on left: 52 53 54
+        on right: 51 53 54
+    expressionStatement <nval> (66)
+        on left: 55
+        on right: 42
     expression <nval> (67)
-        on left: 54
-        on right: 13 14 42 47 49 53 56 57 89
+        on left: 56
+        on right: 14 15 43 48 50 55 58 59 91
     assignExpression <nval> (68)
-        on left: 55 56 57
-        on right: 35 36 44 54
+        on left: 57 58 59
+        on right: 36 37 45 56
     conditionalExpression <nval> (69)
-        on left: 58
-        on right: 8 55
+        on left: 60
+        on right: 9 57
     logicalAND <nval> (70)
-        on left: 59 60
-        on right: 58 60
-    logicalOR <nval> (71)
         on left: 61 62
-        on right: 59 60 62
+        on right: 60 62
+    logicalOR <nval> (71)
+        on left: 63 64
+        on right: 61 62 64
     relationalExpression <nval> (72)
-        on left: 63 64 65 66 67 68 69
-        on right: 61 62 64 65 66 67 68 69
+        on left: 65 66 67 68 69 70 71
+        on right: 63 64 66 67 68 69 70 71
     arithmeticExpression <nval> (73)
-        on left: 70 71 72
-        on right: 63 64 65 66 67 68 69 71 72
+        on left: 72 73 74
+        on right: 65 66 67 68 69 70 71 73 74
     multiplicativeExpression <nval> (74)
-        on left: 73 74 75
-        on right: 70 71 72 74 75
+        on left: 75 76 77
+        on right: 72 73 74 76 77
     castExpression <nval> (75)
-        on left: 76
-        on right: 73 74 75
+        on left: 78
+        on right: 75 76 77
     unaryExpression <nval> (76)
-        on left: 77 78 79
-        on right: 76
+        on left: 79 80 81
+        on right: 78
     postfixExpression <nval> (77)
-        on left: 80 81 82 83
-        on right: 77 78 79 81 82
+        on left: 82 83 84 85
+        on right: 79 80 81 83 84
     identifier <nval> (78)
-        on left: 84
-        on right: 6 7 8 9 27 31 32 33 56 57 83 91
+        on left: 86
+        on right: 7 8 9 10 28 32 33 34 58 59 85 93
     primary <nval> (79)
-        on left: 85 86 87 88 89 90 91
-        on right: 19 80
+        on left: 87 88 89 90 91 92 93
+        on right: 20 82
 
 
 State 0
@@ -306,6 +308,7 @@ State 1
 
     0 $accept: module • $end
     2 module: module • declaration
+    3       | module • error
 
     $end           shift, and go to state 2
     error          shift, and go to state 3
@@ -363,15 +366,18 @@ State 2
 
 State 3
 
-   10 varDeclaration: error • ';'
+    3 module: module error •
+   11 varDeclaration: error • ';'
 
     ';'  shift, and go to state 46
+
+    $default  reduce using rule 3 (module)
 
 
 State 4
 
-   89 primary: T_LEFT_PAREN • expression T_RIGHT_PAREN
-   90        | T_LEFT_PAREN • error T_RIGHT_PAREN
+   91 primary: T_LEFT_PAREN • expression T_RIGHT_PAREN
+   92        | T_LEFT_PAREN • error T_RIGHT_PAREN
 
     error         shift, and go to state 47
     T_LEFT_PAREN  shift, and go to state 4
@@ -400,7 +406,7 @@ State 4
 
 State 5
 
-   78 unaryExpression: '-' • postfixExpression
+   80 unaryExpression: '-' • postfixExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     T_INT         shift, and go to state 12
@@ -416,7 +422,7 @@ State 5
 
 State 6
 
-   79 unaryExpression: '!' • postfixExpression
+   81 unaryExpression: '!' • postfixExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     T_INT         shift, and go to state 12
@@ -432,22 +438,22 @@ State 6
 
 State 7
 
-   42 ifStatement: T_IF • T_LEFT_PAREN expression T_RIGHT_PAREN block else
+   43 ifStatement: T_IF • T_LEFT_PAREN expression T_RIGHT_PAREN block else
 
     T_LEFT_PAREN  shift, and go to state 52
 
 
 State 8
 
-   44 whileLoop: T_WHILE • T_LEFT_PAREN assignExpression T_RIGHT_PAREN block
+   45 whileLoop: T_WHILE • T_LEFT_PAREN assignExpression T_RIGHT_PAREN block
 
     T_LEFT_PAREN  shift, and go to state 53
 
 
 State 9
 
-   47 returnStatement: T_RETURN • expression ';'
-   48                | T_RETURN • ';'
+   48 returnStatement: T_RETURN • expression ';'
+   49                | T_RETURN • ';'
 
     T_LEFT_PAREN  shift, and go to state 4
     ';'           shift, and go to state 54
@@ -476,7 +482,7 @@ State 9
 
 State 10
 
-   26 funcDefinition: T_FUNC • function
+   27 funcDefinition: T_FUNC • function
 
     T_IDENTIFIER  shift, and go to state 21
 
@@ -486,79 +492,79 @@ State 10
 
 State 11
 
-   49 printStatement: T_PRINT • T_LEFT_PAREN expression T_RIGHT_PAREN ';'
+   50 printStatement: T_PRINT • T_LEFT_PAREN expression T_RIGHT_PAREN ';'
 
     T_LEFT_PAREN  shift, and go to state 58
 
 
 State 12
 
-   85 primary: T_INT •
-
-    $default  reduce using rule 85 (primary)
-
-
-State 13
-
-   87 primary: T_BOOL •
+   87 primary: T_INT •
 
     $default  reduce using rule 87 (primary)
 
 
+State 13
+
+   89 primary: T_BOOL •
+
+    $default  reduce using rule 89 (primary)
+
+
 State 14
 
-   86 primary: T_CHAR •
-
-    $default  reduce using rule 86 (primary)
-
-
-State 15
-
-   88 primary: T_STRING •
+   88 primary: T_CHAR •
 
     $default  reduce using rule 88 (primary)
 
 
+State 15
+
+   90 primary: T_STRING •
+
+    $default  reduce using rule 90 (primary)
+
+
 State 16
 
-   21 type: T_INT_TYPE •
-
-    $default  reduce using rule 21 (type)
-
-
-State 17
-
-   23 type: T_BOOL_TYPE •
-
-    $default  reduce using rule 23 (type)
-
-
-State 18
-
-   22 type: T_CHAR_TYPE •
+   22 type: T_INT_TYPE •
 
     $default  reduce using rule 22 (type)
 
 
-State 19
+State 17
 
-   24 type: T_VOID_TYPE •
+   24 type: T_BOOL_TYPE •
 
     $default  reduce using rule 24 (type)
 
 
-State 20
+State 18
 
-   25 type: T_STRING_TYPE •
+   23 type: T_CHAR_TYPE •
+
+    $default  reduce using rule 23 (type)
+
+
+State 19
+
+   25 type: T_VOID_TYPE •
 
     $default  reduce using rule 25 (type)
 
 
+State 20
+
+   26 type: T_STRING_TYPE •
+
+    $default  reduce using rule 26 (type)
+
+
 State 21
 
-   84 identifier: T_IDENTIFIER •
+   86 identifier: T_IDENTIFIER •
 
-    $default  reduce using rule 84 (identifier)
+    $default  reduce using rule 86 (identifier)
 
 
 State 22
@@ -570,17 +576,17 @@ State 22
 
 State 23
 
-    3 declaration: varDeclaration •
+    4 declaration: varDeclaration •
 
-    $default  reduce using rule 3 (declaration)
+    $default  reduce using rule 4 (declaration)
 
 
 State 24
 
-    6 varDeclaration: type • identifier ';'
-    7               | type • identifier declarator ';'
-    8               | type • identifier T_ASSIGN conditionalExpression ';'
-    9               | type • identifier initializerDim T_ASSIGN arrayInitializer ';'
+    7 varDeclaration: type • identifier ';'
+    8               | type • identifier declarator ';'
+    9               | type • identifier T_ASSIGN conditionalExpression ';'
+   10               | type • identifier initializerDim T_ASSIGN arrayInitializer ';'
 
     T_IDENTIFIER  shift, and go to state 21
 
@@ -589,110 +595,110 @@ State 24
 
 State 25
 
-    5 declaration: funcDefinition •
+    6 declaration: funcDefinition •
 
-    $default  reduce using rule 5 (declaration)
+    $default  reduce using rule 6 (declaration)
 
 
 State 26
 
-    4 declaration: statement •
+    5 declaration: statement •
 
-    $default  reduce using rule 4 (declaration)
+    $default  reduce using rule 5 (declaration)
 
 
 State 27
 
-   37 statement: ifStatement •
-
-    $default  reduce using rule 37 (statement)
-
-
-State 28
-
-   38 statement: loopStatement •
+   38 statement: ifStatement •
 
     $default  reduce using rule 38 (statement)
 
 
-State 29
+State 28
 
-   43 loopStatement: whileLoop •
-
-    $default  reduce using rule 43 (loopStatement)
-
-
-State 30
-
-   39 statement: returnStatement •
+   39 statement: loopStatement •
 
     $default  reduce using rule 39 (statement)
 
 
-State 31
+State 29
 
-   40 statement: printStatement •
+   44 loopStatement: whileLoop •
+
+    $default  reduce using rule 44 (loopStatement)
+
+
+State 30
+
+   40 statement: returnStatement •
 
     $default  reduce using rule 40 (statement)
 
 
-State 32
+State 31
 
-   41 statement: expressionStatement •
+   41 statement: printStatement •
 
     $default  reduce using rule 41 (statement)
 
 
+State 32
+
+   42 statement: expressionStatement •
+
+    $default  reduce using rule 42 (statement)
+
+
 State 33
 
-   53 expressionStatement: expression • ';'
+   55 expressionStatement: expression • ';'
 
     ';'  shift, and go to state 60
 
 
 State 34
 
-   54 expression: assignExpression •
+   56 expression: assignExpression •
 
-    $default  reduce using rule 54 (expression)
+    $default  reduce using rule 56 (expression)
 
 
 State 35
 
-   55 assignExpression: conditionalExpression •
+   57 assignExpression: conditionalExpression •
 
-    $default  reduce using rule 55 (assignExpression)
+    $default  reduce using rule 57 (assignExpression)
 
 
 State 36
 
-   58 conditionalExpression: logicalAND •
-   60 logicalAND: logicalAND • T_AND logicalOR
+   60 conditionalExpression: logicalAND •
+   62 logicalAND: logicalAND • T_AND logicalOR
 
     T_AND  shift, and go to state 61
 
-    $default  reduce using rule 58 (conditionalExpression)
+    $default  reduce using rule 60 (conditionalExpression)
 
 
 State 37
 
-   59 logicalAND: logicalOR •
-   62 logicalOR: logicalOR • T_OR relationalExpression
+   61 logicalAND: logicalOR •
+   64 logicalOR: logicalOR • T_OR relationalExpression
 
     T_OR  shift, and go to state 62
 
-    $default  reduce using rule 59 (logicalAND)
+    $default  reduce using rule 61 (logicalAND)
 
 
 State 38
 
-   61 logicalOR: relationalExpression •
-   64 relationalExpression: relationalExpression • T_EQUALS arithmeticExpression
-   65                     | relationalExpression • T_NEQUALS arithmeticExpression
-   66                     | relationalExpression • '<' arithmeticExpression
-   67                     | relationalExpression • '>' arithmeticExpression
-   68                     | relationalExpression • T_LESS_EQ arithmeticExpression
-   69                     | relationalExpression • T_GREATER_EQ arithmeticExpression
+   63 logicalOR: relationalExpression •
+   66 relationalExpression: relationalExpression • T_EQUALS arithmeticExpression
+   67                     | relationalExpression • T_NEQUALS arithmeticExpression
+   68                     | relationalExpression • '<' arithmeticExpression
+   69                     | relationalExpression • '>' arithmeticExpression
+   70                     | relationalExpression • T_LESS_EQ arithmeticExpression
+   71                     | relationalExpression • T_GREATER_EQ arithmeticExpression
 
     '<'           shift, and go to state 63
     '>'           shift, and go to state 64
@@ -701,138 +707,138 @@ State 38
     T_EQUALS      shift, and go to state 67
     T_NEQUALS     shift, and go to state 68
 
-    $default  reduce using rule 61 (logicalOR)
+    $default  reduce using rule 63 (logicalOR)
 
 
 State 39
 
-   63 relationalExpression: arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
+   65 relationalExpression: arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
 
     '+'  shift, and go to state 69
     '-'  shift, and go to state 70
 
-    $default  reduce using rule 63 (relationalExpression)
+    $default  reduce using rule 65 (relationalExpression)
 
 
 State 40
 
-   70 arithmeticExpression: multiplicativeExpression •
-   74 multiplicativeExpression: multiplicativeExpression • '*' castExpression
-   75                         | multiplicativeExpression • '/' castExpression
+   72 arithmeticExpression: multiplicativeExpression •
+   76 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   77                         | multiplicativeExpression • '/' castExpression
 
     '*'  shift, and go to state 71
     '/'  shift, and go to state 72
 
-    $default  reduce using rule 70 (arithmeticExpression)
+    $default  reduce using rule 72 (arithmeticExpression)
 
 
 State 41
 
-   73 multiplicativeExpression: castExpression •
+   75 multiplicativeExpression: castExpression •
 
-    $default  reduce using rule 73 (multiplicativeExpression)
+    $default  reduce using rule 75 (multiplicativeExpression)
 
 
 State 42
 
-   76 castExpression: unaryExpression •
+   78 castExpression: unaryExpression •
 
-    $default  reduce using rule 76 (castExpression)
+    $default  reduce using rule 78 (castExpression)
 
 
 State 43
 
-   77 unaryExpression: postfixExpression •
-   81 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
-   82                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
-
-    T_LEFT_PAREN  shift, and go to state 73
-
-    $default  reduce using rule 77 (unaryExpression)
-
-
-State 44
-
-   56 assignExpression: identifier • T_ASSIGN expression
-   57                 | identifier • declarator T_ASSIGN expression
-   83 postfixExpression: identifier • declarator
-   91 primary: identifier •
-
-    T_LEFT_BRACKET  shift, and go to state 74
-    T_ASSIGN        shift, and go to state 75
-
-    $default  reduce using rule 91 (primary)
-
-    declarator  go to state 76
-
-
-State 45
-
-   80 postfixExpression: primary •
-
-    $default  reduce using rule 80 (postfixExpression)
-
-
-State 46
-
-   10 varDeclaration: error ';' •
-
-    $default  reduce using rule 10 (varDeclaration)
-
-
-State 47
-
-   90 primary: T_LEFT_PAREN error • T_RIGHT_PAREN
-
-    T_RIGHT_PAREN  shift, and go to state 77
-
-
-State 48
-
-   89 primary: T_LEFT_PAREN expression • T_RIGHT_PAREN
-
-    T_RIGHT_PAREN  shift, and go to state 78
-
-
-State 49
-
-   78 unaryExpression: '-' postfixExpression •
-   81 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
-   82                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
-
-    T_LEFT_PAREN  shift, and go to state 73
-
-    $default  reduce using rule 78 (unaryExpression)
-
-
-State 50
-
-   83 postfixExpression: identifier • declarator
-   91 primary: identifier •
-
-    T_LEFT_BRACKET  shift, and go to state 74
-
-    $default  reduce using rule 91 (primary)
-
-    declarator  go to state 79
-
-
-State 51
-
-   79 unaryExpression: '!' postfixExpression •
-   81 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
-   82                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
+   79 unaryExpression: postfixExpression •
+   83 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+   84                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
 
     T_LEFT_PAREN  shift, and go to state 73
 
     $default  reduce using rule 79 (unaryExpression)
 
 
+State 44
+
+   58 assignExpression: identifier • T_ASSIGN expression
+   59                 | identifier • declarator T_ASSIGN expression
+   85 postfixExpression: identifier • declarator
+   93 primary: identifier •
+
+    T_LEFT_BRACKET  shift, and go to state 74
+    T_ASSIGN        shift, and go to state 75
+
+    $default  reduce using rule 93 (primary)
+
+    declarator  go to state 76
+
+
+State 45
+
+   82 postfixExpression: primary •
+
+    $default  reduce using rule 82 (postfixExpression)
+
+
+State 46
+
+   11 varDeclaration: error ';' •
+
+    $default  reduce using rule 11 (varDeclaration)
+
+
+State 47
+
+   92 primary: T_LEFT_PAREN error • T_RIGHT_PAREN
+
+    T_RIGHT_PAREN  shift, and go to state 77
+
+
+State 48
+
+   91 primary: T_LEFT_PAREN expression • T_RIGHT_PAREN
+
+    T_RIGHT_PAREN  shift, and go to state 78
+
+
+State 49
+
+   80 unaryExpression: '-' postfixExpression •
+   83 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+   84                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 73
+
+    $default  reduce using rule 80 (unaryExpression)
+
+
+State 50
+
+   85 postfixExpression: identifier • declarator
+   93 primary: identifier •
+
+    T_LEFT_BRACKET  shift, and go to state 74
+
+    $default  reduce using rule 93 (primary)
+
+    declarator  go to state 79
+
+
+State 51
+
+   81 unaryExpression: '!' postfixExpression •
+   83 postfixExpression: postfixExpression • T_LEFT_PAREN args T_RIGHT_PAREN
+   84                  | postfixExpression • T_LEFT_PAREN error T_RIGHT_PAREN
+
+    T_LEFT_PAREN  shift, and go to state 73
+
+    $default  reduce using rule 81 (unaryExpression)
+
+
 State 52
 
-   42 ifStatement: T_IF T_LEFT_PAREN • expression T_RIGHT_PAREN block else
+   43 ifStatement: T_IF T_LEFT_PAREN • expression T_RIGHT_PAREN block else
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -860,7 +866,7 @@ State 52
 
 State 53
 
-   44 whileLoop: T_WHILE T_LEFT_PAREN • assignExpression T_RIGHT_PAREN block
+   45 whileLoop: T_WHILE T_LEFT_PAREN • assignExpression T_RIGHT_PAREN block
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -887,35 +893,35 @@ State 53
 
 State 54
 
-   48 returnStatement: T_RETURN ';' •
+   49 returnStatement: T_RETURN ';' •
 
-    $default  reduce using rule 48 (returnStatement)
+    $default  reduce using rule 49 (returnStatement)
 
 
 State 55
 
-   47 returnStatement: T_RETURN expression • ';'
+   48 returnStatement: T_RETURN expression • ';'
 
     ';'  shift, and go to state 82
 
 
 State 56
 
-   26 funcDefinition: T_FUNC function •
+   27 funcDefinition: T_FUNC function •
 
-    $default  reduce using rule 26 (funcDefinition)
+    $default  reduce using rule 27 (funcDefinition)
 
 
 State 57
 
-   27 function: identifier • T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
+   28 function: identifier • T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block
 
     T_LEFT_PAREN  shift, and go to state 83
 
 
 State 58
 
-   49 printStatement: T_PRINT T_LEFT_PAREN • expression T_RIGHT_PAREN ';'
+   50 printStatement: T_PRINT T_LEFT_PAREN • expression T_RIGHT_PAREN ';'
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -943,10 +949,10 @@ State 58
 
 State 59
 
-    6 varDeclaration: type identifier • ';'
-    7               | type identifier • declarator ';'
-    8               | type identifier • T_ASSIGN conditionalExpression ';'
-    9               | type identifier • initializerDim T_ASSIGN arrayInitializer ';'
+    7 varDeclaration: type identifier • ';'
+    8               | type identifier • declarator ';'
+    9               | type identifier • T_ASSIGN conditionalExpression ';'
+   10               | type identifier • initializerDim T_ASSIGN arrayInitializer ';'
 
     T_LEFT_BRACKET  shift, and go to state 85
     T_ASSIGN        shift, and go to state 86
@@ -958,14 +964,14 @@ State 59
 
 State 60
 
-   53 expressionStatement: expression ';' •
+   55 expressionStatement: expression ';' •
 
-    $default  reduce using rule 53 (expressionStatement)
+    $default  reduce using rule 55 (expressionStatement)
 
 
 State 61
 
-   60 logicalAND: logicalAND T_AND • logicalOR
+   62 logicalAND: logicalAND T_AND • logicalOR
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -989,7 +995,7 @@ State 61
 
 State 62
 
-   62 logicalOR: logicalOR T_OR • relationalExpression
+   64 logicalOR: logicalOR T_OR • relationalExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1012,7 +1018,7 @@ State 62
 
 State 63
 
-   66 relationalExpression: relationalExpression '<' • arithmeticExpression
+   68 relationalExpression: relationalExpression '<' • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1034,7 +1040,7 @@ State 63
 
 State 64
 
-   67 relationalExpression: relationalExpression '>' • arithmeticExpression
+   69 relationalExpression: relationalExpression '>' • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1056,7 +1062,7 @@ State 64
 
 State 65
 
-   68 relationalExpression: relationalExpression T_LESS_EQ • arithmeticExpression
+   70 relationalExpression: relationalExpression T_LESS_EQ • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1078,7 +1084,7 @@ State 65
 
 State 66
 
-   69 relationalExpression: relationalExpression T_GREATER_EQ • arithmeticExpression
+   71 relationalExpression: relationalExpression T_GREATER_EQ • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1100,7 +1106,7 @@ State 66
 
 State 67
 
-   64 relationalExpression: relationalExpression T_EQUALS • arithmeticExpression
+   66 relationalExpression: relationalExpression T_EQUALS • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1122,7 +1128,7 @@ State 67
 
 State 68
 
-   65 relationalExpression: relationalExpression T_NEQUALS • arithmeticExpression
+   67 relationalExpression: relationalExpression T_NEQUALS • arithmeticExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1144,7 +1150,7 @@ State 68
 
 State 69
 
-   71 arithmeticExpression: arithmeticExpression '+' • multiplicativeExpression
+   73 arithmeticExpression: arithmeticExpression '+' • multiplicativeExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1165,7 +1171,7 @@ State 69
 
 State 70
 
-   72 arithmeticExpression: arithmeticExpression '-' • multiplicativeExpression
+   74 arithmeticExpression: arithmeticExpression '-' • multiplicativeExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1186,7 +1192,7 @@ State 70
 
 State 71
 
-   74 multiplicativeExpression: multiplicativeExpression '*' • castExpression
+   76 multiplicativeExpression: multiplicativeExpression '*' • castExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1206,7 +1212,7 @@ State 71
 
 State 72
 
-   75 multiplicativeExpression: multiplicativeExpression '/' • castExpression
+   77 multiplicativeExpression: multiplicativeExpression '/' • castExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1226,8 +1232,8 @@ State 72
 
 State 73
 
-   81 postfixExpression: postfixExpression T_LEFT_PAREN • args T_RIGHT_PAREN
-   82                  | postfixExpression T_LEFT_PAREN • error T_RIGHT_PAREN
+   83 postfixExpression: postfixExpression T_LEFT_PAREN • args T_RIGHT_PAREN
+   84                  | postfixExpression T_LEFT_PAREN • error T_RIGHT_PAREN
 
     error         shift, and go to state 102
     T_LEFT_PAREN  shift, and go to state 4
@@ -1239,8 +1245,8 @@ State 73
     T_STRING      shift, and go to state 15
     T_IDENTIFIER  shift, and go to state 21
 
-    T_RIGHT_PAREN  reduce using rule 34 (args)
-    T_COMMA        reduce using rule 34 (args)
+    T_RIGHT_PAREN  reduce using rule 35 (args)
+    T_COMMA        reduce using rule 35 (args)
 
     args                      go to state 103
     assignExpression          go to state 104
@@ -1259,7 +1265,7 @@ State 73
 
 State 74
 
-   13 declarator: T_LEFT_BRACKET • expression T_RIGHT_BRACKET
+   14 declarator: T_LEFT_BRACKET • expression T_RIGHT_BRACKET
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1287,7 +1293,7 @@ State 74
 
 State 75
 
-   56 assignExpression: identifier T_ASSIGN • expression
+   58 assignExpression: identifier T_ASSIGN • expression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1315,64 +1321,64 @@ State 75
 
 State 76
 
-   14 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
-   57 assignExpression: identifier declarator • T_ASSIGN expression
-   83 postfixExpression: identifier declarator •
+   15 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
+   59 assignExpression: identifier declarator • T_ASSIGN expression
+   85 postfixExpression: identifier declarator •
 
     T_LEFT_BRACKET  shift, and go to state 107
     T_ASSIGN        shift, and go to state 108
 
-    $default  reduce using rule 83 (postfixExpression)
+    $default  reduce using rule 85 (postfixExpression)
 
 
 State 77
 
-   90 primary: T_LEFT_PAREN error T_RIGHT_PAREN •
+   92 primary: T_LEFT_PAREN error T_RIGHT_PAREN •
 
-    $default  reduce using rule 90 (primary)
+    $default  reduce using rule 92 (primary)
 
 
 State 78
 
-   89 primary: T_LEFT_PAREN expression T_RIGHT_PAREN •
+   91 primary: T_LEFT_PAREN expression T_RIGHT_PAREN •
 
-    $default  reduce using rule 89 (primary)
+    $default  reduce using rule 91 (primary)
 
 
 State 79
 
-   14 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
-   83 postfixExpression: identifier declarator •
+   15 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
+   85 postfixExpression: identifier declarator •
 
     T_LEFT_BRACKET  shift, and go to state 107
 
-    $default  reduce using rule 83 (postfixExpression)
+    $default  reduce using rule 85 (postfixExpression)
 
 
 State 80
 
-   42 ifStatement: T_IF T_LEFT_PAREN expression • T_RIGHT_PAREN block else
+   43 ifStatement: T_IF T_LEFT_PAREN expression • T_RIGHT_PAREN block else
 
     T_RIGHT_PAREN  shift, and go to state 109
 
 
 State 81
 
-   44 whileLoop: T_WHILE T_LEFT_PAREN assignExpression • T_RIGHT_PAREN block
+   45 whileLoop: T_WHILE T_LEFT_PAREN assignExpression • T_RIGHT_PAREN block
 
     T_RIGHT_PAREN  shift, and go to state 110
 
 
 State 82
 
-   47 returnStatement: T_RETURN expression ';' •
+   48 returnStatement: T_RETURN expression ';' •
 
-    $default  reduce using rule 47 (returnStatement)
+    $default  reduce using rule 48 (returnStatement)
 
 
 State 83
 
-   27 function: identifier T_LEFT_PAREN • parameters T_RIGHT_PAREN returnType block
+   28 function: identifier T_LEFT_PAREN • parameters T_RIGHT_PAREN returnType block
 
     T_INT_TYPE     shift, and go to state 16
     T_BOOL_TYPE    shift, and go to state 17
@@ -1380,7 +1386,7 @@ State 83
     T_VOID_TYPE    shift, and go to state 19
     T_STRING_TYPE  shift, and go to state 20
 
-    $default  reduce using rule 30 (parameters)
+    $default  reduce using rule 31 (parameters)
 
     type        go to state 111
     parameters  go to state 112
@@ -1388,15 +1394,15 @@ State 83
 
 State 84
 
-   49 printStatement: T_PRINT T_LEFT_PAREN expression • T_RIGHT_PAREN ';'
+   50 printStatement: T_PRINT T_LEFT_PAREN expression • T_RIGHT_PAREN ';'
 
     T_RIGHT_PAREN  shift, and go to state 113
 
 
 State 85
 
-   11 initializerDim: T_LEFT_BRACKET • T_RIGHT_BRACKET
-   13 declarator: T_LEFT_BRACKET • expression T_RIGHT_BRACKET
+   12 initializerDim: T_LEFT_BRACKET • T_RIGHT_BRACKET
+   14 declarator: T_LEFT_BRACKET • expression T_RIGHT_BRACKET
 
     T_LEFT_PAREN     shift, and go to state 4
     T_RIGHT_BRACKET  shift, and go to state 114
@@ -1425,7 +1431,7 @@ State 85
 
 State 86
 
-    8 varDeclaration: type identifier T_ASSIGN • conditionalExpression ';'
+    9 varDeclaration: type identifier T_ASSIGN • conditionalExpression ';'
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1451,15 +1457,15 @@ State 86
 
 State 87
 
-    6 varDeclaration: type identifier ';' •
+    7 varDeclaration: type identifier ';' •
 
-    $default  reduce using rule 6 (varDeclaration)
+    $default  reduce using rule 7 (varDeclaration)
 
 
 State 88
 
-    9 varDeclaration: type identifier initializerDim • T_ASSIGN arrayInitializer ';'
-   12 initializerDim: initializerDim • T_LEFT_BRACKET T_RIGHT_BRACKET
+   10 varDeclaration: type identifier initializerDim • T_ASSIGN arrayInitializer ';'
+   13 initializerDim: initializerDim • T_LEFT_BRACKET T_RIGHT_BRACKET
 
     T_LEFT_BRACKET  shift, and go to state 116
     T_ASSIGN        shift, and go to state 117
@@ -1467,8 +1473,8 @@ State 88
 
 State 89
 
-    7 varDeclaration: type identifier declarator • ';'
-   14 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
+    8 varDeclaration: type identifier declarator • ';'
+   15 declarator: declarator • T_LEFT_BRACKET expression T_RIGHT_BRACKET
 
     T_LEFT_BRACKET  shift, and go to state 107
     ';'             shift, and go to state 118
@@ -1476,23 +1482,23 @@ State 89
 
 State 90
 
-   60 logicalAND: logicalAND T_AND logicalOR •
-   62 logicalOR: logicalOR • T_OR relationalExpression
+   62 logicalAND: logicalAND T_AND logicalOR •
+   64 logicalOR: logicalOR • T_OR relationalExpression
 
     T_OR  shift, and go to state 62
 
-    $default  reduce using rule 60 (logicalAND)
+    $default  reduce using rule 62 (logicalAND)
 
 
 State 91
 
-   62 logicalOR: logicalOR T_OR relationalExpression •
-   64 relationalExpression: relationalExpression • T_EQUALS arithmeticExpression
-   65                     | relationalExpression • T_NEQUALS arithmeticExpression
-   66                     | relationalExpression • '<' arithmeticExpression
-   67                     | relationalExpression • '>' arithmeticExpression
-   68                     | relationalExpression • T_LESS_EQ arithmeticExpression
-   69                     | relationalExpression • T_GREATER_EQ arithmeticExpression
+   64 logicalOR: logicalOR T_OR relationalExpression •
+   66 relationalExpression: relationalExpression • T_EQUALS arithmeticExpression
+   67                     | relationalExpression • T_NEQUALS arithmeticExpression
+   68                     | relationalExpression • '<' arithmeticExpression
+   69                     | relationalExpression • '>' arithmeticExpression
+   70                     | relationalExpression • T_LESS_EQ arithmeticExpression
+   71                     | relationalExpression • T_GREATER_EQ arithmeticExpression
 
     '<'           shift, and go to state 63
     '>'           shift, and go to state 64
@@ -1501,38 +1507,14 @@ State 91
     T_EQUALS      shift, and go to state 67
     T_NEQUALS     shift, and go to state 68
 
-    $default  reduce using rule 62 (logicalOR)
+    $default  reduce using rule 64 (logicalOR)
 
 
 State 92
 
-   66 relationalExpression: relationalExpression '<' arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
-
-    '+'  shift, and go to state 69
-    '-'  shift, and go to state 70
-
-    $default  reduce using rule 66 (relationalExpression)
-
-
-State 93
-
-   67 relationalExpression: relationalExpression '>' arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
-
-    '+'  shift, and go to state 69
-    '-'  shift, and go to state 70
-
-    $default  reduce using rule 67 (relationalExpression)
-
-
-State 94
-
-   68 relationalExpression: relationalExpression T_LESS_EQ arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
+   68 relationalExpression: relationalExpression '<' arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
 
     '+'  shift, and go to state 69
     '-'  shift, and go to state 70
@@ -1540,11 +1522,11 @@ State 94
     $default  reduce using rule 68 (relationalExpression)
 
 
-State 95
+State 93
 
-   69 relationalExpression: relationalExpression T_GREATER_EQ arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
+   69 relationalExpression: relationalExpression '>' arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
 
     '+'  shift, and go to state 69
     '-'  shift, and go to state 70
@@ -1552,79 +1534,103 @@ State 95
     $default  reduce using rule 69 (relationalExpression)
 
 
-State 96
+State 94
 
-   64 relationalExpression: relationalExpression T_EQUALS arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
+   70 relationalExpression: relationalExpression T_LESS_EQ arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
 
     '+'  shift, and go to state 69
     '-'  shift, and go to state 70
 
-    $default  reduce using rule 64 (relationalExpression)
+    $default  reduce using rule 70 (relationalExpression)
+
+
+State 95
+
+   71 relationalExpression: relationalExpression T_GREATER_EQ arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 69
+    '-'  shift, and go to state 70
+
+    $default  reduce using rule 71 (relationalExpression)
+
+
+State 96
+
+   66 relationalExpression: relationalExpression T_EQUALS arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
+
+    '+'  shift, and go to state 69
+    '-'  shift, and go to state 70
+
+    $default  reduce using rule 66 (relationalExpression)
 
 
 State 97
 
-   65 relationalExpression: relationalExpression T_NEQUALS arithmeticExpression •
-   71 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
-   72                     | arithmeticExpression • '-' multiplicativeExpression
+   67 relationalExpression: relationalExpression T_NEQUALS arithmeticExpression •
+   73 arithmeticExpression: arithmeticExpression • '+' multiplicativeExpression
+   74                     | arithmeticExpression • '-' multiplicativeExpression
 
     '+'  shift, and go to state 69
     '-'  shift, and go to state 70
 
-    $default  reduce using rule 65 (relationalExpression)
+    $default  reduce using rule 67 (relationalExpression)
 
 
 State 98
 
-   71 arithmeticExpression: arithmeticExpression '+' multiplicativeExpression •
-   74 multiplicativeExpression: multiplicativeExpression • '*' castExpression
-   75                         | multiplicativeExpression • '/' castExpression
+   73 arithmeticExpression: arithmeticExpression '+' multiplicativeExpression •
+   76 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   77                         | multiplicativeExpression • '/' castExpression
 
     '*'  shift, and go to state 71
     '/'  shift, and go to state 72
 
-    $default  reduce using rule 71 (arithmeticExpression)
+    $default  reduce using rule 73 (arithmeticExpression)
 
 
 State 99
 
-   72 arithmeticExpression: arithmeticExpression '-' multiplicativeExpression •
-   74 multiplicativeExpression: multiplicativeExpression • '*' castExpression
-   75                         | multiplicativeExpression • '/' castExpression
+   74 arithmeticExpression: arithmeticExpression '-' multiplicativeExpression •
+   76 multiplicativeExpression: multiplicativeExpression • '*' castExpression
+   77                         | multiplicativeExpression • '/' castExpression
 
     '*'  shift, and go to state 71
     '/'  shift, and go to state 72
 
-    $default  reduce using rule 72 (arithmeticExpression)
+    $default  reduce using rule 74 (arithmeticExpression)
 
 
 State 100
 
-   74 multiplicativeExpression: multiplicativeExpression '*' castExpression •
+   76 multiplicativeExpression: multiplicativeExpression '*' castExpression •
 
-    $default  reduce using rule 74 (multiplicativeExpression)
+    $default  reduce using rule 76 (multiplicativeExpression)
 
 
 State 101
 
-   75 multiplicativeExpression: multiplicativeExpression '/' castExpression •
+   77 multiplicativeExpression: multiplicativeExpression '/' castExpression •
 
-    $default  reduce using rule 75 (multiplicativeExpression)
+    $default  reduce using rule 77 (multiplicativeExpression)
 
 
 State 102
 
-   82 postfixExpression: postfixExpression T_LEFT_PAREN error • T_RIGHT_PAREN
+   84 postfixExpression: postfixExpression T_LEFT_PAREN error • T_RIGHT_PAREN
 
     T_RIGHT_PAREN  shift, and go to state 119
 
 
 State 103
 
-   36 args: args • T_COMMA assignExpression
-   81 postfixExpression: postfixExpression T_LEFT_PAREN args • T_RIGHT_PAREN
+   37 args: args • T_COMMA assignExpression
+   83 postfixExpression: postfixExpression T_LEFT_PAREN args • T_RIGHT_PAREN
 
     T_RIGHT_PAREN  shift, and go to state 120
     T_COMMA        shift, and go to state 121
@@ -1632,28 +1638,28 @@ State 103
 
 State 104
 
-   35 args: assignExpression •
+   36 args: assignExpression •
 
-    $default  reduce using rule 35 (args)
+    $default  reduce using rule 36 (args)
 
 
 State 105
 
-   13 declarator: T_LEFT_BRACKET expression • T_RIGHT_BRACKET
+   14 declarator: T_LEFT_BRACKET expression • T_RIGHT_BRACKET
 
     T_RIGHT_BRACKET  shift, and go to state 122
 
 
 State 106
 
-   56 assignExpression: identifier T_ASSIGN expression •
+   58 assignExpression: identifier T_ASSIGN expression •
 
-    $default  reduce using rule 56 (assignExpression)
+    $default  reduce using rule 58 (assignExpression)
 
 
 State 107
 
-   14 declarator: declarator T_LEFT_BRACKET • expression T_RIGHT_BRACKET
+   15 declarator: declarator T_LEFT_BRACKET • expression T_RIGHT_BRACKET
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1681,7 +1687,7 @@ State 107
 
 State 108
 
-   57 assignExpression: identifier declarator T_ASSIGN • expression
+   59 assignExpression: identifier declarator T_ASSIGN • expression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1709,7 +1715,7 @@ State 108
 
 State 109
 
-   42 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN • block else
+   43 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN • block else
 
     T_LEFT_BRACE  shift, and go to state 125
 
@@ -1718,7 +1724,7 @@ State 109
 
 State 110
 
-   44 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN • block
+   45 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN • block
 
     T_LEFT_BRACE  shift, and go to state 125
 
@@ -1727,8 +1733,8 @@ State 110
 
 State 111
 
-   31 parameters: type • identifier
-   32           | type • initializerDim identifier
+   32 parameters: type • identifier
+   33           | type • initializerDim identifier
 
     T_LEFT_BRACKET  shift, and go to state 128
     T_IDENTIFIER    shift, and go to state 21
@@ -1739,8 +1745,8 @@ State 111
 
 State 112
 
-   27 function: identifier T_LEFT_PAREN parameters • T_RIGHT_PAREN returnType block
-   33 parameters: parameters • T_COMMA type identifier
+   28 function: identifier T_LEFT_PAREN parameters • T_RIGHT_PAREN returnType block
+   34 parameters: parameters • T_COMMA type identifier
 
     T_RIGHT_PAREN  shift, and go to state 131
     T_COMMA        shift, and go to state 132
@@ -1748,35 +1754,35 @@ State 112
 
 State 113
 
-   49 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN • ';'
+   50 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN • ';'
 
     ';'  shift, and go to state 133
 
 
 State 114
 
-   11 initializerDim: T_LEFT_BRACKET T_RIGHT_BRACKET •
+   12 initializerDim: T_LEFT_BRACKET T_RIGHT_BRACKET •
 
-    $default  reduce using rule 11 (initializerDim)
+    $default  reduce using rule 12 (initializerDim)
 
 
 State 115
 
-    8 varDeclaration: type identifier T_ASSIGN conditionalExpression • ';'
+    9 varDeclaration: type identifier T_ASSIGN conditionalExpression • ';'
 
     ';'  shift, and go to state 134
 
 
 State 116
 
-   12 initializerDim: initializerDim T_LEFT_BRACKET • T_RIGHT_BRACKET
+   13 initializerDim: initializerDim T_LEFT_BRACKET • T_RIGHT_BRACKET
 
     T_RIGHT_BRACKET  shift, and go to state 135
 
 
 State 117
 
-    9 varDeclaration: type identifier initializerDim T_ASSIGN • arrayInitializer ';'
+   10 varDeclaration: type identifier initializerDim T_ASSIGN • arrayInitializer ';'
 
     T_LEFT_BRACE  shift, and go to state 136
 
@@ -1785,28 +1791,28 @@ State 117
 
 State 118
 
-    7 varDeclaration: type identifier declarator ';' •
+    8 varDeclaration: type identifier declarator ';' •
 
-    $default  reduce using rule 7 (varDeclaration)
+    $default  reduce using rule 8 (varDeclaration)
 
 
 State 119
 
-   82 postfixExpression: postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN •
+   84 postfixExpression: postfixExpression T_LEFT_PAREN error T_RIGHT_PAREN •
 
-    $default  reduce using rule 82 (postfixExpression)
+    $default  reduce using rule 84 (postfixExpression)
 
 
 State 120
 
-   81 postfixExpression: postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN •
+   83 postfixExpression: postfixExpression T_LEFT_PAREN args T_RIGHT_PAREN •
 
-    $default  reduce using rule 81 (postfixExpression)
+    $default  reduce using rule 83 (postfixExpression)
 
 
 State 121
 
-   36 args: args T_COMMA • assignExpression
+   37 args: args T_COMMA • assignExpression
 
     T_LEFT_PAREN  shift, and go to state 4
     '-'           shift, and go to state 5
@@ -1833,63 +1839,63 @@ State 121
 
 State 122
 
-   13 declarator: T_LEFT_BRACKET expression T_RIGHT_BRACKET •
+   14 declarator: T_LEFT_BRACKET expression T_RIGHT_BRACKET •
 
-    $default  reduce using rule 13 (declarator)
+    $default  reduce using rule 14 (declarator)
 
 
 State 123
 
-   14 declarator: declarator T_LEFT_BRACKET expression • T_RIGHT_BRACKET
+   15 declarator: declarator T_LEFT_BRACKET expression • T_RIGHT_BRACKET
 
     T_RIGHT_BRACKET  shift, and go to state 139
 
 
 State 124
 
-   57 assignExpression: identifier declarator T_ASSIGN expression •
+   59 assignExpression: identifier declarator T_ASSIGN expression •
 
-    $default  reduce using rule 57 (assignExpression)
+    $default  reduce using rule 59 (assignExpression)
 
 
 State 125
 
-   50 block: T_LEFT_BRACE • blockBody T_RIGHT_BRACE
+   51 block: T_LEFT_BRACE • blockBody T_RIGHT_BRACE
 
-    $default  reduce using rule 51 (blockBody)
+    $default  reduce using rule 52 (blockBody)
 
     blockBody  go to state 140
 
 
 State 126
 
-   42 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block • else
+   43 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block • else
 
     T_ELSE  shift, and go to state 141
 
-    $default  reduce using rule 45 (else)
+    $default  reduce using rule 46 (else)
 
     else  go to state 142
 
 
 State 127
 
-   44 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN block •
+   45 whileLoop: T_WHILE T_LEFT_PAREN assignExpression T_RIGHT_PAREN block •
 
-    $default  reduce using rule 44 (whileLoop)
+    $default  reduce using rule 45 (whileLoop)
 
 
 State 128
 
-   11 initializerDim: T_LEFT_BRACKET • T_RIGHT_BRACKET
+   12 initializerDim: T_LEFT_BRACKET • T_RIGHT_BRACKET
 
     T_RIGHT_BRACKET  shift, and go to state 114
 
 
 State 129
 
-   12 initializerDim: initializerDim • T_LEFT_BRACKET T_RIGHT_BRACKET
-   32 parameters: type initializerDim • identifier
+   13 initializerDim: initializerDim • T_LEFT_BRACKET T_RIGHT_BRACKET
+   33 parameters: type initializerDim • identifier
 
     T_LEFT_BRACKET  shift, and go to state 116
     T_IDENTIFIER    shift, and go to state 21
@@ -1899,25 +1905,25 @@ State 129
 
 State 130
 
-   31 parameters: type identifier •
+   32 parameters: type identifier •
 
-    $default  reduce using rule 31 (parameters)
+    $default  reduce using rule 32 (parameters)
 
 
 State 131
 
-   27 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN • returnType block
+   28 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN • returnType block
 
     T_ARROW  shift, and go to state 144
 
-    $default  reduce using rule 28 (returnType)
+    $default  reduce using rule 29 (returnType)
 
     returnType  go to state 145
 
 
 State 132
 
-   33 parameters: parameters T_COMMA • type identifier
+   34 parameters: parameters T_COMMA • type identifier
 
     T_INT_TYPE     shift, and go to state 16
     T_BOOL_TYPE    shift, and go to state 17
@@ -1930,28 +1936,28 @@ State 132
 
 State 133
 
-   49 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN ';' •
+   50 printStatement: T_PRINT T_LEFT_PAREN expression T_RIGHT_PAREN ';' •
 
-    $default  reduce using rule 49 (printStatement)
+    $default  reduce using rule 50 (printStatement)
 
 
 State 134
 
-    8 varDeclaration: type identifier T_ASSIGN conditionalExpression ';' •
+    9 varDeclaration: type identifier T_ASSIGN conditionalExpression ';' •
 
-    $default  reduce using rule 8 (varDeclaration)
+    $default  reduce using rule 9 (varDeclaration)
 
 
 State 135
 
-   12 initializerDim: initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET •
+   13 initializerDim: initializerDim T_LEFT_BRACKET T_RIGHT_BRACKET •
 
-    $default  reduce using rule 12 (initializerDim)
+    $default  reduce using rule 13 (initializerDim)
 
 
 State 136
 
-   15 arrayInitializer: T_LEFT_BRACE • initializerList T_RIGHT_BRACE
+   16 arrayInitializer: T_LEFT_BRACE • initializerList T_RIGHT_BRACE
 
     T_LEFT_BRACE  shift, and go to state 136
     T_LEFT_PAREN  shift, and go to state 4
@@ -1961,7 +1967,7 @@ State 136
     T_STRING      shift, and go to state 15
     T_IDENTIFIER  shift, and go to state 21
 
-    $default  reduce using rule 16 (initializerList)
+    $default  reduce using rule 17 (initializerList)
 
     arrayInitializer  go to state 147
     initializerList   go to state 148
@@ -1972,32 +1978,33 @@ State 136
 
 State 137
 
-    9 varDeclaration: type identifier initializerDim T_ASSIGN arrayInitializer • ';'
+   10 varDeclaration: type identifier initializerDim T_ASSIGN arrayInitializer • ';'
 
     ';'  shift, and go to state 152
 
 
 State 138
 
-   36 args: args T_COMMA assignExpression •
+   37 args: args T_COMMA assignExpression •
 
-    $default  reduce using rule 36 (args)
+    $default  reduce using rule 37 (args)
 
 
 State 139
 
-   14 declarator: declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET •
+   15 declarator: declarator T_LEFT_BRACKET expression T_RIGHT_BRACKET •
 
-    $default  reduce using rule 14 (declarator)
+    $default  reduce using rule 15 (declarator)
 
 
 State 140
 
-   50 block: T_LEFT_BRACE blockBody • T_RIGHT_BRACE
-   52 blockBody: blockBody • declaration
+   51 block: T_LEFT_BRACE blockBody • T_RIGHT_BRACE
+   53 blockBody: blockBody • declaration
+   54          | blockBody • error
 
-    error          shift, and go to state 3
-    T_RIGHT_BRACE  shift, and go to state 153
+    error          shift, and go to state 153
+    T_RIGHT_BRACE  shift, and go to state 154
     T_LEFT_PAREN   shift, and go to state 4
     '-'            shift, and go to state 5
     '!'            shift, and go to state 6
@@ -2017,7 +2024,7 @@ State 140
     T_STRING_TYPE  shift, and go to state 20
     T_IDENTIFIER   shift, and go to state 21
 
-    declaration               go to state 154
+    declaration               go to state 155
     varDeclaration            go to state 23
     type                      go to state 24
     funcDefinition            go to state 25
@@ -2045,30 +2052,30 @@ State 140
 
 State 141
 
-   46 else: T_ELSE • block
+   47 else: T_ELSE • block
 
     T_LEFT_BRACE  shift, and go to state 125
 
-    block  go to state 155
+    block  go to state 156
 
 
 State 142
 
-   42 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else •
+   43 ifStatement: T_IF T_LEFT_PAREN expression T_RIGHT_PAREN block else •
 
-    $default  reduce using rule 42 (ifStatement)
+    $default  reduce using rule 43 (ifStatement)
 
 
 State 143
 
-   32 parameters: type initializerDim identifier •
+   33 parameters: type initializerDim identifier •
 
-    $default  reduce using rule 32 (parameters)
+    $default  reduce using rule 33 (parameters)
 
 
 State 144
 
-   29 returnType: T_ARROW • type
+   30 returnType: T_ARROW • type
 
     T_INT_TYPE     shift, and go to state 16
     T_BOOL_TYPE    shift, and go to state 17
@@ -2076,123 +2083,133 @@ State 144
     T_VOID_TYPE    shift, and go to state 19
     T_STRING_TYPE  shift, and go to state 20
 
-    type  go to state 156
+    type  go to state 157
 
 
 State 145
 
-   27 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType • block
+   28 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType • block
 
     T_LEFT_BRACE  shift, and go to state 125
 
-    block  go to state 157
+    block  go to state 158
 
 
 State 146
 
-   33 parameters: parameters T_COMMA type • identifier
+   34 parameters: parameters T_COMMA type • identifier
 
     T_IDENTIFIER  shift, and go to state 21
 
-    identifier  go to state 158
+    identifier  go to state 159
 
 
 State 147
 
-   20 initializerValue: arrayInitializer •
+   21 initializerValue: arrayInitializer •
 
-    $default  reduce using rule 20 (initializerValue)
+    $default  reduce using rule 21 (initializerValue)
 
 
 State 148
 
-   15 arrayInitializer: T_LEFT_BRACE initializerList • T_RIGHT_BRACE
-   18 initializerList: initializerList • T_COMMA initializerValue
+   16 arrayInitializer: T_LEFT_BRACE initializerList • T_RIGHT_BRACE
+   19 initializerList: initializerList • T_COMMA initializerValue
 
-    T_RIGHT_BRACE  shift, and go to state 159
-    T_COMMA        shift, and go to state 160
+    T_RIGHT_BRACE  shift, and go to state 160
+    T_COMMA        shift, and go to state 161
 
 
 State 149
 
-   17 initializerList: initializerValue •
+   18 initializerList: initializerValue •
 
-    $default  reduce using rule 17 (initializerList)
+    $default  reduce using rule 18 (initializerList)
 
 
 State 150
 
-   91 primary: identifier •
+   93 primary: identifier •
 
-    $default  reduce using rule 91 (primary)
+    $default  reduce using rule 93 (primary)
 
 
 State 151
 
-   19 initializerValue: primary •
+   20 initializerValue: primary •
 
-    $default  reduce using rule 19 (initializerValue)
+    $default  reduce using rule 20 (initializerValue)
 
 
 State 152
 
-    9 varDeclaration: type identifier initializerDim T_ASSIGN arrayInitializer ';' •
+   10 varDeclaration: type identifier initializerDim T_ASSIGN arrayInitializer ';' •
 
-    $default  reduce using rule 9 (varDeclaration)
+    $default  reduce using rule 10 (varDeclaration)
 
 
 State 153
 
-   50 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE •
+   11 varDeclaration: error • ';'
+   54 blockBody: blockBody error •
 
-    $default  reduce using rule 50 (block)
+    ';'  shift, and go to state 46
+
+    $default  reduce using rule 54 (blockBody)
 
 
 State 154
 
-   52 blockBody: blockBody declaration •
+   51 block: T_LEFT_BRACE blockBody T_RIGHT_BRACE •
 
-    $default  reduce using rule 52 (blockBody)
+    $default  reduce using rule 51 (block)
 
 
 State 155
 
-   46 else: T_ELSE block •
+   53 blockBody: blockBody declaration •
 
-    $default  reduce using rule 46 (else)
+    $default  reduce using rule 53 (blockBody)
 
 
 State 156
 
-   29 returnType: T_ARROW type •
+   47 else: T_ELSE block •
 
-    $default  reduce using rule 29 (returnType)
+    $default  reduce using rule 47 (else)
 
 
 State 157
 
-   27 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block •
+   30 returnType: T_ARROW type •
 
-    $default  reduce using rule 27 (function)
+    $default  reduce using rule 30 (returnType)
 
 
 State 158
 
-   33 parameters: parameters T_COMMA type identifier •
+   28 function: identifier T_LEFT_PAREN parameters T_RIGHT_PAREN returnType block •
 
-    $default  reduce using rule 33 (parameters)
+    $default  reduce using rule 28 (function)
 
 
 State 159
 
-   15 arrayInitializer: T_LEFT_BRACE initializerList T_RIGHT_BRACE •
+   34 parameters: parameters T_COMMA type identifier •
 
-    $default  reduce using rule 15 (arrayInitializer)
+    $default  reduce using rule 34 (parameters)
 
 
 State 160
 
-   18 initializerList: initializerList T_COMMA • initializerValue
+   16 arrayInitializer: T_LEFT_BRACE initializerList T_RIGHT_BRACE •
+
+    $default  reduce using rule 16 (arrayInitializer)
+
+
+State 161
+
+   19 initializerList: initializerList T_COMMA • initializerValue
 
     T_LEFT_BRACE  shift, and go to state 136
     T_LEFT_PAREN  shift, and go to state 4
@@ -2203,13 +2220,13 @@ State 160
     T_IDENTIFIER  shift, and go to state 21
 
     arrayInitializer  go to state 147
-    initializerValue  go to state 161
+    initializerValue  go to state 162
     identifier        go to state 150
     primary           go to state 151
 
 
-State 161
+State 162
 
-   18 initializerList: initializerList T_COMMA initializerValue •
+   19 initializerList: initializerList T_COMMA initializerValue •
 
-    $default  reduce using rule 18 (initializerList)
+    $default  reduce using rule 19 (initializerList)
