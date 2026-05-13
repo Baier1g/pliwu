@@ -1,12 +1,17 @@
 int yarr = 500;
-main(5, "c");
+main();
 
-func main(int argv, char argc) {
+func main() {
+    test2();
+    return;
+}
+
+func test2() {
     print(yarr);
     //int test;
     int habibi = 30;
     print(habibi / 10);
-    //bool sheeesh = id(habibi, 50, "f"); 
+    bool sheeesh = id(habibi, 50, "f"); 
 
     //Nested function test
     func nest(int a) -> int {
@@ -70,7 +75,7 @@ func main(int argv, char argc) {
     return;
 }
 
-/*func id(int a, int b, char c) -> bool {
+func id(int a, int b, char c) -> bool {
     int bombaclat = 1000;
     //return (50 * 100) - (10 / 5) > (60 + 70) * 3 || (a * b) - (1002 / 3) > 2 * a - b && true || false;
     if (a > b) {
@@ -87,4 +92,4 @@ func main(int argv, char argc) {
     int j = 3;
     bool boo = d * e - f / g > h + i * j || a * b - ((e * f) + g - j) / j > 2 * a - b && true || false;
     return true;
-}*/
+}

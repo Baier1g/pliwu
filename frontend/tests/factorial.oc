@@ -1,5 +1,3 @@
-main(1, "l");
-
 func factorial(int n) -> int {
     if (n <= 1) {
         return 1;
@@ -7,7 +5,7 @@ func factorial(int n) -> int {
     return (n * factorial(n - 1));
 }
 
-func main(int argv, char argc) {
+func main() {
     factorial_helper(24);
     return;
 }

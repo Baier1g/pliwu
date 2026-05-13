@@ -2,9 +2,13 @@ int gucci = 10;
 int grum = 3;
 int grim = 44;
 string s = "hello";
-main(1,2,3,4,5,6,7);
 
-func main(int h, int i, int j, int k, int l, int m, int n) {
+func main() {
+    parameter_test(1,2,3,4,5,6,7);
+    return;
+}
+
+func parameter_test(int h, int i, int j, int k, int l, int m, int n) {
     int a1 = i;
     int bcc = j;
     int a = bcc;
