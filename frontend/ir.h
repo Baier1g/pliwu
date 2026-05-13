@@ -135,6 +135,7 @@ enum operand_type {
     P_CONSTANT,
     P_TEMP,
     P_DEREFERENCE,
+    P_REFERENCE,
     P_LABEL,
     P_VARIABLE,
     P_FUNC_CALL,

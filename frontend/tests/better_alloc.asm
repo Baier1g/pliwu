@@ -36,6 +36,7 @@ _get_stack_variables:
 	sub r9, 8						; Decrement offset
 	cmp rbx, rsi					; Compare counter to dimensionality
 	jne _get_stack_variables		; If not equal, loop to load the rest of the stack variables
+	mov rbx, qword[heap_pointer]	; Move the address of the heap pointer into rbx
 _allocate_sub_arrays:
 	call _better_alloc				; Call alloc recursively, element size is the same and dimensionality has already been decremented
 	mov qword[r8], rax				; Move address of allocated array onto the heap

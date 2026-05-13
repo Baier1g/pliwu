@@ -482,7 +482,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             //printf("count: %d, temp: %d\n", count, temp_num);
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
             if (!op) {
-                //("shit\n");
+                printf("shit\n");
             }
             segment *seg = op->in_seg;
             //printf("WE got here\n");

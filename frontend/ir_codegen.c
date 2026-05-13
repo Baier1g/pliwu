@@ -209,48 +209,16 @@ _alloc_loop:\n\
 	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array\n\
 	mov r9, qword[r10]				; Move the size of this array into r9\n\
 	mov qword[r8], rdi				; Move element size onto the heap at the base address\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[r8]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], rsi				; Move dimensionality of this array onto the heap at base_addres + 8\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[r8]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], r9				; Move number of elements in this array onto the heap at base_address + 16\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[r8]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter\n\
 	imul r9, rdi					; Multiply the number of elements by the element size to get the actual amount of space needed\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array\n\
 	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size\n\
 	mov qword[heap_pointer], r10	; Move the newly calculated address into the heap_pointer to make it point at the new first free space\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[heap_pointer]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
 	cmp rsi, 1						; Check the dimensionality of the array\n\
 	je _end_alloc					; If it is 1, this array has no subarrays and base_address can be returned\n\
 	mov rbx, 0						; Move 0 into rbx, as it will be used as counter\n\
@@ -267,11 +235,12 @@ _get_stack_variables:\n\
 	sub r9, 8						; Decrement offset\n\
 	cmp rbx, rsi					; Compare counter to dimensionality\n\
 	jne _get_stack_variables		; If not equal, loop to load the rest of the stack variables\n\
+    mov rbx, qword[heap_pointer]	; Move the address of the heap pointer into rbx\n\
 _allocate_sub_arrays:\n\
 	call _better_alloc				; Call alloc recursively, element size is the same and dimensionality has already been decremented\n\
 	mov qword[r8], rax				; Move address of allocated array onto the heap\n\
 	add r8, rdi						; Increment r8 by the element size to point it at the next element\n\
-	cmp r8, qword[heap_pointer]		; Compare r8 to the heap_pointer\n\
+	cmp r8, rbx             		; Compare r8 to the heap_pointer\n\
 	jne _allocate_sub_arrays		; If not equal, more subarrays need to be allocated\n\
 	mov r9, rsi						; Move dimensionality into r9\n\
 	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack\n\
@@ -421,7 +390,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    //printf("recursing segment\n");
+    printf("recursing segment\n");
     CG_current_segment = seg;
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
@@ -432,7 +401,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        //print_operation(operation);
+        print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s\n", IR_op_code_to_string(code));
@@ -451,7 +420,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_ASSIGN:
                 name = (char *) calloc(128, sizeof(char));
                 //printf("henlo\n");
-                if (operation->arg1->type == P_TEMP) {
+                if (operation->arg1->type == P_TEMP || operation->arg1->type == P_REFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
                     if (operation->arg2->type == P_CONSTANT) {
                         sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
@@ -627,7 +596,11 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     // Previous operation is not relational or logical
                     reg_color color = graph->nodes[prev->arg1->constant]->color;
                     name = (char *) calloc(128, sizeof(char));
-                    sprintf(name, "\ttest %s, %s\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                    if (prev->arg1->type == P_REFERENCE) {
+                        sprintf(name, "\tmov rax, qword[%s]\n\ttest qword[%s], rax\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                    } else {
+                        sprintf(name, "\ttest %s, %s\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                    }
                     linked_list_append(CG_generated_code, name);
                 } else {
                     linked_list_append(CG_generated_code, IR_decide_branching(prev));
