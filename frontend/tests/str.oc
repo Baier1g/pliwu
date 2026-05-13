@@ -6,7 +6,7 @@ func main() {
     int j = 0;
     while (i > 0) {
         a[j] = i;
-        //print(a[j]);
+        print(a[j]);
         i = i - 1;
         j = j + 1;
     }
