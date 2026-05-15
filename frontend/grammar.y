@@ -92,7 +92,7 @@
 module:
     /*%empty*/          {prog = create_unary_node(0, 0, A_MODULE, linked_list_new());}
 |   module declaration  {linked_list_append(prog->module.module_declarations, $2);}
-|   module error        {yyerrok;}
+|   module error        {}
 ;
 
 declaration:

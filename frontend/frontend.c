@@ -16,18 +16,17 @@ int main(int argc, char* argv[]) {
     FILE *fp;
     AST_node *prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());
     int bison_errors = 0;
-    int* bison_errors_ptr = &bison_errors;
     linked_list *errors = linked_list_new();
     
     for (int i = 1; i < argc; i++) {
         char *filename = argv[i];
-        AST_node *module = run_bison(filename, bison_errors_ptr);
+        AST_node *module = run_bison(filename, &bison_errors);
         if (!module) {
             printf("Bison failed :(");
             return -1;
         }
         if (bison_errors) {
-            puts("Syntax errors in progam, terminating");
+            printf("%d syntax errors in progam, terminating\n", bison_errors);
             exit(-1);
         }
         linked_list_append(prog->program.modules, module);
