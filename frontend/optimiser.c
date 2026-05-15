@@ -48,6 +48,14 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                 node->var_decl.expr_stmt = tmp;
             }
             break;
+        case A_ARRAY_DECL:
+            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
+                tmp = AST_optimiser_constant_folding((AST_node *) lln->data);
+                if (tmp) {
+                    lln->data = tmp;
+                }
+            }
+            break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
                 AST_optimiser_constant_folding((AST_node *) lln->data);
@@ -203,6 +211,14 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
             return tmp;
         case A_UNARY_EXPR:
             AST_optimiser_constant_folding(node);
+            break;
+        case A_INDEX_EXPR:
+            for (linked_list_node *lln = node->indexing.indices->head; lln != NULL; lln = lln->next) {
+                tmp = AST_optimiser_constant_folding((AST_node *) lln->data);
+                if (tmp) {
+                    lln->data = tmp;
+                }
+            }
             break;
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type != TYPE_IDENTIFIER) {

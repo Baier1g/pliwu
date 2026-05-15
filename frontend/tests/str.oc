@@ -17,18 +17,24 @@ func main() {
     }
     int b[20][10];
     print(1000);
-    //b[10][5] = 500;
+    b[10][5] = 500;
+    b[1][0] = 1;
+    print(b[1][0]);
     print(b);
     print(b[10][5]);
-    //print(100);
-    //insertion_sort(a, 10);
+    print(100);
+    insertion_sort(a, 10);
+    i = 0;
+    while (i < 10) {
+        print(a[i]);
+        i = i + 1;
+    }
     return;
 }
 
-/*func insertion_sort(int[] a, int length) -> void {
+func insertion_sort(int[] a, int length) -> void {
     int i = 1;
     while (i < length) {
-        print(a[i]);
         int key = a[i];
         int j = i - 1;
 
@@ -40,4 +46,4 @@ func main() {
         i = i + 1;
     }
     return;
-}*/
+}
