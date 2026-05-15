@@ -21,12 +21,21 @@ all: flexbison
 	./grammar.out tests/$*.oc
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 
+#prints (standard input) if output differs from running the .oc program and the .true file 
+folder = tests/
+check.%:
+	@make flexbison 														> /dev/null 2>&1
+	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)										> /dev/null 2>&1
+	@./grammar.out $(folder)$*.oc											> /dev/null 2>&1
+	@nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out	
+	@./out > testresult.txt
+	@diff -s testresult.txt $(folder)$*.true | grep -L "identical"
+
 test.%:
 	make flexbison		
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
 	./grammar.out oc_tests/$*.oc
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
-	
 
 nasm:
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
