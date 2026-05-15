@@ -418,26 +418,36 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, label);
                 break;
             case IR_ASSIGN:
-                name = (char *) calloc(128, sizeof(char));
+                name = (char *) calloc(256, sizeof(char));
                 //printf("henlo\n");
                 if (operation->arg1->type == P_TEMP || operation->arg1->type == P_REFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
-                    if (operation->arg2->type == P_CONSTANT) {
-                        sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
-                    } else if (operation->arg2->type == P_TEMP) {
-                        sprintf(name, "\tmov %s, %s\t\t\t\t; Assign from register to register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
-                    } else if (operation->arg2->type == P_DEREFERENCE) {
-                        sprintf(name, "\tmov %s, qword[%s]\t\t\t\t; Assign from memory to register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
-                    } else {
-                        var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
-                        if (operation->arg2->variable_name[0] == '_') {
-                            printf("Got here\n");
-                            label = operation->arg2->variable_name;
-                            sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", CG_reg_color_to_string(reg), label, label, CG_reg_color_to_string(reg));
-                        } else {
-                            CG_var_address(var);
-                            sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
-                        }
+                    operand_type type = operation->arg2->type;
+                    switch(type) {
+                        case P_CONSTANT:
+                            sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
+                            break;
+                        case P_REFERENCE:
+                        case P_TEMP:
+                            sprintf(name, "\tmov %s, %s\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
+                            break;
+                        case P_DEREFERENCE:
+                            sprintf(name, "\tmov rbx, qword[%s]\t\t\t\t; Get value from address in %s\n\tmov %s, rbx\t\t\t\t; Assign from memory to register", CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(reg));
+                            break;
+                        case P_VARIABLE:
+                            var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
+                            if (operation->arg2->variable_name[0] == '_') {
+                                printf("Got here\n");
+                                label = operation->arg2->variable_name;
+                                sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", CG_reg_color_to_string(reg), label, label, CG_reg_color_to_string(reg));
+                            } else {
+                                CG_var_address(var);
+                                sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                            }
+                            break;
+                        default:
+                            printf("ir_codegen.c::recurse_segment::IR_ASSSIGN: Unkown operand type\n");
+                        break;
                     }
                 } else if (operation->arg1->type == P_DEREFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
@@ -536,7 +546,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     sprintf(label, "\txor rdx, rdx\n%s %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
                 } else {
                     if (operation->arg3->type == P_DEREFERENCE) {
-                        sprintf(label, "%s rax, qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
+                        sprintf(label, "\tmov rbx, qword[%s]\n%s rax, rbx\n", CG_reg_color_to_string((reg_color)arg3->color), CG_IR_op_code_to_string(code));
                     } else if (operation->arg3->type == P_CONSTANT) {
                         sprintf(label, "%s rax, %d\n", CG_IR_op_code_to_string(code), operation->arg3->constant);
                     } else {

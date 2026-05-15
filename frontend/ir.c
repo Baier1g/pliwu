@@ -386,7 +386,6 @@ int recurse_IR_tree(AST_node *node) {
                 int temp = recurse_IR_tree((AST_node *) lln->data);
                 id = create_operand(P_TEMP, temp);
                 op = create_op(IR_PARAM, id, create_operand(P_CONSTANT, 0), NULL);
-                
                 linked_list_append(current_segment->operations, op);
             }
             
@@ -693,7 +692,7 @@ int recurse_IR_tree(AST_node *node) {
 
 
                 expr = create_operand(P_TEMP, id->constant);
-                id = create_operand(P_TEMP, temp_counter++);
+                id = create_operand(P_REFERENCE, temp_counter++);
                 op = create_op(IR_ADD, id, create_operand(P_TEMP, temp), expr);
                 linked_list_append(current_segment->operations, op);
                 op->in_frame = current_frame;
@@ -716,7 +715,7 @@ int recurse_IR_tree(AST_node *node) {
                     linked_list_append(current_segment->operations, op);
                     op->in_frame = current_frame;
                     op->in_seg = current_segment;
-                }           
+                }      
             }
             return temp_counter++;
         case A_PRIMARY_EXPR:
@@ -861,7 +860,17 @@ void print_operand(IR_operand *op) {
 
 void print_operation(IR_operation *op) {
     char *name = IR_op_code_to_string(op->op);
-    //printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
+    /*printf("in_set size: %d, out_set size: %d\n", op->in->size, op->out->size);
+    printf("Out set: ");
+    for (linked_list_node *lln = op->out->head; lln != NULL; lln = lln->next) {
+        printf("%d, ", (int) lln->data);
+    }
+    printf("\n");
+    printf("In set: ");
+    for (linked_list_node *lln = op->in->head; lln != NULL; lln = lln->next) {
+        printf("%d, ", (int) lln->data);
+    }
+    printf("\n");*/
     switch (op->op) {
         case IR_ADD:
         case IR_SUB:
@@ -1004,9 +1013,9 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    print_IR_tree(current_frame);
     printf("liveness analysis:\n");
     liveness(current_frame);
+    print_IR_tree(current_frame);
     //print_graph(graph);
     printf("temp_counter: %d\n", temp_counter);
     //print_graph(graph);
@@ -1045,8 +1054,13 @@ void handle_use_set(IR_operation *op) {
         case IR_GREATER:
         case IR_LESS_EQ:
         case IR_GREATER_EQ:
-            linked_list_append(ll, op->arg2->constant);
-            linked_list_append(ll, op->arg3->constant);
+            if (op->arg2->type != P_CONSTANT) {
+                linked_list_append(ll, op->arg2->constant);
+            }
+            if (op->arg3->type != P_CONSTANT)
+            {
+                linked_list_append(ll, op->arg3->constant);
+            }
             break;
         case IR_AND:
         case IR_OR:
@@ -1069,10 +1083,10 @@ void handle_use_set(IR_operation *op) {
             }
             break;
         case IR_ASSIGN:
-            //printf("arg1 type: %d, arg1 constant: %d, arg2 type: %d, arg2 constant: %d\n", op->arg1->type, op->arg1->constant, op->arg2->type, op->arg2->constant);
-            if (op->arg1->type == P_DEREFERENCE) {
-                linked_list_append(ll, op->arg1->constant);
-            }
+            printf("arg1 type: %d, arg1 constant: %d, arg2 type: %d, arg2 constant: %d\n", op->arg1->type, op->arg1->constant, op->arg2->type, op->arg2->constant);
+            /*if (op->arg1->type == P_DEREFERENCE) {
+                linked_list_append(ll, op->arg2->constant);
+            }*/
             if (op->arg1->type != P_TEMP) {
                 linked_list_append(ll, op->arg2->constant);
             }
@@ -1106,6 +1120,7 @@ void handle_def_set(IR_operation *op) {
                 linked_list_append(ll, op->arg1->constant);
             } 
             break;
+        
         default:
             break;
     }

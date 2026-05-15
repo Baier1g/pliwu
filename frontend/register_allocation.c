@@ -29,7 +29,8 @@ RA_node *create_graph_node(int max_connections) {
 }
 
 void connect_nodes(RA_graph *graph, int temp1, int temp2) {
-    //printf("connect_nodes: invalid temp_val T_one: %d, T_two: %d, max temp: %d\n", temp1, temp2, graph->num_nodes);
+    //printf("connect_nodes: temp_val T_one: %d, T_two: %d, max temp: %d\n", temp1, temp2, graph->num_nodes);
+    //print_adj_matrix(graph);
     RA_node *node1 = graph->nodes[temp1];
     RA_node *node2 = graph->nodes[temp2];
     int in = 0;
@@ -80,6 +81,7 @@ void connect_graph(frame *frm) {
         seg->iteration++;
         int params_loaded = 0;
         for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
+            //print_operation((IR_operation *) lln->data);
             if (!params_loaded && seg == frm->segment) {
                 IR_operation *param;
                 int color = RDI;
@@ -535,7 +537,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     RA_graph *graph = create_graph(temp_c);
     printf("graph created\n");
     glob_graph = graph;
-
+    //print_graph(graph);
+    //print_adj_matrix(graph);
     connect_graph(program);
     
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
