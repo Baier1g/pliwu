@@ -6,6 +6,7 @@
     #define NUM_TYPES    4
     #define NUM_DIGRAPHS 7
     #define STRING_MAX_LENGTH 10000
+    #define IDENTIFIER_MAX_LENGTH 128
 
     extern unsigned short line_number;
     extern long current_character;
@@ -100,7 +101,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     //printf("%d\n", stringptr);
 
     if(stringptr > STRING_MAX_LENGTH) {
-        puts("String too long!");
+        pritnf("String too long on line %d \n", line_number);
         exit(-1);
     }
     stringbuffer[stringptr++] = yytext[0];
@@ -188,6 +189,10 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 }
 
 <INITIAL>{IDENTIFIER} {
+    if (yyleng > IDENTIFIER_MAX_LENGTH) {
+        printf("Identifier name too long (%d characters) on line %d\n", yyleng, line_number);
+        exit(-1);
+    }
     //printf("%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
     yylval.string.sval = calloc(yyleng + 1, sizeof(char));
