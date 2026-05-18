@@ -172,6 +172,7 @@ struct segment {
  */
 struct IR_operation {
     linked_list *in, *out, *use, *def;
+    segment *start_while;
     segment *in_seg;
     frame *in_frame;
     enum IR_op_code op;

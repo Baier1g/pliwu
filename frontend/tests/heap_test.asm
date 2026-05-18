@@ -168,14 +168,6 @@ _better_alloc:
 	push r12
 	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8
 	mov r12, r8
-    push rdi
-    push rsi
-    push rax
-    mov rdi, r8
-    call print_int
-    pop rax
-    pop rsi
-    pop rdi
 	push r8							; Save the base address on the stack
 	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array
 	mov r9, qword[r10]				; Move the size of this array into r9
@@ -187,32 +179,8 @@ _better_alloc:
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword
 	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter
 	imul r9, rdi					; Multiply the number of elements by the element size to get the actual amount of space needed
-	push rax
-	push rdi
-	push rsi
-	mov rdi, r9
-	call print_int
-	pop rsi
-	pop rdi
-	pop rax
 	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array
-	push rax
-	push rdi
-	push rsi
-	mov rdi, r8
-	call print_int
-	pop rsi
-	pop rdi
-	pop rax
 	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size
-	push rax
-	push rdi
-	push rsi
-	mov rdi, r10
-	call print_int
-	pop rsi
-	pop rdi
-	pop rax
 	mov qword[heap_pointer], r10	; Move the newly calculated address into the heap_pointer to make it point at the new first free space
 	cmp rsi, 1						; Check the dimensionality of the array
 	je _end_alloc					; If it is 1, this array has no subarrays and base_address can be returned
@@ -233,14 +201,14 @@ _get_stack_variables:
     mov rbx, qword[heap_pointer]	; Move the address of the heap pointer into rbx
 _allocate_sub_arrays:
 	call _better_alloc				; Call alloc recursively, element size is the same and dimensionality has already been decremented
-	lea r10, [r12 + 8]
-	mov r11, qword[r10]
-	imul r11, 8
-	add rsp, r11
 	mov qword[r8], rax				; Move address of allocated array onto the heap
 	add r8, 8						; Increment r8 by the element size to point it at the next element
 	cmp r8, rbx             		; Compare r8 to the heap_pointer
 	jne _allocate_sub_arrays		; If not equal, more subarrays need to be allocated
+	lea r10, [r12 + 8]
+	mov r11, qword[r10]
+	imul r11, 8
+	add rsp, r11
 	mov r9, rsi						; Move dimensionality into r9
 	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack
 	sub rsp, r9						; Decrement rsp to reset the stack pointer
@@ -253,4 +221,4 @@ _end_alloc:
 	pop r8							; EPILOGUE
 	mov rsp, rbp					;
 	pop rbp							;
-	ret		
+	ret								;

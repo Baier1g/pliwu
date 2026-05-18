@@ -196,15 +196,9 @@ _alloc_loop:\n\
 	push r9							; PROLOGUE\n\
 	push r10						;\n\
 	push r11						;\n\
+	push r12\n\
 	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, r8\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
+	mov r12, r8\n\
 	push r8							; Save the base address on the stack\n\
 	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array\n\
 	mov r9, qword[r10]				; Move the size of this array into r9\n\
@@ -239,14 +233,19 @@ _get_stack_variables:\n\
 _allocate_sub_arrays:\n\
 	call _better_alloc				; Call alloc recursively, element size is the same and dimensionality has already been decremented\n\
 	mov qword[r8], rax				; Move address of allocated array onto the heap\n\
-	add r8, rdi						; Increment r8 by the element size to point it at the next element\n\
+	add r8, 8						; Increment r8 by the element size to point it at the next element\n\
 	cmp r8, rbx             		; Compare r8 to the heap_pointer\n\
 	jne _allocate_sub_arrays		; If not equal, more subarrays need to be allocated\n\
+	lea r10, [r12 + 8]\n\
+	mov r11, qword[r10]\n\
+	imul r11, 8\n\
+	add rsp, r11\n\
 	mov r9, rsi						; Move dimensionality into r9\n\
 	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack\n\
 	sub rsp, r9						; Decrement rsp to reset the stack pointer\n\
 _end_alloc:\n\
 	pop rax							; Restore base_address to rax\n\
+	pop r12\n\
 	pop r11							;\n\
 	pop r10							;\n\
 	pop r9							;\n\
@@ -454,7 +453,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     reg_color reg2 = (reg_color) graph->nodes[operation->arg2->constant]->color;
                     if (operation->arg2->type == P_DEREFERENCE) {
                         label = (char *) calloc(128, sizeof(char));
-                        sprintf(label, "\tmov rax, qword[%s]\t\t\t\t; Move the value of the address in %s into rax\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
+                        sprintf(label, "\tmov rax, qword[%s]\t\t\t\t; Move the value of the address in %s into rax\n", CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg2));
                         linked_list_append(CG_generated_code, label);
                         sprintf(name, "\tmov qword[%s], rax\t\t\t\t; Move value of rax into memory address pointed to by %s", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
                     } else if (operation->arg2->type == P_CONSTANT) {
@@ -601,19 +600,26 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 break;
             case IR_IF:
             case IR_WHILE:
-                prev = (IR_operation *) lln->prev->data;
-                if (prev->op < IR_EQUALS || IR_OR < prev->op) {
-                    // Previous operation is not relational or logical
-                    reg_color color = graph->nodes[prev->arg1->constant]->color;
+                if (!lln->prev) {
+                    reg_color color = graph->nodes[operation->arg1->constant]->color;
                     name = (char *) calloc(128, sizeof(char));
-                    if (prev->arg1->type == P_REFERENCE) {
-                        sprintf(name, "\tmov rax, qword[%s]\n\ttest qword[%s], rax\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
-                    } else {
-                        sprintf(name, "\ttest %s, %s\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
-                    }
+                    sprintf(name, "\tcmp %s, 0\n\tje ", CG_reg_color_to_string(color));
                     linked_list_append(CG_generated_code, name);
                 } else {
-                    linked_list_append(CG_generated_code, IR_decide_branching(prev));
+                    prev = (IR_operation *) lln->prev->data;
+                    reg_color color = graph->nodes[prev->arg1->constant]->color;
+                    if (prev && prev->op < IR_EQUALS || IR_OR < prev->op) {
+                        // Previous operation is not relational or logical
+                        name = (char *) calloc(128, sizeof(char));
+                        if (prev->arg1->type == P_REFERENCE) {
+                            sprintf(name, "\tmov rax, qword[%s]\n\ttest qword[%s], rax\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                        } else {
+                            sprintf(name, "\ttest %s, %s\t\t\t\t; Test value to set flags\n\tjz ", CG_reg_color_to_string(color), CG_reg_color_to_string(color));
+                        }
+                    linked_list_append(CG_generated_code, name);
+                    } else {
+                        linked_list_append(CG_generated_code, IR_decide_branching(prev));
+                    }
                 }
                 linked_list_append(CG_generated_code, (char *) operation->arg3->dest->name);
                 break;
