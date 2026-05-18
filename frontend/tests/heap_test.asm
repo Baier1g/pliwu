@@ -12,6 +12,7 @@ section .bss
 	heap_pointer resq 1
 section .data
 	table db '0123456789'
+	array dq 1,2,3,4,5,6,7,8,9,10,11,12
 	newline db 0xa
 section .text
 
@@ -219,6 +220,52 @@ _end_alloc:
 	pop r10							;
 	pop r9							;
 	pop r8							; EPILOGUE
+	mov rsp, rbp					;
+	pop rbp							;
+	ret								;
+
+; This function initializes and array.
+; RDI: The address of the array to initialize
+; RSI: The address of the data segment array holding the values
+_initialize_array:
+	push rbp						;
+	mov rbp, rsp					;
+	push r8							; PROLOGUE
+	push r9							; 
+	push r10						;
+	push r11						;
+	lea r8, [rdi + 8]				; Load address of dimensionality
+	mov r9, qword[r8]				; Get dimensionality of the array
+	cmp r9, 1						; Check dimensionality against 1
+	lea r8, [rdi + 16]				; Load the address of the number of elements into r8
+	mov r9, qword[r8]				; Dereference r8 to get the number of elements and put them into r9
+	mov rbx, 0						; move 0 into rbx, it will be used as a counter
+	lea r8, [rdi + 32]				; Load address of the first subarray into r8
+	je _values						; If dimensionality is 1, put values onto the heap
+	push rdi						; Save address of array
+_recurse_subarrays:
+	mov rdi, qword[r8]				; Load the base address of a subarray into rdi
+	call _initialise_array			; Recursively call _initialize_array to get to the proper depth
+	add r8, 8						; Add 8 to r8 to point it at the address of the next subarray
+	add rbx, 1						; Increment counter
+	cmp rbx, r9						; Check the counter against number of elements
+	jne _recurse_subarrays			; If not all subarrays have been initialised, loop
+	pop rdi							; Pop rdi to keep the stack balanced
+	jmp _end_init					; Jump to the epilogue
+_values:
+	mov r10, qword[rsi]				; Load a value from the data segment
+	mov qword[r8], r10				; Put loaded value onto the heap
+	mov r11, qword[rdi]				; Get the element size of the array
+	add r8, r11
+	add rsi, r11
+	add rbx, 1
+	cmp rbx, r9
+	jne _values				
+_end_init:
+	pop r11							;
+	pop r10							;
+	pop r9							;
+	pop r8							; EPILOGUE 
 	mov rsp, rbp					;
 	pop rbp							;
 	ret								;

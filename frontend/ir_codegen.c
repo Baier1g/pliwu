@@ -74,120 +74,6 @@ void IR_create_print_int(void) {
 }
 
 void IR_create_alloc(void) {
-    /*old alloc
-    linked_list_append(CG_generated_code,\
-    "_alloc:\n\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tmov rax, qword[heap_pointer]\t\t\t; Move start of allocated segment into rax\n");
-    linked_list_append(CG_generated_code,\
-    "\tmov qword[rax], rdi\t\t\t\t; Move element size into base address\n\tmov qword[rax + 8], rsi\t\t\t; put length of allocated memory segment at the heap pointer\n\tadd qword[heap_pointer], 16\t\t\t; Increment heap pointer to next available slot\n");
-    linked_list_append(CG_generated_code,\
-    "\tmov r8, rsi\t\t\t\t; Move number of elements into r8\n\timul r8, 8\t\t\t\t; Multiply r8 by 8 to get total number of bytes needed\n");
-    linked_list_append(CG_generated_code,\
-    "\tadd qword[heap_pointer], r8\t\t\t; Add r8 to the heap_pointer to get first free space past segment\n\tpop r8\n\tmov rsp, rbp\n\tpop rbp\n\tret\n\n");
-     */
-   /* linked_list_append(CG_generated_code,\
-"_alloc:\n\
-    push rbp\n\
-    mov rbp, rsp\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-\n\
-    mov rax, qword[heap_pointer]; move base address of memory segment into rax\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, rax\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    mov qword[rax], rdi         ; move element size onto the heap\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[rax]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    lea r8, [rax + 8]            ; r15 = address of dimensionality of a\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, r8\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    mov qword[r8], rsi         ; move dimensionality of a onto the heap\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[r8]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    mov r9, 16                 ; r14 = offset from base_address of first dim_size\n\
-    mov rbx, 1                  ; accumulator register\n\
-    mov r11, rsi\n\
-_alloc_loop:\n\
-    mov r10, r9                ; r13 = current offset from base_address\n\
-    lea r11, [rbp + r10]\n\
-    mov r10, qword[r11]   ; r13 = value of dimension size\n\
-    mov qword[rax + r9], r10   ; set dimension size on the heap\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, qword[rax + r9]\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    imul rbx, r10               ; rbx = accumulates total dimension size\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, rsi\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    sub rsi, 1                    ; decrement rsi (dimensionality)\n\
-    push rdi\n\
-    push rsi\n\
-    push rax\n\
-    mov rdi, rsi\n\
-    call print_int\n\
-    pop rax\n\
-    pop rsi\n\
-    pop rdi\n\
-    add r9, 8                  ; add 8 to the running offset\n\
-    cmp rsi, 0               ; test whether dimension sizes have been added\n\
-    jne _alloc_loop\n\
-    mov qword[rax + r9], rbx   ; move total element size onto the heap\n\
-    ;push rdi\n\
-    ;push rsi\n\
-    ;push rax\n\
-    ;mov rdi, qword[rax + r9]\n\
-    ;call print_int\n\
-    ;pop rax\n\
-    ;pop rsi\n\
-    ;pop rdi\n\
-    add r9, 8\n\
-    mov qword[rax + r9], 1     ; reference count, move 1 on allocation\n\
-    add rbx, 8\n\
-    imul rbx, qword[rax]        ; calculate actual byte size of the array\n\
-    add qword[heap_pointer], rbx\n\
-\n\
-    pop r11\n\
-    pop r10\n\
-    pop r9\n\
-    pop r8\n\
-    mov rsp, rbp\n\
-    pop rbp\n\
-    ret\n\n");*/
     linked_list_append(CG_generated_code,\
 "_better_alloc:\n\
 	push rbp						;\n\
@@ -246,6 +132,57 @@ _allocate_sub_arrays:\n\
 _end_alloc:\n\
 	pop rax							; Restore base_address to rax\n\
 	pop r12\n\
+	pop r11							;\n\
+	pop r10							;\n\
+	pop r9							;\n\
+	pop r8							; EPILOGUE\n\
+	mov rsp, rbp					;\n\
+	pop rbp							;\n\
+	ret								;\n");
+}
+
+void IR_create_init_array(void) {
+    linked_list_append(CG_generated_code,\
+"; This function initializes and array.\n\
+; RDI: The address of the array to initialize\n\
+; RSI: The address of the data segment array holding the values\n\
+_initialize_array:\n\
+	push rbp						;\n\
+	mov rbp, rsp					;\n\
+	push r8							; PROLOGUE\n\
+	push r9							;\n\
+	push r10						;\n\
+	push r11						;\n\
+	lea r8, [rdi + 8]				; Load address of dimensionality\n\
+	mov r9, qword[r8]				; Get dimensionality of the array\n\
+	cmp r9, 1						; Check dimensionality against 1\n\
+	lea r8, [rdi + 16]				; Load the address of the number of elements into r8\n\
+	mov r9, qword[r8]				; Dereference r8 to get the number of elements and put them into r9\n\
+	mov rbx, 0						; move 0 into rbx, it will be used as a counter\n\
+	lea r8, [rdi + 32]				; Load address of the first subarray into r8\n\
+	je _values						; If dimensionality is 1, put values onto the heap\n\
+	push rdi						; Save address of array\n\
+_recurse_subarrays:\n\
+	mov rdi, qword[r8]				; Load the base address of a subarray into rdi\n\
+    push rbx                        ; Save value in rbx\n\
+	call _initialize_array			; Recursively call _initialize_array to get to the proper depth\n\
+    pop rbx                         ; Restore rbx\n\
+	add r8, 8						; Add 8 to r8 to point it at the address of the next subarray\n\
+	add rbx, 1						; Increment counter\n\
+	cmp rbx, r9						; Check the counter against number of elements\n\
+	jne _recurse_subarrays			; If not all subarrays have been initialised, loop\n\
+	pop rdi							; Pop rdi to keep the stack balanced\n\
+	jmp _end_init					; Jump to the epilogue\n\
+_values:\n\
+	mov r10, qword[rsi]				; Load a value from the data segment\n\
+	mov qword[r8], r10				; Put loaded value onto the heap\n\
+	mov r11, qword[rdi]				; Get the element size of the array\n\
+	add r8, r11\n\
+	add rsi, r11\n\
+	add rbx, 1\n\
+	cmp rbx, r9\n\
+	jne _values\n\
+_end_init:\n\
 	pop r11							;\n\
 	pop r10							;\n\
 	pop r9							;\n\
@@ -389,7 +326,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    printf("recursing segment\n");
+    //printf("recursing segment\n");
     CG_current_segment = seg;
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
@@ -482,7 +419,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         linked_list_append(CG_generated_code, name);
                         break;
                     }
-                    if (param_count <= CG_current_frame->func_params) {
+                    if (CG_current_frame->func_params && param_count <= CG_current_frame->func_params) {
                         sprintf(name, "\tpush %s\t\t\t\t; Push current function parameter %s to the stack\n", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(param_count + 11));
                         linked_list_append(CG_generated_code, name);
                         name = (char *) calloc(128, sizeof(char));
@@ -515,10 +452,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_POP_PARAM:
                 name = (char *) calloc(128, sizeof(char));
                 if (param_count > 4) {
-                    sprintf(name, "\tsub rsp, %d\t\t\t\t\t; Reset stack pointer after function call", operation->arg1->constant);
+                    sprintf(name, "\tadd rsp, %d\t\t\t\t\t; Reset stack pointer after function call", operation->arg1->constant);
                     param_count = 4;
                 } else if (operation->arg2) {
-                    sprintf(name, "\tsub rsp, %d\t\t\t\t\t; Reset stack pointer after alloc call", operation->arg1->constant);
+                    sprintf(name, "\tadd rsp, %d\t\t\t\t\t; Reset stack pointer after alloc call", operation->arg1->constant);
                 } else {
                     if (param_count <= CG_current_frame->func_params) {
                         sprintf(name, "\tpop %s\t\t\t\t\t; Pop current function parameter %s from the stack", CG_reg_color_to_string(param_count + 10), CG_reg_color_to_string(param_count + 10));
@@ -628,6 +565,9 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 name = (char *) calloc(128, sizeof(char));
                 sprintf(name, "\tcall _better_alloc\n\tmov %s, rax", CG_reg_color_to_string(arg1->color));
                 linked_list_append(CG_generated_code, name);
+                break;
+            case IR_INIT:
+                linked_list_append(CG_generated_code, "\tcall _initialize_array");
                 break;
             case IR_PRINT:
                 int counter = 0;
@@ -765,7 +705,7 @@ void CG_regs_used_helper(segment *seg, RA_graph *graph) {
         if (op->op == IR_GOTO || op->op == IR_RET) {
             return;
         }
-        if (op->op == IR_VAR_DECL || op->arg1->type != P_TEMP) {
+        if (op->op == IR_INIT || op->op == IR_VAR_DECL || op->arg1->type != P_TEMP) {
             continue;
         }
         int color = graph->nodes[op->arg1->constant]->color;
@@ -813,8 +753,12 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
         for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
             if (((AST_node *) lln->data)->primary_expr.type == TYPE_INT) {
                 sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.integer_value);
-                strcat(buffer, elem);
+            } else if (((AST_node *) lln->data)->primary_expr.type == TYPE_CHAR) {
+                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.char_value);
+            } else if (((AST_node *) lln->data)->primary_expr.type == TYPE_BOOL) {
+                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.bool_value);
             }
+            strcat(buffer, elem);
         }
         free(elem);
     } else {
@@ -827,6 +771,7 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
 void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     for (linked_list_node *lln = program->data->head; lln != NULL; lln = lln->next) {
         AST_node *node = (AST_node *) lln->data;
+        printf("yurr\n");
         char *buffer = (char *)calloc(500000, sizeof(char));
         if (node->kind == A_PRIMARY_EXPR) {
             sprintf(buffer, "\t%s db \"%s\"\n", IR_generate_label("_string", CG_string_counter++), node->primary_expr.string.value);
@@ -836,27 +781,16 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
             int total_length = 1;
             char* name = IR_generate_label("_array", CG_array_counter++);
             if (node->array_decl.type == TYPE_INT || node->array_decl.type == TYPE_STRING) {
-                sprintf(buffer, "\t%s dq 8,%d,", name, node->array_decl.sizes->size);
+                sprintf(buffer, "\t%s dq ", name);
             } else {
-                sprintf(buffer, "\t%s dq 1,%d,", name, node->array_decl.sizes->size);
+                sprintf(buffer, "\t%s db ", name);
             }
-            for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
-                name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "%d,", ((AST_node *)lln->data)->primary_expr.integer_value);
-                strcat(buffer, name);
-                total_length *= (int) ((AST_node*) lln->data)->primary_expr.integer_value;
-                free(name);
-            }
-            name = (char *) calloc(128, sizeof(char));
-            sprintf(name, "%d,1, ", total_length);
-            strcat(buffer, name);
-            free(name);
-
             CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             strcat(buffer, "\n");
             printf("%s\n", buffer);
             linked_list_append(data_section, buffer);
         }
+        printf("we made it\n");
     }
     if (program->name) {
         if (strncmp("main", program->name, 4) == 0) {
@@ -899,7 +833,9 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
                 "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\n");
     IR_create_print_int();
     IR_create_alloc();
-
+    IR_create_init_array();
+    
+    printf("fr\n");
     CG_regs_used(program, graph);
 
     /**
