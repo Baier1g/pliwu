@@ -15,7 +15,7 @@ extern AST_node *run_bison(const char*, int*);
 int main(int argc, char* argv[]) {
     FILE *fp;
     AST_node *prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());
-    int bison_errors = 0;
+    unsigned int bison_errors = 0;
     linked_list *errors = linked_list_new();
     
     for (int i = 1; i < argc; i++) {

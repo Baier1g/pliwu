@@ -5,6 +5,7 @@
     #define NUM_KEYWORDS 6
     #define NUM_TYPES    4
     #define NUM_DIGRAPHS 7
+    #define STRING_MAX_LENGTH 10000
 
     extern unsigned short line_number;
     extern long current_character;
@@ -70,7 +71,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 <INITIAL>\" {;
     increment_counter(yyleng);
     BEGIN(STR);
-    stringbuffer = calloc(10000, sizeof(char));
+    stringbuffer = calloc(STRING_MAX_LENGTH, sizeof(char));
     stringptr = 0;
 }
 
@@ -98,6 +99,10 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     increment_counter(yyleng);
     //printf("%d\n", stringptr);
 
+    if(stringptr > STRING_MAX_LENGTH) {
+        puts("String too long!");
+        exit(-1);
+    }
     stringbuffer[stringptr++] = yytext[0];
 }
 

@@ -10,14 +10,14 @@
     extern int yylex(void);
     void yyerror(char const*);
     extern void yyrestart(FILE*);
-    AST_node *run_bison(const char*, int*);
+    AST_node *run_bison(const char*, unsigned int*);
     AST_node *binexp(void *, int, void *);
     AST_node *relexp(void *, int, void *);
 
     AST_node *prog;
     AST_node *node;
 
-    int* bison_errors;
+    unsigned int* bison_errors;
 
     extern FILE *yyin;
     unsigned short line_number = 1;
@@ -301,6 +301,10 @@ primary:
 /* EPILOGUE */
 
 void yyerror(char const* err) {
+    if (*bison_errors > *bison_errors + 1) {
+        puts("too many errors!");
+        exit(-1);
+    }
     (*bison_errors)++;
     printf("bison_error in line %d, character %ld: %s;\n", line_number, start_current_character, err);
 }
@@ -313,7 +317,7 @@ AST_node* relexp(void* left, int op, void* right) {
     return create_ternary_node(start_current_character, line_number, A_RELATIONAL_EXPR, left, (void*) op, right);
 }
 
-AST_node* run_bison(const char* filename, int* errors) {
+AST_node* run_bison(const char* filename, unsigned int* errors) {
     yyin = fopen(filename,"r");
     if (!yyin) {
         return NULL;
@@ -321,8 +325,7 @@ AST_node* run_bison(const char* filename, int* errors) {
     bison_errors = errors;
 
     yyparse();
-    printf("Number of lines in the file - %u\n", line_number);
-    printf("Number of characters in the file - %ld\n", current_character);
+    printf("Bison read file with %u lines and %ld characters\n", line_number, current_character);
     yyrestart(yyin);
     fclose(yyin);
     return prog;
