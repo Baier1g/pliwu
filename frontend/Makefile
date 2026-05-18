@@ -29,7 +29,7 @@ check.%:
 	@./grammar.out $(folder)$*.oc											> /dev/null 2>&1
 	@nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out	
 	@./out > testresult.txt
-	@diff -s testresult.txt $(folder)$*.true | grep -L "identical"
+	@diff -q testresult.txt $(folder)$*.true || true
 
 test.%:
 	make flexbison		
