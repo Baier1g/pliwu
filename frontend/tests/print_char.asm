@@ -55,7 +55,6 @@ _print_char_array:
 	xor rcx, rcx
 	mov byte[r10], 0xa
 	dec r10
-	inc rcx
 	mov r9, qword[rbp-40]				; Access provided argument on the stack
 	lea rax, [r9 + 32]
 	mov r8, r11
@@ -72,13 +71,14 @@ _no_increment:
 	dec r10
 	sub rax, 8
 	cmp rcx, r11
-	jne _char_L1
+	jle _char_L1
 	lea rsi, [r10+1]
 	cld
 _char__L1:
 	movsb
 	cmp rsi, rsp
 	jne _char__L1
+	inc rcx
 	pop rdi
 	sys_write 1, output, rcx
 	pop r11

@@ -1127,9 +1127,9 @@ void handle_use_set(IR_operation *op) {
             break;
         case IR_ASSIGN:
             //printf("arg1 type: %d, arg1 constant: %d, arg2 type: %d, arg2 constant: %d\n", op->arg1->type, op->arg1->constant, op->arg2->type, op->arg2->constant);
-            /*if (op->arg1->type == P_DEREFERENCE) {
-                linked_list_append(ll, op->arg2->constant);
-            }*/
+            if (op->arg1->type == P_DEREFERENCE) {
+                linked_list_append(ll, op->arg1->constant);
+            }
             if (op->arg1->type != P_TEMP) {
                 linked_list_append(ll, op->arg2->constant);
             }

@@ -55,6 +55,58 @@ void IR_create_print_macro(void) {
     "%macro sys_write 3\n\tmov rdi, %1\n\tmov rsi, %2\n\tmov rdx, %3\n\tmov rax,1\n\tsyscall\n%endmacro\n\n");
 }
 
+void create_print_char_array(void) {
+    linked_list_append(CG_generated_code, \
+"_print_char_array:\n\
+	push rbp\n\
+	mov rbp, rsp\n\
+	push r8\n\
+	push r9\n\
+	push r10\n\
+	push r11\n\
+	lea r9, [rdi + 16]\n\
+	mov r11, qword[r9]\n\
+	push rdi\n\
+	mov rdi, output\n\
+	lea r10, [rsp-1]\n\
+	xor rcx, rcx\n\
+	mov byte[r10], 0xa\n\
+	dec r10\n\
+	mov r9, qword[rbp-40]				; Access provided argument on the stack\n\
+	lea rax, [r9 + 32]\n\
+	mov r8, r11\n\
+	imul r8, 8\n\
+	add rax, r8\n\
+	xor r9, r9\n\
+_char_L1:\n\
+	mov r9b, byte[rax]\n\
+	mov [r10], r9b\n\
+	;cmp r9b, 0\n\
+	;je _no_increment\n\
+	inc rcx\n\
+_no_increment:\n\
+	dec r10\n\
+	sub rax, 8\n\
+	cmp rcx, r11\n\
+	jle _char_L1\n\
+	lea rsi, [r10+1]\n\
+	cld\n\
+_char__L1:\n\
+	movsb\n\
+	cmp rsi, rsp\n\
+	jne _char__L1\n\
+	inc rcx\n\
+	pop rdi\n\
+	sys_write 1, output, rcx\n\
+	pop r11\n\
+	pop r10\n\
+	pop r9\n\
+	pop r8\n\
+	mov rsp, rbp\n\
+	pop rbp\n\
+	ret\n\n");
+}
+
 void IR_create_print_int(void) {
     // Print prelude
     linked_list_append(CG_generated_code, \
