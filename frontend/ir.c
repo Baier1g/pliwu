@@ -688,13 +688,15 @@ int recurse_IR_tree(AST_node *node) {
             return temp_counter++;
         case A_RELATIONAL_EXPR:
         case A_ARITHMETIC_EXPR:
-            left = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.left));
             if (node->binary_expr.left->kind == A_INDEX_EXPR) {
-                left->type == P_DEREFERENCE;
+                left = create_operand(P_DEREFERENCE, recurse_IR_tree(node->binary_expr.left));
+            } else {
+                left = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.left));
             }
-            right = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.right));
             if (node->binary_expr.right->kind == A_INDEX_EXPR) {
-                right->type == P_DEREFERENCE;
+                right = create_operand(P_DEREFERENCE, recurse_IR_tree(node->binary_expr.right));
+            } else {
+                right = create_operand(P_TEMP, recurse_IR_tree(node->binary_expr.right));
             }
             IR_op_code op_code = AST_op_to_IR_op(node->binary_expr.op);
             
@@ -1099,8 +1101,7 @@ void handle_use_set(IR_operation *op) {
             if (op->arg2->type != P_CONSTANT) {
                 linked_list_append(ll, op->arg2->constant);
             }
-            if (op->arg3->type != P_CONSTANT)
-            {
+            if (op->arg3->type != P_CONSTANT) {
                 linked_list_append(ll, op->arg3->constant);
             }
             break;

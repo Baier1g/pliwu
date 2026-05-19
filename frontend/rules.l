@@ -101,7 +101,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     //printf("%d\n", stringptr);
 
     if(stringptr > STRING_MAX_LENGTH) {
-        pritnf("String too long on line %d \n", line_number);
+        printf("String too long on line %d \n", line_number);
         exit(-1);
     }
     stringbuffer[stringptr++] = yytext[0];

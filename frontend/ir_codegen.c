@@ -82,20 +82,21 @@ void IR_create_alloc(void) {
 	push r9							; PROLOGUE\n\
 	push r10						;\n\
 	push r11						;\n\
-	push r12\n\
+	push r12                        ;\n\
 	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8\n\
 	mov r12, r8\n\
 	push r8							; Save the base address on the stack\n\
 	lea r10, [rbp + 16]				; The address of the first stack argument, i.e the size of this array\n\
 	mov r9, qword[r10]				; Move the size of this array into r9\n\
-	mov qword[r8], rdi				; Move element size onto the heap at the base address\n\
+	mov qword[r8], 8				; Move element size (EVERYTHING IS QUADWORDS) onto the heap at the base address\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], rsi				; Move dimensionality of this array onto the heap at base_addres + 8\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], r9				; Move number of elements in this array onto the heap at base_address + 16\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter\n\
-	imul r9, rdi					; Multiply the number of elements by the element size to get the actual amount of space needed\n\
+	;lea r10, [r8 - 24]\n\
+	imul r9, 8						; Multiply the number of elements by the element size to get the actual amount of space needed (Everything is quadwords)\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array\n\
 	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size\n\
 	mov qword[heap_pointer], r10	; Move the newly calculated address into the heap_pointer to make it point at the new first free space\n\
@@ -121,24 +122,25 @@ _allocate_sub_arrays:\n\
 	mov qword[r8], rax				; Move address of allocated array onto the heap\n\
 	add r8, 8						; Increment r8 by the element size to point it at the next element\n\
 	cmp r8, rbx             		; Compare r8 to the heap_pointer\n\
-	jne _allocate_sub_arrays		; If not equal, more subarrays need to be allocated\n\
-	lea r10, [r12 + 8]\n\
-	mov r11, qword[r10]\n\
-	imul r11, 8\n\
-	add rsp, r11\n\
-	mov r9, rsi						; Move dimensionality into r9\n\
+	jl _allocate_sub_arrays			; If not equal, more subarrays need to be allocated\n\
+	;lea r10, [r12 + 8]\n\
+	;mov r11, qword[r10]\n\
+	;sub r11, 1\n\
+	;imul r11, 8					; \n\
+	;add rsp, r11					; Reset stack pointer\n\
+	mov r9, rsi					    ; Move dimensionality into r9\n\
 	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack\n\
-	sub rsp, r9						; Decrement rsp to reset the stack pointer\n\
+	add rsp, r9					    ; Decrement rsp to reset the stack pointer\n\
 _end_alloc:\n\
 	pop rax							; Restore base_address to rax\n\
-	pop r12\n\
+	pop r12                         ;\n\
 	pop r11							;\n\
 	pop r10							;\n\
 	pop r9							;\n\
 	pop r8							; EPILOGUE\n\
 	mov rsp, rbp					;\n\
 	pop rbp							;\n\
-	ret								;\n");
+	ret								;\n\n");
 }
 
 void IR_create_init_array(void) {
@@ -154,12 +156,12 @@ _initialize_array:\n\
 	push r10						;\n\
 	push r11						;\n\
 	lea r8, [rdi + 8]				; Load address of dimensionality\n\
-	mov r9, qword[r8]				; Get dimensionality of the array\n\
-	cmp r9, 1						; Check dimensionality against 1\n\
+	mov r10, qword[r8]				; Get dimensionality of the array\n\
 	lea r8, [rdi + 16]				; Load the address of the number of elements into r8\n\
 	mov r9, qword[r8]				; Dereference r8 to get the number of elements and put them into r9\n\
 	mov rbx, 0						; move 0 into rbx, it will be used as a counter\n\
 	lea r8, [rdi + 32]				; Load address of the first subarray into r8\n\
+	cmp r10, 1						; Check dimensionality against 1\n\
 	je _values						; If dimensionality is 1, put values onto the heap\n\
 	push rdi						; Save address of array\n\
 _recurse_subarrays:\n\
@@ -176,9 +178,9 @@ _recurse_subarrays:\n\
 _values:\n\
 	mov r10, qword[rsi]				; Load a value from the data segment\n\
 	mov qword[r8], r10				; Put loaded value onto the heap\n\
-	mov r11, qword[rdi]				; Get the element size of the array\n\
-	add r8, r11\n\
-	add rsi, r11\n\
+	;mov r11, qword[rdi]			; Get the element size of the array (everything is quadwords)\n\
+	add r8, 8\n\
+	add rsi, 8\n\
 	add rbx, 1\n\
 	cmp rbx, r9\n\
 	jne _values\n\
@@ -189,7 +191,7 @@ _end_init:\n\
 	pop r8							; EPILOGUE\n\
 	mov rsp, rbp					;\n\
 	pop rbp							;\n\
-	ret								;\n");
+	ret								;\n\n");
 }
 
 char *IR_decide_branching(IR_operation *operation) {
@@ -363,10 +365,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         case P_CONSTANT:
                             sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
                             break;
-                        case P_REFERENCE:
                         case P_TEMP:
                             sprintf(name, "\tmov %s, %s\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
                             break;
+                        case P_REFERENCE:
                         case P_DEREFERENCE:
                             sprintf(name, "\tmov rbx, qword[%s]\t\t\t\t; Get value from address in %s\n\tmov %s, rbx\t\t\t\t; Assign from memory to register", CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(reg));
                             break;
@@ -507,6 +509,16 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 arg2 = graph->nodes[operation->arg2->constant];
                 arg3 = graph->nodes[operation->arg3->constant];
                 name = (char *) calloc(128, sizeof(char));
+                if (operation->arg2->type == P_DEREFERENCE || operation->arg2->type == P_REFERENCE) {
+                    sprintf(name, "\tmov rax, qword[%s]\n\tmov %s, rax\n", CG_reg_color_to_string((reg_color)arg2->color), CG_reg_color_to_string((reg_color)arg2->color));
+                    linked_list_append(CG_generated_code, name);
+                    name = (char *) calloc(128, sizeof(char));
+                }
+                if (operation->arg3->type == P_DEREFERENCE || operation->arg3->type == P_REFERENCE) {
+                    sprintf(name, "\tmov rax, qword[%s]\n\tmov %s, rax\n", CG_reg_color_to_string((reg_color)arg3->color), CG_reg_color_to_string((reg_color)arg3->color));
+                    linked_list_append(CG_generated_code, name);
+                    name = (char *) calloc(128, sizeof(char));
+                }
                 sprintf(name, "\tcmp %s, %s\n", CG_reg_color_to_string((reg_color) arg2->color), CG_reg_color_to_string((reg_color) arg3->color));
                 linked_list_append(CG_generated_code, name);
 
