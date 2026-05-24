@@ -112,6 +112,7 @@ enum IR_op_code {
     IR_WHILE,
     IR_PRINT,
     IR_ALLOC,
+    IR_INIT,
     IR_CALL,
     IR_RET,
     // INT,

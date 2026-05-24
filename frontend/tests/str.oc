@@ -1,32 +1,35 @@
 func main() {
     int a[10];
-    print(a);
-    print(a[0]);
+    char c[][] = {{"1","2","3"}, {"4","5","6"}, {"7","8","9"}};
+    int d[] = {47, 32, 73, 57, 21, 17, 89, 57, 59, 63, 13, 92, 48, 45, 51, 52, 16, 30, 4, 14, 9, 97, 61, 71, 39};
+    print(d);
+    insertion_sort(d, 25);
+    int k = 0;
+    while (k < 25) {
+        print(d[k]);
+        k = k + 1;
+    }
+    //print(c[1][2]);
+    //print(a);
+    //print(a[0]);
     int i = 10;
     int j = 0;
     while (i > 0) {
         a[j] = i;
-        //print(a[j]);
         i = i - 1;
         j = j + 1;
-        //print(a[j-1]);
     }
-    while (i < 10) {
-        //print(a[i]);
-        i = i + 1;
-    }
-    int b[20][10];
-    print(1000);
+    /*int b[20][10];
     b[10][5] = 500;
     b[1][0] = 1;
     print(b[1][0]);
     print(b);
     print(b[10][5]);
-    print(100);
+    print(100);*/
     insertion_sort(a, 10);
     i = 0;
     while (i < 10) {
-        print(a[i]);
+        //print(a[i]);
         i = i + 1;
     }
     return;
@@ -37,7 +40,6 @@ func insertion_sort(int[] a, int length) -> void {
     while (i < length) {
         int key = a[i];
         int j = i - 1;
-
         while (j >= 0 && a[j] > key) {
             a[j + 1] = a[j];
             j = j - 1;
