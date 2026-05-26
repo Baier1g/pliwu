@@ -332,7 +332,7 @@ void kill_tree(AST_node* node) {
     }
     kind type = node->kind;
     //printf("%s\n", kind_enum_to_string(type));
-    if (node->table) {
+    if (node->table && node->kind != A_PRINT_STMT) {
         destroy_symbol_table(node->table);
     }
     switch (type) {

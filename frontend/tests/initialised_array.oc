@@ -18,5 +18,6 @@ func main() {
         print(g[i]);
         i = i + 1;
     }
+    print(g);
     
 }

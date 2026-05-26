@@ -89,6 +89,15 @@ _char__L1:
 	pop rbp
 	ret
 
+print_char:
+	push rbp
+	mov rbp, rsp
+	mov [output], rdi
+	sys_write 1, output, 1
+	mov rsp, rbp
+	pop rbp
+	ret
+
     
 global _start
 _start:
