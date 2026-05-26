@@ -119,6 +119,27 @@ void IR_create_print_char(void) {
 	ret\n");
 }
 
+void IR_create_print_string(void) {
+    linked_list_append(CG_generated_code, \
+"_print_string:\n\
+	push rbp\n\
+	mov rbp, rsp\n\
+	push r8\n\
+	push rcx\n\
+	xor rcx, rcx\n\
+	mov rcx, qword[rbp+16]				; Access provided argument on the stack\n\
+	mov r8, rdi\n\
+	sys_write 1, r8, rcx\n\
+	mov r8, qword[newline]\n\
+	mov [output], r8\n\
+	sys_write 1, output, 1\n\
+	pop rcx\n\
+	pop r8\n\
+	mov rsp, rbp\n\
+	pop rbp\n\
+	ret\n\n");
+}
+
 void IR_create_print_int(void) {
     // Print prelude
     linked_list_append(CG_generated_code, \
@@ -656,15 +677,15 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     name = (char *) calloc(128, sizeof(char));
                     counter++;
                 }
-                if (operation->arg1->type == P_VARIABLE) {
+                if (operation->arg1->type == P_VARIABLE && operation->arg2->constant != TYPE_STRING) {
                     var_info *info = symbol_table_get(operation->in_seg->table, operation->arg1->variable_name);
                     CG_var_address(info);
                     sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n");
-                } else if (operation->arg1->type == P_DEREFERENCE) {
+                } else if (operation->arg1->type == P_DEREFERENCE && operation->arg2->constant != TYPE_STRING) {
                     sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 } else if (operation->arg1->type == P_CONSTANT) {
                     sprintf(name, "\tmov rdi, %d\t\t\t\t; Move value to be printed into rdi\n", operation->arg1->constant);
-                } else {
+                } else if (operation->arg1->type == P_TEMP && operation->arg2->constant != TYPE_STRING) {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
                 linked_list_append(CG_generated_code, name);
@@ -676,6 +697,11 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     } else {
                         sprintf(name, "\tcall print_char\t\t\t\t; Call print_char");
                     }
+                } else if (operation->arg2 && operation->arg2->constant == TYPE_STRING) {
+                    sprintf(name, "\tmov rbx, qword[%s]\t\t\t; Load address of string length into rbx\n\tpush rbx\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    linked_list_append(CG_generated_code, name);
+                    name = (char *) calloc(128, sizeof(char));
+                    sprintf(name, "\tadd %s, 8\n\tmov rdi, %s\n\tcall _print_string\n\tadd rsp, 8", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 } else {
                     sprintf(name, "\tcall print_int\t\t\t\t; Call print_int");
                 }
@@ -865,7 +891,7 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
         char *buffer = (char *)calloc(500000, sizeof(char));
         if (node->kind == A_PRIMARY_EXPR) {
             char *string_name = IR_generate_label("_string", CG_string_counter++);
-            sprintf(buffer, "\t%s db \"%s\"\n\t%s_len dq %d\n", string_name, node->primary_expr.string.value, string_name, node->primary_expr.string.length);
+            sprintf(buffer, "\t%s dq %d\n\t%s_elem db \"%s\"\n", string_name, node->primary_expr.string.length, string_name, node->primary_expr.string.value);
             //printf("%s", buffer);
             free(string_name);
             linked_list_append(data_section, buffer);
@@ -922,7 +948,7 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     IR_create_print_int();
     create_print_char_array();
     IR_create_print_char();
-
+    IR_create_print_string();
     IR_create_alloc();
     IR_create_init_array();
     
