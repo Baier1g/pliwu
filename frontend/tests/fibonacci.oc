@@ -1,8 +1,8 @@
-func fibbonaci(int n) -> int {
+func fibonacci(int n) -> int {
     if (n <= 1) {
         return n;
     }
-    return fibbonaci(n - 1) + fibbonaci(n - 2);
+    return fibonacci(n - 1) + fibonacci(n - 2);
 }
 
 func main() {
@@ -15,6 +15,6 @@ func fib_util(int n) -> void {
         return;
     }
     fib_util(n - 1);
-    print(fibbonaci(n));
+    print(fibonacci(n));
     return;
 }
