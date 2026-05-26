@@ -107,6 +107,18 @@ _char__L1:\n\
 	ret\n\n");
 }
 
+void IR_create_print_char(void) {
+    linked_list_append(CG_generated_code,
+"print_char:\n\
+	push rbp\n\
+	mov rbp, rsp\n\
+	mov [output], rdi\n\
+	sys_write 1, output, 1\n\
+	mov rsp, rbp\n\
+	pop rbp\n\
+	ret\n");
+}
+
 void IR_create_print_int(void) {
     // Print prelude
     linked_list_append(CG_generated_code, \
@@ -382,16 +394,18 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     }
     //printf("recursing segment\n");
     CG_current_segment = seg;
+    //printf("here?\n");
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
         linked_list_append(CG_generated_code, ":\n");
     }
+    //printf("out\n");
     var_info *info;
     int param_count = 0;
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s\n", IR_op_code_to_string(code));
@@ -427,7 +441,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         case P_VARIABLE:
                             var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
                             if (operation->arg2->variable_name[0] == '_') {
-                                printf("Got here\n");
+                                //printf("Got here\n");
                                 label = operation->arg2->variable_name;
                                 sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", CG_reg_color_to_string(reg), label, label, CG_reg_color_to_string(reg));
                             } else {
@@ -645,13 +659,25 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 if (operation->arg1->type == P_VARIABLE) {
                     var_info *info = symbol_table_get(operation->in_seg->table, operation->arg1->variable_name);
                     CG_var_address(info);
-                    sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int");
+                    sprintf(name, "\tmov rdi, qword[rax]\t\t\t\t; Move value to be printed into rdi\n");
                 } else if (operation->arg1->type == P_DEREFERENCE) {
-                    sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 } else if (operation->arg1->type == P_CONSTANT) {
-                    sprintf(name, "\tmov rdi, %d\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", operation->arg1->constant);
+                    sprintf(name, "\tmov rdi, %d\t\t\t\t; Move value to be printed into rdi\n", operation->arg1->constant);
                 } else {
-                    sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n\tcall print_int\t\t\t\t; Call print_int", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                }
+                linked_list_append(CG_generated_code, name);
+                //printf("yurr\n");
+                name = (char *) calloc(128, sizeof(char));
+                if (operation->arg2 && operation->arg2->constant == TYPE_CHAR) {
+                    if (operation->arg3->constant == 1) {
+                        sprintf(name, "\tcall _print_char_array\t\t\t\t; Call _print_char_array");
+                    } else {
+                        sprintf(name, "\tcall print_char\t\t\t\t; Call print_char");
+                    }
+                } else {
+                    sprintf(name, "\tcall print_int\t\t\t\t; Call print_int");
                 }
                 linked_list_append(CG_generated_code, name);
                 while (counter > 0) {
@@ -747,7 +773,7 @@ void CG_find_offset(segment *seg) {
         if (info->kind == ID_FUNC_PARAM) {
             continue;
         }
-        print_operation(op);
+        //print_operation(op);
         
         info->offset = 8 * CG_offset;
         CG_offset++;
@@ -835,11 +861,13 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
 void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     for (linked_list_node *lln = program->data->head; lln != NULL; lln = lln->next) {
         AST_node *node = (AST_node *) lln->data;
-        printf("yurr\n");
+        //printf("yurr\n");
         char *buffer = (char *)calloc(500000, sizeof(char));
         if (node->kind == A_PRIMARY_EXPR) {
-            sprintf(buffer, "\t%s db \"%s\"\n", IR_generate_label("_string", CG_string_counter++), node->primary_expr.string.value);
-            printf("%s", buffer);
+            char *string_name = IR_generate_label("_string", CG_string_counter++);
+            sprintf(buffer, "\t%s db \"%s\"\n\t%s_len dq %d\n", string_name, node->primary_expr.string.value, string_name, node->primary_expr.string.length);
+            //printf("%s", buffer);
+            free(string_name);
             linked_list_append(data_section, buffer);
         } else {
             int total_length = 1;
@@ -851,16 +879,12 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
             }
             CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             strcat(buffer, "\n");
-            printf("%s\n", buffer);
+            //printf("%s\n", buffer);
             linked_list_append(data_section, buffer);
         }
-        printf("we made it\n");
+        //printf("we made it\n");
     }
     if (program->name) {
-        if (strncmp("main", program->name, 4) == 0) {
-            //linked_list_append(CG_generated_code, \
-            //    "global _start\n_start:\n");        
-        }
         prologue(program);
         CG_current_frame = program;
         recurse_segment(program->segment, graph);
@@ -896,10 +920,12 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     linked_list_append(data_section, \
                 "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\n");
     IR_create_print_int();
+    create_print_char_array();
+    IR_create_print_char();
+
     IR_create_alloc();
     IR_create_init_array();
     
-    printf("fr\n");
     CG_regs_used(program, graph);
 
     /**

@@ -151,7 +151,7 @@ frame *create_frame() {
 
 frame *create_named_frame(char *name) {
     frame *tmp = (frame *) malloc(sizeof(frame));
-    tmp->name = calloc(strlen(name), sizeof(char));
+    tmp->name = calloc(strlen(name) + 1, sizeof(char));
     strcpy(tmp->name, name);
     tmp->nested_frames = linked_list_new();
     tmp->data = linked_list_new();
@@ -163,6 +163,7 @@ frame *create_named_frame(char *name) {
 
 segment *create_segment(symbol_table *table) {
     segment *tmp = (segment *) malloc(sizeof(segment));
+    tmp->name = NULL;
     tmp->left = tmp->right = NULL;
     tmp->iteration = 0;
     tmp->table = table;
@@ -176,7 +177,7 @@ IR_operand *create_operand(operand_type type, void *content) {
     op->type = type;
     switch(type) {
         case P_VARIABLE:
-            op->variable_name = calloc(strlen((char *) content), sizeof(char));
+            op->variable_name = calloc(strlen((char *) content) + 1, sizeof(char));
             strcpy(op->variable_name, content);
             break;
         case P_TEMP:
@@ -544,14 +545,44 @@ int recurse_IR_tree(AST_node *node) {
             break;
         case A_PRINT_STMT:
             expr = NULL;
+            int type = 0;
             if (node->print_stmt.expression) {
-                if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
+                AST_node *child = node->print_stmt.expression;
+                if (child->kind == A_INDEX_EXPR) {
                     expr = create_operand(P_DEREFERENCE, recurse_IR_tree(node->print_stmt.expression));
+                    var_info *array = symbol_table_get(node->table, child->indexing.identifier->primary_expr.identifier_name);
+                    type = array->type;
                 } else {
+                    if (child->kind == A_PRIMARY_EXPR) {
+                        if (child->primary_expr.type == TYPE_IDENTIFIER) {
+                            var_info *variable = symbol_table_get(node->table, child->primary_expr.identifier_name);
+                            type = variable->type;
+                        } else {
+                            type = child->primary_expr.type;
+                        }
+                    } else if (child->kind == A_ARITHMETIC_EXPR) {
+                        type = TYPE_INT;
+                    } else if (child->kind == A_RELATIONAL_EXPR || child->kind == A_LOGICAL_EXPR) {
+                        type = TYPE_BOOL;
+                    } else if (child->kind == A_CALL_EXPR) {
+                        var_info *call = symbol_table_get(node->table, child->call_expr.identifier->primary_expr.identifier_name);
+                        type = call->type;
+                    }
                     expr = create_operand(P_TEMP, recurse_IR_tree(node->print_stmt.expression));
                 }
             }
-            op = create_op(IR_PRINT, expr, NULL, NULL);
+            //printf("%d\n", type);
+            int is_array = 0;
+            if (node->print_stmt.expression->kind == A_PRIMARY_EXPR) {
+                if (node->print_stmt.expression->primary_expr.type == TYPE_IDENTIFIER) {
+                    //printf("shalom\n");
+                    var_info *variable = symbol_table_get(node->table, node->print_stmt.expression->primary_expr.identifier_name);
+                    if (variable->ast_node && variable->ast_node->kind == A_ARRAY_DECL) {
+                        is_array = 1;
+                    }
+                }
+            }
+            op = create_op(IR_PRINT, expr, create_operand(P_CONSTANT, type), create_operand(P_CONSTANT, is_array));
             op->in_frame = current_frame;
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);

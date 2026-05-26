@@ -196,6 +196,7 @@ short recurse_scope(AST_node *node) {
             current_scope = outer_table;
             break;
         case A_PRINT_STMT:
+            node->table = current_scope;
             recurse_scope(node->print_stmt.expression);
             break;
         case A_EXPR_STMT:
