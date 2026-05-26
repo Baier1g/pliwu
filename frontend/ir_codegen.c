@@ -129,6 +129,7 @@ void IR_create_print_string(void) {
 	xor rcx, rcx\n\
 	mov rcx, qword[rbp+16]				; Access provided argument on the stack\n\
 	mov r8, rdi\n\
+    dec rcx \n\
 	sys_write 1, r8, rcx\n\
 	mov r8, qword[newline]\n\
 	mov [output], r8\n\
