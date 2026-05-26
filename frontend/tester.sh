@@ -4,10 +4,6 @@ set -euo pipefail
 
 TEST_ROOT="tests"
 
-(
-    make -s flexbison
-)
-
 FAIL=0
 
 while read -rd '' file; do
@@ -25,10 +21,8 @@ while read -rd '' file; do
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
     )
 
-    if ! diff -u "$expected" <(./out); then
+    if ! diff -q "$expected" <(./out); then
         FAIL=1
-    #else
-        #echo "PASS"
     fi
 
 done < <(find "$TEST_ROOT" -name '*.oc' -print0)

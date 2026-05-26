@@ -23,6 +23,8 @@ all: flexbison
 
 #test all
 tester:
+	@make flexbison 					> /dev/null 2>&1
+	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
 	@bash tester.sh
 	
 #test one
