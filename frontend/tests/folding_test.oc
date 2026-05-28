@@ -1,6 +1,4 @@
-main(1 + 2 + 3 + 4 + 5 + 6);
-
-func main(int m) {
+func main() {
     int a = 5 + 6 + 7 + 9;
     int b = 1000 - 5 * 10 + 2;
     int c = 1000 / 10 + 3;
@@ -23,6 +21,16 @@ func main(int m) {
                     j = j + j;
                     if (1 == 1) {
                         j = j + j;
+                        if (g < 3) {
+                            h = 1;
+                            if (1) {
+                                print("hi");
+                            } else {
+                                print("no");
+                            }
+                        } else {
+                            h = 2;
+                        }
                     } else {
                         j = j- j;
                     }

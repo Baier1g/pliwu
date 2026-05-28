@@ -112,11 +112,19 @@ void IR_create_print_char(void) {
 "print_char:\n\
 	push rbp\n\
 	mov rbp, rsp\n\
+    push r8\n\
+    push r9\n\
+    push r10\n\
+    push r11\n\
 	mov [output], rdi\n\
 	sys_write 1, output, 1\n\
+    pop r11\n\
+    pop r10\n\
+    pop r9\n\
+	pop r8\n\
 	mov rsp, rbp\n\
 	pop rbp\n\
-	ret\n");
+	ret\n\n");
 }
 
 void IR_create_print_string(void) {
@@ -125,7 +133,9 @@ void IR_create_print_string(void) {
 	push rbp\n\
 	mov rbp, rsp\n\
 	push r8\n\
-	push rcx\n\
+    push r9\n\
+    push r10\n\
+    push r11\n\
 	xor rcx, rcx\n\
 	mov rcx, qword[rbp+16]				; Access provided argument on the stack\n\
 	mov r8, rdi\n\
@@ -134,7 +144,9 @@ void IR_create_print_string(void) {
 	mov r8, qword[newline]\n\
 	mov [output], r8\n\
 	sys_write 1, output, 1\n\
-	pop rcx\n\
+	pop r11\n\
+    pop r10\n\
+    pop r9\n\
 	pop r8\n\
 	mov rsp, rbp\n\
 	pop rbp\n\
@@ -160,7 +172,7 @@ void IR_create_print_int(void) {
 }
 
 void IR_create_alloc(void) {
-    linked_list_append(CG_generated_code,\
+    linked_list_append(CG_generated_code,
 "_better_alloc:\n\
 	push rbp						;\n\
 	mov rbp, rsp					;\n\
@@ -169,6 +181,7 @@ void IR_create_alloc(void) {
 	push r10						;\n\
 	push r11						;\n\
 	push r12                        ;\n\
+    push rbx                        ;\n\
 	mov r8, qword[heap_pointer] 	; Move base address of new array to be allocated into r8\n\
 	mov r12, r8\n\
 	push r8							; Save the base address on the stack\n\
@@ -181,7 +194,6 @@ void IR_create_alloc(void) {
 	mov qword[r8], r9				; Move number of elements in this array onto the heap at base_address + 16\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the next quadword\n\
 	mov qword[r8], 1				; Move 1 onto the heap at base_address + 24. This is the reference counter\n\
-	;lea r10, [r8 - 24]\n\
 	imul r9, 8						; Multiply the number of elements by the element size to get the actual amount of space needed (Everything is quadwords)\n\
 	add r8, 8						; Increment r8 by 8 to get the address of the first element of the array\n\
 	lea r10, [r8 + r9]				; Calculate the address of the next free space on the heap, which is base_address + 32 + array_size\n\
@@ -209,21 +221,17 @@ _allocate_sub_arrays:\n\
 	add r8, 8						; Increment r8 by the element size to point it at the next element\n\
 	cmp r8, rbx             		; Compare r8 to the heap_pointer\n\
 	jl _allocate_sub_arrays			; If not equal, more subarrays need to be allocated\n\
-	;lea r10, [r12 + 8]\n\
-	;mov r11, qword[r10]\n\
-	;sub r11, 1\n\
-	;imul r11, 8					; \n\
-	;add rsp, r11					; Reset stack pointer\n\
 	mov r9, rsi					    ; Move dimensionality into r9\n\
 	imul r9, 8						; Multiply r9 by 8 to get the space the stack variables use on the stack\n\
 	add rsp, r9					    ; Decrement rsp to reset the stack pointer\n\
 _end_alloc:\n\
 	pop rax							; Restore base_address to rax\n\
+    pop rbx                         ;\n\
 	pop r12                         ;\n\
 	pop r11							;\n\
 	pop r10							;\n\
-	pop r9							;\n\
-	pop r8							; EPILOGUE\n\
+	pop r9							; EPILOGUE\n\
+	pop r8							;\n\
 	mov rsp, rbp					;\n\
 	pop rbp							;\n\
 	ret								;\n\n");
@@ -241,6 +249,7 @@ _initialize_array:\n\
 	push r9							;\n\
 	push r10						;\n\
 	push r11						;\n\
+    push rbx                        ;\n\
 	lea r8, [rdi + 8]				; Load address of dimensionality\n\
 	mov r10, qword[r8]				; Get dimensionality of the array\n\
 	lea r8, [rdi + 16]				; Load the address of the number of elements into r8\n\
@@ -271,6 +280,7 @@ _values:\n\
 	cmp rbx, r9\n\
 	jne _values\n\
 _end_init:\n\
+    pop rbx                         ;\n\
 	pop r11							;\n\
 	pop r10							;\n\
 	pop r9							;\n\
@@ -448,27 +458,31 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 //printf("henlo\n");
                 if (operation->arg1->type == P_TEMP || operation->arg1->type == P_REFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
+                    char *op1_reg = CG_reg_color_to_string(reg);
                     operand_type type = operation->arg2->type;
+                    char *op2_reg;
                     switch(type) {
                         case P_CONSTANT:
-                            sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), operation->arg2->constant);
+                            sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", op1_reg, operation->arg2->constant);
                             break;
                         case P_TEMP:
-                            sprintf(name, "\tmov %s, %s\t\t\t\t; Put constant value into register", CG_reg_color_to_string(reg), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color));
+                            op2_reg = CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color);
+                            sprintf(name, "\tmov %s, %s\t\t\t\t; Put constant value into register", op1_reg, op2_reg);
                             break;
                         case P_REFERENCE:
                         case P_DEREFERENCE:
-                            sprintf(name, "\tmov rbx, qword[%s]\t\t\t\t; Get value from address in %s\n\tmov %s, rbx\t\t\t\t; Assign from memory to register", CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color), CG_reg_color_to_string(reg));
+                            op2_reg = CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color);
+                            sprintf(name, "\tmov %s, qword[%s]\t\t\t\t; Assign from memory to register", op1_reg, op2_reg);
                             break;
                         case P_VARIABLE:
                             var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
                             if (operation->arg2->variable_name[0] == '_') {
                                 //printf("Got here\n");
                                 label = operation->arg2->variable_name;
-                                sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", CG_reg_color_to_string(reg), label, label, CG_reg_color_to_string(reg));
+                                sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", op1_reg, label, label, op1_reg);
                             } else {
                                 CG_var_address(var);
-                                sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
+                                sprintf(name, "\tmov %s, qword[rax]\t\t\t; Load value of variable into register", op1_reg);
                             }
                             break;
                         default:
@@ -562,17 +576,25 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 RA_node *arg2 = graph->nodes[operation->arg2->constant];
                 RA_node *arg3 = graph->nodes[operation->arg3->constant];
                 name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "\tmov rax, %s\n", CG_reg_color_to_string((reg_color) arg2->color));
+                if (operation->arg2->type == P_DEREFERENCE) {
+                    sprintf(name, "\tmov rax, qword[%s]\n", CG_reg_color_to_string((reg_color)arg2->color));
+                } else {
+                    sprintf(name, "\tmov rax, %s\n", CG_reg_color_to_string((reg_color) arg2->color));
+                }
                 linked_list_append(CG_generated_code, name);
                 label = (char *) calloc(128, sizeof(char));
                 if (code == IR_DIV) {
                     if (CG_current_frame->func_params > 3) {
                         linked_list_append(CG_generated_code, "\tpush rdx\t\t\t\t; Save value of function parameter\n");
                     }
-                    sprintf(label, "\txor rdx, rdx\n%s %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
+                    if (operation->arg3->type == P_DEREFERENCE) {
+                        sprintf(label, "\txor rdx, rdx\n%s qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
+                    } else {
+                        sprintf(label, "\txor rdx, rdx\n%s %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg3->color));
+                    }
                 } else {
                     if (operation->arg3->type == P_DEREFERENCE) {
-                        sprintf(label, "\tmov rbx, qword[%s]\n%s rax, rbx\n", CG_reg_color_to_string((reg_color)arg3->color), CG_IR_op_code_to_string(code));
+                        sprintf(label, "%s rax, qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg3->color));
                     } else if (operation->arg3->type == P_CONSTANT) {
                         sprintf(label, "%s rax, %d\n", CG_IR_op_code_to_string(code), operation->arg3->constant);
                     } else {
@@ -598,12 +620,12 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 arg3 = graph->nodes[operation->arg3->constant];
                 name = (char *) calloc(128, sizeof(char));
                 if (operation->arg2->type == P_DEREFERENCE || operation->arg2->type == P_REFERENCE) {
-                    sprintf(name, "\tmov rax, qword[%s]\n\tmov %s, rax\n", CG_reg_color_to_string((reg_color)arg2->color), CG_reg_color_to_string((reg_color)arg2->color));
+                    sprintf(name, "\tmov %s, qword[%s]\n", CG_reg_color_to_string((reg_color)arg2->color), CG_reg_color_to_string((reg_color)arg2->color));
                     linked_list_append(CG_generated_code, name);
                     name = (char *) calloc(128, sizeof(char));
                 }
                 if (operation->arg3->type == P_DEREFERENCE || operation->arg3->type == P_REFERENCE) {
-                    sprintf(name, "\tmov rax, qword[%s]\n\tmov %s, rax\n", CG_reg_color_to_string((reg_color)arg3->color), CG_reg_color_to_string((reg_color)arg3->color));
+                    sprintf(name, "\tmov %s, qword[%s]\n", CG_reg_color_to_string((reg_color)arg3->color), CG_reg_color_to_string((reg_color)arg3->color));
                     linked_list_append(CG_generated_code, name);
                     name = (char *) calloc(128, sizeof(char));
                 }
@@ -699,7 +721,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         sprintf(name, "\tcall print_char\t\t\t\t; Call print_char");
                     }
                 } else if (operation->arg2 && operation->arg2->constant == TYPE_STRING) {
-                    sprintf(name, "\tmov rbx, qword[%s]\t\t\t; Load address of string length into rbx\n\tpush rbx\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                    sprintf(name, "\tmov rax, qword[%s]\t\t\t; Load address of string length into rax\n\tpush rax\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                     linked_list_append(CG_generated_code, name);
                     name = (char *) calloc(128, sizeof(char));
                     sprintf(name, "\tadd %s, 8\n\tmov rdi, %s\n\tcall _print_string\n\tadd rsp, 8", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
@@ -889,7 +911,7 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     for (linked_list_node *lln = program->data->head; lln != NULL; lln = lln->next) {
         AST_node *node = (AST_node *) lln->data;
         //printf("yurr\n");
-        char *buffer = (char *)calloc(500000, sizeof(char));
+        char *buffer = (char *) calloc(50000, sizeof(char));
         if (node->kind == A_PRIMARY_EXPR) {
             char *string_name = IR_generate_label("_string", CG_string_counter++);
             sprintf(buffer, "\t%s dq %d\n\t%s_elem db \"%s\"\n", string_name, node->primary_expr.string.length, string_name, node->primary_expr.string.value);

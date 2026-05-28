@@ -36,6 +36,7 @@ func dum_rec(int n) -> int {
         return 0;
     }
     int a = dum_rec(n-1);
+    dummy(5, 9);
     print(a);
     return n;
 }
