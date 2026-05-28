@@ -476,7 +476,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
     linked_list_append(new_frames, frm);
     char *name;
     int key_found = 0;
-    printf("in rewrite\n");
+    //printf("in rewrite\n");
     while (!key_found) {
         if (!new_frames->size) {
             // Spilled node is a temp, gotts fix that
@@ -537,9 +537,9 @@ RA_graph *register_allocation(int temps, frame *program) {
     RA_graph *graph = create_graph(temp_c);
     printf("graph created\n");
     glob_graph = graph;
+    connect_graph(program);
     //print_graph(graph);
     //print_adj_matrix(graph);
-    connect_graph(program);
     
     int *simple_nodes = (int *) calloc(graph->num_nodes + 1, sizeof(int));
     int *potential_spill = (int *) calloc(graph->num_nodes + 1, sizeof(int));

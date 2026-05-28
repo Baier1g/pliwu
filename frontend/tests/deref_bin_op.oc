@@ -1,0 +1,14 @@
+func main() {
+    int a[] = {2,3,4};
+    a[2] = a[0] * a[1];
+    print(a[2]);
+    print(a[1]);
+    a[2] = a[2] / a[1];
+    print(a[2]);
+    if (a[2] > a[0]) {
+        print("it is true");
+    } else {
+        print("it is false");
+    }
+    return;
+}
