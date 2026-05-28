@@ -66,7 +66,7 @@ data_type recurse_type(AST_node *node) {
             current_return_type = d_type;
             outer_table = type_scope;
             type_scope = node->table;
-
+            
             //set param types
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
                 recurse_type(lln->data);
