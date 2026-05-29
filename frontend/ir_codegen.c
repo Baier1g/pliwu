@@ -56,101 +56,87 @@ void IR_create_print_macro(void) {
 }
 
 void create_print_char_array(void) {
-    linked_list_append(CG_generated_code, \
+    linked_list_append(CG_generated_code,
 "_print_char_array:\n\
-	push rbp\n\
-	mov rbp, rsp\n\
-	push r8\n\
-	push r9\n\
-	push r10\n\
-	push r11\n\
-	lea r9, [rdi + 16]\n\
-	mov r11, qword[r9]\n\
-	push rdi\n\
-	mov rdi, output\n\
-	lea r10, [rsp-1]\n\
-	xor rcx, rcx\n\
-	mov byte[r10], 0xa\n\
-	dec r10\n\
-	mov r9, qword[rbp-40]				; Access provided argument on the stack\n\
-	lea rax, [r9 + 32]\n\
-	mov r8, r11\n\
-	imul r8, 8\n\
-	add rax, r8\n\
-	xor r9, r9\n\
+	push rbp                            ;\n\
+	mov rbp, rsp                        ;\n\
+	push r8                             ;\n\
+	push r9                             ; PROLOGUE\n\
+	push r10                            ;\n\
+	push r11                            ;\n\
+	lea r9, [rdi + 16]                  ; Load the address of the length of the array\n\
+	mov r11, qword[r9]                  ; Move the length of the array into r11\n\
+	mov rdi, output                     ; Move address of output into rdi\n\
+	lea r10, [rsp-1]                    ; Load the address of the first byte past rsp into r10 (this is the print pointer)\n\
+	xor rcx, rcx                        ; Clear rcx\n\
+	mov byte[r10], 0xa                  ; Move a newline onto the stack\n\
+	dec r10                             ; Decrement print pointer\n\
+	mov r9, qword[rbp-40]				; Move the basse address of the array to be printed into r9\n\
+	lea rax, [r9 + 32]                  ; Load the address of the first element of the array into rax\n\
+	mov r8, r11                         ; Move the length of the arrayu into r8\n\
+	imul r8, 8                          ; Multiply length by 8 to get amount of bytes used for elements (since everything is quadwords)\n\
+	add rax, r8                         ; Add total amount of bytes used in the array to rax, making rax point at the last element of the array\n\
+	xor r9, r9                          ; Clear r9\n\
 _char_L1:\n\
-	mov r9b, byte[rax]\n\
-	mov [r10], r9b\n\
-	;cmp r9b, 0\n\
+	mov r9b, byte[rax]                  ; Move a char element into r9\n\
+	mov [r10], r9b                      ; Put char element on the stack\n\
+	;cmp r9b, 0                           This is to avoid printing null characters, might be useful in the future\n\
 	;je _no_increment\n\
-	inc rcx\n\
+	inc rcx                             ; Increment counter\n\
 _no_increment:\n\
-	dec r10\n\
-	sub rax, 8\n\
-	cmp rcx, r11\n\
-	jle _char_L1\n\
-	lea rsi, [r10+1]\n\
-	cld\n\
+	dec r10                             ; Move print pointer to next empty space\n\
+	sub rax, 8                          ; Subtract 8 from rax to get the next element of the array\n\
+	cmp rcx, r11                        ; Check if the entire array has been put on the stack\n\
+	jle _char_L1                        ; Keep putting elements on the stack if more still exist\n\
+	lea rsi, [r10+1]                    ; Load address of last element added to the stack to rsi\n\
+	cld                                 ; Clear direction flag to ensure movsb processes the stack in the correct order\n\
 _char__L1:\n\
-	movsb\n\
-	cmp rsi, rsp\n\
-	jne _char__L1\n\
-	inc rcx\n\
-	pop rdi\n\
-	sys_write 1, output, rcx\n\
-	pop r11\n\
-	pop r10\n\
-	pop r9\n\
-	pop r8\n\
-	mov rsp, rbp\n\
-	pop rbp\n\
-	ret\n\n");
+	movsb                               ; Move a byte from the address pointed to by rsi into output\n\
+	cmp rsi, rsp                        ; Repeat until all characters have been processed\n\
+	jne _char__L1                       ;\n\
+	inc rcx                             ; Increment rcx to include the newline character\n\
+	sys_write 1, output, rcx            ; Write array to the terminal\n\
+	pop r11                             ;\n\
+	pop r10                             ;\n\
+	pop r9                              ;\n\
+	pop r8                              ; EPILOGUE\
+	mov rsp, rbp                        ;\n\
+	pop rbp                             ;\n\
+	ret                                 ;\n\n");
 }
 
 void IR_create_print_char(void) {
     linked_list_append(CG_generated_code,
 "print_char:\n\
-	push rbp\n\
-	mov rbp, rsp\n\
-    push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-	mov [output], rdi\n\
-	sys_write 1, output, 1\n\
-    pop r11\n\
-    pop r10\n\
-    pop r9\n\
-	pop r8\n\
-	mov rsp, rbp\n\
-	pop rbp\n\
-	ret\n\n");
+	push rbp                            ;\n\
+	mov rbp, rsp                        ; PROLOGUE\n\
+    push r11                            ;\n\
+	mov [output], rdi                   ; Move character to be printed into output\n\
+	sys_write 1, output, 1              ; Write output to terminal\n\
+    pop r11                             ;\n\
+	mov rsp, rbp                        ; EPILOGUE\n\
+	pop rbp                             ;\n\
+	ret                                 ;\n\n");
 }
 
 void IR_create_print_string(void) {
-    linked_list_append(CG_generated_code, \
+    linked_list_append(CG_generated_code,
 "_print_string:\n\
-	push rbp\n\
-	mov rbp, rsp\n\
-	push r8\n\
-    push r9\n\
-    push r10\n\
-    push r11\n\
-	xor rcx, rcx\n\
-	mov rcx, qword[rbp+16]				; Access provided argument on the stack\n\
-	mov r8, rdi\n\
-    dec rcx \n\
-	sys_write 1, r8, rcx\n\
-	mov r8, qword[newline]\n\
-	mov [output], r8\n\
-	sys_write 1, output, 1\n\
-	pop r11\n\
-    pop r10\n\
-    pop r9\n\
-	pop r8\n\
-	mov rsp, rbp\n\
-	pop rbp\n\
-	ret\n\n");
+	push rbp                            ;\n\
+	mov rbp, rsp                        ; PROLOGUE\n\                     
+    push r11                            ;\n\
+	xor rcx, rcx                        ; Clear rcx\n\
+	mov rcx, qword[rbp+16]				; Move length of string to be printed into rcx\n\
+	mov r11, rdi                        ; Move address of string to be printed into r11\n\
+    dec rcx                             ; Decrement rcx to get rid of the null character\n\
+	sys_write 1, r11, rcx               ; Write to input string terminal\n\
+	mov r11, qword[newline]             ; Move a newline into r11\n\
+	mov [output], r11\n                 ; Put newline in output\n\
+	sys_write 1, output, 1              ; Print newline\n\
+	pop r11                             ;\n\
+	mov rsp, rbp                        ; EPILOGUE\n\
+	pop rbp                             ;\n\
+	ret                                 ;\n\n");
 }
 
 void IR_create_print_int(void) {
@@ -238,8 +224,8 @@ _end_alloc:\n\
 }
 
 void IR_create_init_array(void) {
-    linked_list_append(CG_generated_code,\
-"; This function initializes and array.\n\
+    linked_list_append(CG_generated_code,
+                       "; This function initializes and array.\n\
 ; RDI: The address of the array to initialize\n\
 ; RSI: The address of the data segment array holding the values\n\
 _initialize_array:\n\
@@ -274,11 +260,11 @@ _values:\n\
 	mov r10, qword[rsi]				; Load a value from the data segment\n\
 	mov qword[r8], r10				; Put loaded value onto the heap\n\
 	;mov r11, qword[rdi]			; Get the element size of the array (everything is quadwords)\n\
-	add r8, 8\n\
-	add rsi, 8\n\
-	add rbx, 1\n\
-	cmp rbx, r9\n\
-	jne _values\n\
+	add r8, 8                       ; Increment r8 to point at the next heap address\n\
+	add rsi, 8                      ; Increment rsi to get the address of the next element to be loaded\n\                   
+	add rbx, 1                      ; Increment counter\n\
+	cmp rbx, r9                     ; Compare counter to array length\n\
+	jne _values                     ; Keep loading values while array length is not reached\n\
 _end_init:\n\
     pop rbx                         ;\n\
 	pop r11							;\n\
