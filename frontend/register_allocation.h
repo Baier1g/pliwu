@@ -29,7 +29,7 @@ struct RA_node {
 
 // Constant for max registers available during register allocation
 #define MAX_REG 9
-#define TOTAL_REG 14
+#define TOTAL_REG 15
 
 enum reg_color {
     R15 = 1,

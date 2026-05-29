@@ -1,0 +1,27 @@
+func main() {
+    print(regs());
+}
+
+func regs() -> int {
+    int count = 0;
+    int result = 0;
+    int a = 1;
+    int b = 1;
+    int c = 1;
+    int d = 1;
+    int e = 1;
+    int f = 1;
+    int r = 0;
+    while(count < 100000000000) {
+        r = 0;
+        r = r+a;
+        r = r+b;
+        r = r+c;
+        r = r+d;
+        r = r+e;
+        r = r+f;
+        result = result + r;
+        count = count + 1;
+    }
+    return result;
+}

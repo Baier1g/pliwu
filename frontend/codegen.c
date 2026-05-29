@@ -127,7 +127,7 @@ void generate_code(linked_list *ll, AST_node *node) {
     generate_code_helper(node);
     // finish shit ig
     linked_list_append(generated_code, \
-    "\tmov rsp, rbp\n\tpop rbp\n\tmov rax, 1\n\tcall main0\n\tint 0x80\n\n");
+    "\tmov rsp, rbp\n\tcall main0\n\tmov rax, 1\n\tint 0x80\n\n");
     for (linked_list_node *lln = functions->head; lln != NULL; lln = lln->next) {
         linked_list_append(generated_code, (char*) lln->data);
         //printf("%s", (char *) lln->data);

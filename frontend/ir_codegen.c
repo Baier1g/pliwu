@@ -123,7 +123,7 @@ void IR_create_print_string(void) {
     linked_list_append(CG_generated_code,
 "_print_string:\n\
 	push rbp                            ;\n\
-	mov rbp, rsp                        ; PROLOGUE\n\                     
+	mov rbp, rsp                        ; PROLOGUE\n\
     push r11                            ;\n\
 	xor rcx, rcx                        ; Clear rcx\n\
 	mov rcx, qword[rbp+16]				; Move length of string to be printed into rcx\n\
@@ -261,7 +261,7 @@ _values:\n\
 	mov qword[r8], r10				; Put loaded value onto the heap\n\
 	;mov r11, qword[rdi]			; Get the element size of the array (everything is quadwords)\n\
 	add r8, 8                       ; Increment r8 to point at the next heap address\n\
-	add rsi, 8                      ; Increment rsi to get the address of the next element to be loaded\n\                   
+	add rsi, 8                      ; Increment rsi to get the address of the next element to be loaded\n\
 	add rbx, 1                      ; Increment counter\n\
 	cmp rbx, r9                     ; Compare counter to array length\n\
 	jne _values                     ; Keep loading values while array length is not reached\n\

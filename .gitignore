@@ -10,3 +10,4 @@ lex.yy.c
 frontend/.gdb_history
 frontend/y.tab.h
 frontend/grammar.output
+frontend/oldout

@@ -50,119 +50,135 @@ global _start
 _start:
 	mov rbp, rsp
 	mov rsp, rbp
-	pop rbp
-	mov rax, 1
 	call main0
+	mov rax, 1
 	int 0x80
 
-fibonacci0:
+main0:
 	push rbp					; Save the old base pointer
 	mov rbp, rsp				; Set up base pointer for new stack frame
-	mov rax, 1
-	push rax
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	pop rbx
-	cmp rax, rbx
-	jg false0
-	mov rax, 1
-	jmp end_rel0
-false0:
-	mov rax, 0
-end_rel0:
-	jg end_if0
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	jmp epilogue0
-	jmp end_if0
-end_if0:
-	mov rax, 2
-	push rax
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	pop rbx
-	sub rax, rbx
-	push rax
 	lea rax, [rbp+16]			; Load the address containing the address of the static link for link traversal
 	mov rax, qword[rax]			; Dereference rax to get the address of the static link
 	push rax					; Pushing static link to stack
-	call fibonacci0				; Calling function
-	add rsp, 16					; Reset stack pointer after call, getting rid of function arguments
-	push rax
-	mov rax, 1
-	push rax
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	pop rbx
-	sub rax, rbx
-	push rax
-	lea rax, [rbp+16]			; Load the address containing the address of the static link for link traversal
-	mov rax, qword[rax]			; Dereference rax to get the address of the static link
-	push rax					; Pushing static link to stack
-	call fibonacci0				; Calling function
-	add rsp, 16					; Reset stack pointer after call, getting rid of function arguments
-	pop rbx
-	add rax, rbx
+	call regs0				; Calling function
+	add rsp, 8					; Reset stack pointer after call, getting rid of function arguments
+	mov rdi, rax				; Move argument to be printed from rax to rdi
+	push rax					; Save value to be printed to the stack
+	call print_int				; Call the print function
+	pop rax						; Restore the printed value
 	jmp epilogue0
 epilogue0:
 	mov rsp, rbp				; Restore the old stack pointer before exit
 	pop rbp						; Restore the base pointer of the previous stack
 	ret
 
-main0:
-	push rbp					; Save the old base pointer
-	mov rbp, rsp				; Set up base pointer for new stack frame
-	mov rax, 10
-	push rax
-	lea rax, [rbp+16]			; Load the address containing the address of the static link for link traversal
-	mov rax, qword[rax]			; Dereference rax to get the address of the static link
-	push rax					; Pushing static link to stack
-	call fib_util0				; Calling function
-	add rsp, 16					; Reset stack pointer after call, getting rid of function arguments
-	jmp epilogue1
-epilogue1:
-	mov rsp, rbp				; Restore the old stack pointer before exit
-	pop rbp						; Restore the base pointer of the previous stack
-	ret
-
-fib_util0:
+regs0:
 	push rbp					; Save the old base pointer
 	mov rbp, rsp				; Set up base pointer for new stack frame
 	mov rax, 0
 	push rax
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
+	mov rax, 0
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 1
+	push rax
+	mov rax, 0
+	push rax
+while0:
+	mov rax, 1215752192
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-8]		; Load the value of a variable into rax
 	pop rbx
 	cmp rax, rbx
-	jne false1
+	jge false0
 	mov rax, 1
-	jmp end_rel1
-false1:
+	jmp end_rel0
+false0:
 	mov rax, 0
-end_rel1:
-	jne end_if2
-	jmp epilogue2
-	jmp end_if2
-end_if2:
+end_rel0:
+	jge end_while0
+	mov rax, 0
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-24]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-32]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-40]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-48]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-56]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-64]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-72], rax
+	lea rax, [rbp]
+	mov rax, qword[rax-72]		; Load the value of a variable into rax
+	push rax
+	lea rax, [rbp]
+	mov rax, qword[rax-16]		; Load the value of a variable into rax
+	pop rbx
+	add rax, rbx
+	mov qword[rbp-16], rax
 	mov rax, 1
 	push rax
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
+	lea rax, [rbp]
+	mov rax, qword[rax-8]		; Load the value of a variable into rax
 	pop rbx
-	sub rax, rbx
-	push rax
-	lea rax, [rbp+16]			; Load the address containing the address of the static link for link traversal
-	mov rax, qword[rax]			; Dereference rax to get the address of the static link
-	push rax					; Pushing static link to stack
-	call fib_util0				; Calling function
-	add rsp, 16					; Reset stack pointer after call, getting rid of function arguments
-	mov rax, qword[rbp+24]		; Load function argument from above base pointer
-	push rax
-	lea rax, [rbp+16]			; Load the address containing the address of the static link for link traversal
-	mov rax, qword[rax]			; Dereference rax to get the address of the static link
-	push rax					; Pushing static link to stack
-	call fibonacci0				; Calling function
-	add rsp, 16					; Reset stack pointer after call, getting rid of function arguments
-	mov rdi, rax				; Move argument to be printed from rax to rdi
-	push rax					; Save value to be printed to the stack
-	call print_int				; Call the print function
-	pop rax						; Restore the printed value
-	jmp epilogue2
-epilogue2:
+	add rax, rbx
+	mov qword[rbp-8], rax
+
+	jmp while0
+end_while0:
+	lea rax, [rbp]
+	mov rax, qword[rax-16]		; Load the value of a variable into rax
+	jmp epilogue1
+epilogue1:
 	mov rsp, rbp				; Restore the old stack pointer before exit
 	pop rbp						; Restore the base pointer of the previous stack
 	ret

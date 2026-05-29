@@ -41,7 +41,7 @@ old.%:
 	make flexbison		
 	$(CC) $(WFLAGS) -o $(OUT) frontend_old.c $(BISON) $(UTILS) $(SEMANTIC) codegen.c
 	./grammar.out tests/$*.oc
-	nasm -f elf64 gen_asm_old.asm -o out.o && ld -m elf_x86_64 out.o -o out
+	nasm -f elf64 gen_asm_old.asm -o out.o && ld -m elf_x86_64 out.o -o oldout
 
 
 nasm:
@@ -65,4 +65,4 @@ flexbison:
 
 .PHONY: clean
 clean:
-	rm -f out *.o *.out *.tab.c y.output grammar.out lex.yy.c gen_asm.asm
+	rm -f out oldout *.o *.out *.tab.c y.output grammar.out lex.yy.c gen_asm.asm gen_asm_old.asm
