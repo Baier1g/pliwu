@@ -36,6 +36,14 @@ check.%:
 	@nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out	
 	@./out | diff -q - $(folder)$*.true || true
 
+
+old.%:
+	make flexbison		
+	$(CC) $(WFLAGS) -o $(OUT) frontend_old.c $(BISON) $(UTILS) $(SEMANTIC) codegen.c
+	./grammar.out tests/$*.oc
+	nasm -f elf64 gen_asm_old.asm -o out.o && ld -m elf_x86_64 out.o -o out
+
+
 nasm:
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 	./out
