@@ -1,0 +1,4 @@
+Bison read file with 3 lines and 29 characters
+scope checking: 
+scope_error: Undefined identifier
+scope_error: Undefined identifier

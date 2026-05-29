@@ -18,16 +18,18 @@ all: flexbison
 %: #can not have flexbison as dependency, as then clean doesn't work for some reason.
 	make flexbison		
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
-	./grammar.out tests/$*.oc
-	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
+	bash run.sh $*
 
-#test all
 tester:
 	@make flexbison 					> /dev/null 2>&1
 	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
 	@bash tester.sh
+
+testerFail:
+	@make flexbison 					> /dev/null 2>&1
+	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
+	@bash testerFail.sh
 	
-#test one
 folder = tests/
 check.%:
 	@make flexbison 														> /dev/null 2>&1
