@@ -52,7 +52,7 @@ data_type recurse_type(AST_node *node) {
             // set parameter types
             // recurse block
             if (node->func_def.parameters->size > MAX_PARAMETERS){
-                to_error("function definition has too many parameters", node);
+                type_to_error("function definition has too many parameters", node);
                 return 0;
             }
 
