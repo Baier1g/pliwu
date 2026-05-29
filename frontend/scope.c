@@ -1,12 +1,10 @@
 #include "scope.h"
 #include "symbol_table.h"
 
-#define MAX_ARGUMENTS 64
-
 typedef struct call_info call_info;
 
 linked_list *scope_errors;
-symbol_table *current_scope; // string name -> ast_node
+symbol_table *current_scope; // string name -> var_info
 linked_list *calls;          // list->data = ast_node
 short is_in_function = 0;
 short nesting_depth = 0;
@@ -64,19 +62,8 @@ short recurse_scope(AST_node *node) {
             nesting_depth--;
             break;
         case A_FUNC_DEF:
-            // [x] check if scope is global scope
-            // [x] check param maxlength
             // [x] check name
             // [x] name -> symboltable
-            /*if (current_scope != (current_scope->global)){
-                to_error("function definition not in global scope", node);
-                return;
-            }*/
-            if (node->func_def.parameters->size > MAX_ARGUMENTS){
-                to_error("funciton definition has too many parameters", node);
-                return 0;
-            }
-
             v = create_var_info(nesting_depth);
             v->kind = ID_FUNCTION;
             v->num_params = node->func_def.parameters->size;
@@ -104,7 +91,8 @@ short recurse_scope(AST_node *node) {
                 recurse_scope(lln->data);
             }
             l = recurse_scope(node->func_def.function_block);
-            if (node->func_def.return_type == TYPE_VOID) {
+            if (node->func_def.return_type == TYPE_VOID && !l) {
+                //Ensure epilogue
                 linked_list_append(node->func_def.function_block->block.stmt_list, create_unary_node(0, 0, A_RETURN_STMT, NULL));
             } else {
                 if (!l) {

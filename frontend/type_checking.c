@@ -1,5 +1,7 @@
 #include "type_checking.h"
 
+#define MAX_PARAMETERS 64
+
 symbol_table *type_scope;
 linked_list *type_errors;
 data_type current_return_type = TYPE_VOID;
@@ -49,6 +51,10 @@ data_type recurse_type(AST_node *node) {
             // increment scopes
             // set parameter types
             // recurse block
+            if (node->func_def.parameters->size > MAX_PARAMETERS){
+                to_error("function definition has too many parameters", node);
+                return 0;
+            }
 
             name = node->func_def.identifier->primary_expr.identifier_name;
             d_type = node->func_def.return_type;
@@ -60,7 +66,7 @@ data_type recurse_type(AST_node *node) {
             current_return_type = d_type;
             outer_table = type_scope;
             type_scope = node->table;
-
+            
             //set param types
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
                 recurse_type(lln->data);
