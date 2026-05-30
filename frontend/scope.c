@@ -1,5 +1,6 @@
 #include "scope.h"
 #include "symbol_table.h"
+#include "oc_errors.h"
 
 typedef struct call_info call_info;
 
@@ -27,7 +28,7 @@ call_info *create_call_info(AST_node *node, symbol_table *table) {
 
 void to_error(char *error_msg, AST_node *n) {
     //find line #, find startchar with helper
-    linked_list_append(scope_errors, error_msg);
+    linked_list_append(scope_errors, pack_error(n, error_msg));
 }
 
 void recurse_scope_array(linked_list *values, int depth, int current_depth) {

@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "ast.h"
 #include "y.tab.h"
+#include "oc_errors.h"
 #include "scope.h"
 #include "type_checking.h"
 #include "codegen.h"
@@ -36,16 +37,12 @@ int main(int argc, char* argv[]) {
     
     printf("scope checking: \n");
     if (scopecheck(prog, errors)) {
-        for (linked_list_node *lln = errors->head; lln != NULL; lln = lln->next) {
-            printf("scope_error: %s\n", (char *) lln->data);
-        }
+        print_errors(errors, "scope");
         exit(-1);
     }
     printf("type checking: \n");
     if (typecheck(prog, errors)){
-        for (linked_list_node *lln = errors->head; lln != NULL; lln = lln->next) {
-            printf("type_error: %s\n", (char *) lln->data);
-        }
+        print_errors(errors, "type");
         exit(-1);
     }
 

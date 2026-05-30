@@ -1,4 +1,5 @@
 #include "type_checking.h"
+#include "oc_errors.h"
 
 #define MAX_PARAMETERS 64
 
@@ -9,7 +10,7 @@ data_type current_return_type = TYPE_VOID;
 data_type recurse_type(AST_node *);
 
 void type_to_error(char *error_msg, AST_node *node) {
-    linked_list_append(type_errors, error_msg);
+    linked_list_append(type_errors, pack_error(node, error_msg));
 }
 
 void recurse_type_array(linked_list *values, data_type type, int depth, int current_depth, AST_node* node) {

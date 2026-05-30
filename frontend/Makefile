@@ -4,7 +4,7 @@ WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion
 MEMFLAG = -fsanitize=address,leak,undefined
 
 BISON = lex.yy.c grammar.tab.c
-UTILS = linked_list.c hashmap.c symbol_table.c
+UTILS = linked_list.c hashmap.c symbol_table.c oc_errors.c
 SEMANTIC = ast.c scope.c type_checking.c
 IR = codegen.c ir.c optimiser.c register_allocation.c ir_codegen.c
 
@@ -12,7 +12,7 @@ FILES = frontend.c $(BISON) $(UTILS) $(SEMANTIC) $(IR)
 
 all: flexbison
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
-	./grammar.out tests/test2.txt
+	./grammar.out tests/test2.oc
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 
 %: #can not have flexbison as dependency, as then clean doesn't work for some reason.
@@ -30,19 +30,20 @@ testerFail:
 	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
 	@bash testerFail.sh
 	
-folder = tests/
+folder = tests
 check.%:
 	@make flexbison 														> /dev/null 2>&1
 	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)										> /dev/null 2>&1
-	@./grammar.out $(folder)$*.oc											> /dev/null 2>&1
+	@./grammar.out $(folder)/$*.oc											> /dev/null 2>&1
 	@nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out	
 	@./out | diff -q - $(folder)$*.true || true
 
 
+old_folder = regAllocComparison
 old.%:
 	make flexbison		
 	$(CC) $(WFLAGS) -o $(OUT) frontend_old.c $(BISON) $(UTILS) $(SEMANTIC) codegen.c
-	./grammar.out tests/$*.oc
+	./grammar.out $(old_folder)/$*.oc
 	nasm -f elf64 gen_asm_old.asm -o out.o && ld -m elf_x86_64 out.o -o oldout
 
 
