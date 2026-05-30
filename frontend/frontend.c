@@ -14,49 +14,56 @@
 extern AST_node *run_bison(const char*, int*);
 
 int main(int argc, char* argv[]) {
-    FILE *fp;
+    short returnValue           = 0;
+    unsigned int bison_errors   = 0;
     AST_node *prog = create_unary_node(0, 0, A_PROGRAM, linked_list_new());
-    unsigned int bison_errors = 0;
-    linked_list *errors = linked_list_new();
+    linked_list *errors     = linked_list_new();
+    linked_list *gen_asm    = linked_list_new();
+    frame *root     = NULL;
+    RA_graph *graph = NULL;
+    FILE *fp        = NULL;
     
     for (int i = 1; i < argc; i++) {
         char *filename = argv[i];
         AST_node *module = run_bison(filename, &bison_errors);
         if (!module) {
-            printf("Bison failed :(");
-            return -1;
+            printf("Bison failed :(\n");
+            returnValue = -1;
+            goto ret;
         }
         if (bison_errors) {
             printf("%d syntax errors in progam, terminating\n", bison_errors);
-            exit(-1);
+            returnValue = -1;
+            goto ret;
         }
         linked_list_append(prog->program.modules, module);
     }
-    //AST_printer(prog);
-
     
+    //AST_printer(prog);  
     printf("scope checking: \n");
     if (scopecheck(prog, errors)) {
         print_errors(errors, "scope");
-        exit(-1);
+        returnValue = -1;
+        goto ret;
     }
     printf("type checking: \n");
     if (typecheck(prog, errors)){
         print_errors(errors, "type");
-        exit(-1);
+        returnValue = -1;
+        goto ret;
     }
 
     //AST_optimiser_constant_folding(prog);
     //AST_printer(prog);
+
     int *count = calloc(1, sizeof(int));
     printf("Converting to IR:\n");
-    frame *root = create_IR_tree(count, prog);
+    root = create_IR_tree(count, prog);
     //print_IR_tree(root);
     printf("Register allocation\n");
-    RA_graph *graph = register_allocation(count[0], root);
+    graph = register_allocation(count[0], root);
     //print_IR_tree(root);
     //print_graph(graph);
-    linked_list *gen_asm = linked_list_new();
     printf("generating code\n");
     codegen(gen_asm, root, graph);
 
@@ -68,11 +75,18 @@ int main(int argc, char* argv[]) {
         //printf("%s", tmp);
         fwrite(tmp, strlen(tmp), 1, fp);
     }
-    linked_list_delete(gen_asm);
-    fclose(fp);
+    ret:
+    if (fp) {
+        fclose(fp);
+    }    
     linked_list_delete(errors);
-    kill_graph(graph);
+    linked_list_delete(gen_asm);
     kill_tree(prog);
-    printf("All done!\n");
-    return 0;
+    if (graph) {
+        kill_graph(graph);
+    }
+    if (!returnValue) {
+        printf("All done!\n");
+    }
+    return returnValue;
 }
