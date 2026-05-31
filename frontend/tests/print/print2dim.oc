@@ -1,0 +1,4 @@
+func main(){
+    char cs[][] = {{"T"},{"h"},{"i"},{"s"}};
+    print(cs[1]);
+}
