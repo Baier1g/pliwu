@@ -1,0 +1,6 @@
+func main(){
+    char c = '\n';
+    print(c);
+    string s = "lolol\n";
+    print(s);
+}

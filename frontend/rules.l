@@ -25,6 +25,7 @@
     const int  digraph_tokens[NUM_DIGRAPHS] = {T_ARROW, T_AND, T_OR, T_LESS_EQ, T_GREATER_EQ, T_EQUALS, T_NEQUALS};
 
     void increment_counter(int);
+    void increment_line();
     int find_keyword(char* keywrd);
     int find_type(char* type);
     int find_digraph(char* digraph);
@@ -51,9 +52,11 @@ BOOL_VALUE          true|false
 TYPE                int|char|bool|void|string
 SINGLE_OPERATOR     (\+|\-|\*|\/|\!|\<|\>)
 OPERATOR            (\-\>|==|\!=|\|\||\&\&|\<=|\>=)
-CHARACTER           (.|"\n")
+CHARACTER           (\\n|\\t|\n|.)
+CHAR                \'{CHARACTER}\'
 WHITESPACES         [\t\r ]+
 ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
+REST                \n|.
 
 
 %s STR COMMENT
@@ -71,6 +74,19 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
     BEGIN(INITIAL);
 }
 
+<INITIAL>{CHAR} {
+    if (yyleng == 2) {
+        if (yytext[1] == 'n') {yylval.cval = '\n';}
+        if (yytext[1] == 't') {yylval.cval = '\t';}
+    } else {
+        yylval.cval = yytext[0];
+    }
+    if (yytext[0] == '\n') {
+        increment_line();
+    }
+    return T_CHAR;
+}
+
 <INITIAL>\" {;
     increment_counter(yyleng);
     BEGIN(STR);
@@ -80,11 +96,6 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 
 <STR>\" {
     increment_counter(yyleng);
-    if (stringptr == 1) {
-        yylval.cval = stringbuffer[0];
-        BEGIN(INITIAL);
-        return T_CHAR;
-    }
     yylval.string.sval = (char *) calloc(stringptr + 1, sizeof(char));
     yylval.string.length = stringptr + 1;
     strncpy(yylval.string.sval, stringbuffer, yylval.string.length);
@@ -108,7 +119,16 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
         printf("String too long on line %d \n", line_number);
         exit(-1);
     }
-    stringbuffer[stringptr++] = yytext[0];
+
+    if (yyleng == 2) {
+        if (yytext[1] == 'n') {stringbuffer[stringptr++] = '\n';}
+        if (yytext[1] == 't') {stringbuffer[stringptr++] = '\t';}
+    } else {
+        stringbuffer[stringptr++] = yytext[0];
+    }
+    if (yytext[0] == '\n') {
+        increment_line();
+    }
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
@@ -197,7 +217,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
         printf("Identifier name too long (%d characters) on line %d\n", yyleng, line_number);
         exit(-1);
     }
-    //printf("%s \tidentifier, length: %d\n", yytext, yyleng);
+    //printf("=%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
     yylval.string.sval = calloc(yyleng + 1, sizeof(char));
     yylval.string.length = yyleng;
@@ -233,11 +253,7 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 }
 
 <INITIAL,COMMENT>"\n"    {
-    line_number++;
-    if (line_number == 0) {
-        //overflow case
-        puts("flex_error: file has too many lines"); 
-        exit(-1);}
+    increment_line();
     increment_counter(yyleng);
 }
 
@@ -252,6 +268,11 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 }
 
 <INITIAL>{ILLEGAL_IDENTIFIER} {
+    increment_counter(yyleng);
+    return YYUNDEF;
+}
+
+<INITIAL>{REST} {
     increment_counter(yyleng);
     return YYUNDEF;
 }
@@ -274,6 +295,15 @@ void increment_counter(int len) {
     } else {
         start_current_character = current_character;
         current_character += len;
+    }
+}
+
+void increment_line(){
+    line_number++;
+    if (line_number == 0) {
+        //overflow case
+        puts("flex_error: file has too many lines"); 
+        exit(-1);
     }
 }
 

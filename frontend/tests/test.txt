@@ -26,7 +26,7 @@ if (a == b) {
 }
 
 bool gg = false;
-char charac = "f";
+char charac = 'f';
 
 a = 10;
 b = 30;
