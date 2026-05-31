@@ -1,0 +1,41 @@
+module: ε | module declaration
+declaration: varDeclaration | Stmt | funcDefinition
+
+varDeclaration: type identifier ';' | type identifier declarator ';' | type identifier '=' conditionalExpr ';' | type identifier initDim '=' arrayinit ';'
+initDim: '[' ']' | initDim '[' ']'
+declarator: '[' Expr ']' | declarator '[' Expr ']'
+arrayinit: '{' initList '}'
+initList: ε | initValue | initList ',' initValue
+initValue: primary | arrayinit
+
+type: T_INT_TYPE | T_CHAR_TYPE | T_BOOL_TYPE | T_VOID_TYPE | T_STRING_TYPE
+funcDefinition: T_FUNC function
+function: identifier '(' parameters ')' returnType block
+returnType: ε | '->' type
+parameters: ε | type identifier | type initDim identifier | parameters ',' type identifier
+args: ε | assignExpr | args ',' assignExpr
+
+Stmt: ifStmt | loopStmt | returnStmt | printStmt | ExprStmt
+ifStmt: T_IF '(' Expr ')' block else
+loopStmt: whileLoop
+whileLoop: T_WHILE '(' assignExpr ')' block
+else: ε | T_ELSE block
+returnStmt: T_RETURN Expr ';' | T_RETURN ';'
+printStmt: T_PRINT '(' Expr ')' ';'
+block: '{' blockBody '}'
+blockBody: ε | blockBody declaration
+ExprStmt: Expr ';'
+
+Expr: assignExpr
+assignExpr: conditionalExpr | identifier '=' Expr | identifier declarator '=' Expr
+conditionalExpr: logicalAND
+logicalAND: logicalOR | logicalAND '&&' logicalOR
+logicalOR: relExpr | logicalOR '||' relExpr
+relExpr: ariExpr | relExpr '=' ariExpr | relExpr '!=' ariExpr | relExpr '<' ariExpr | relExpr '>' ariExpr | relExpr '<=' ariExpr | relExpr '>=' ariExpr
+ariExpr: mulExpr | ariExpr '+' mulExpr | ariExpr '-' mulExpr
+mulExpr: castExpr | mulExpr '*' castExpr | mulExpr '/' castExpr
+castExpr: unaryExpr
+unaryExpr: postfixExpr | '-' postfixExpr | '!' postfixExpr
+postfixExpr: primary | postfixExpr '(' args ')' | identifier declarator
+identifier: T_IDENTIFIER
+primary: T_INT | T_CHAR | T_BOOL | T_STRING | '(' Expr ')' | identifier
