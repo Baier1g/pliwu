@@ -38,7 +38,6 @@ int main(int argc, char* argv[]) {
         }
         linked_list_append(prog->program.modules, module);
     }
-    
     //AST_printer(prog);  
     printf("scope checking: \n");
     if (scopecheck(prog, errors)) {
@@ -53,8 +52,8 @@ int main(int argc, char* argv[]) {
         goto ret;
     }
 
-    //AST_optimiser_constant_folding(prog);
-    //AST_printer(prog);
+    AST_optimiser_constant_folding(prog);
+    AST_printer(prog);
 
     int *count = calloc(1, sizeof(int));
     printf("Converting to IR:\n");

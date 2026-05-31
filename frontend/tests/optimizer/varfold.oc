@@ -1,0 +1,13 @@
+func main() {
+    bool a = true;
+    bool b = true;
+    if (a && b) {
+        print(1);
+    }
+    if (false && b) {
+        print(1);
+    }
+    if (true && true) {
+        print(1);
+    }
+}
