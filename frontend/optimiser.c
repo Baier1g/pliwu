@@ -106,18 +106,30 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
 
                 AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
                 AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
-                if (!n1 || !n2) {
+                if (!n1) {
                     return NULL;
                 }
 
                 int arg1 = n1->primary_expr.bool_value;
-                int arg2 = n2->primary_expr.bool_value;
+                int arg2 = n2 ? n2->primary_expr.bool_value : NULL;
                 switch (node->binary_expr.op) {
                     case A_AND:
-                        temp = arg1 && arg2;
+                        if (!arg1) {
+                            temp = arg1;}
+                        else if (arg2) {
+                            temp = arg1 && arg2;
+                        } else {
+                            return NULL;
+                        }
                         break;
                     case A_OR:
-                        temp = arg1 || arg2;
+                        if (arg1) {
+                            temp = arg1;
+                        } else if (arg2) {
+                            temp = arg1 || arg2;
+                        } else {
+                            return NULL;
+                        }
                         break;
                     default:
                         printf("optimiser.c::AST_optimiser_constant_folding: Wrong binary_op\n");
