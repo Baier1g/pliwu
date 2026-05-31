@@ -71,23 +71,25 @@ void create_print_char_array(void) {
 	xor rcx, rcx                        ; Clear rcx\n\
 	mov byte[r10], 0xa                  ; Move a newline onto the stack\n\
 	dec r10                             ; Decrement print pointer\n\
-	mov r9, qword[rbp-40]				; Move the basse address of the array to be printed into r9\n\
+	mov r9, qword[rbp-40]				; Move the base address of the array to be printed into r9\n\
 	lea rax, [r9 + 32]                  ; Load the address of the first element of the array into rax\n\
 	mov r8, r11                         ; Move the length of the arrayu into r8\n\
 	imul r8, 8                          ; Multiply length by 8 to get amount of bytes used for elements (since everything is quadwords)\n\
 	add rax, r8                         ; Add total amount of bytes used in the array to rax, making rax point at the last element of the array\n\
-	xor r9, r9                          ; Clear r9\n\
+	xor r8, r8                          ; Clear r8\n\
 _char_L1:\n\
-	mov r9b, byte[rax]                  ; Move a char element into r9\n\
-	mov [r10], r9b                      ; Put char element on the stack\n\
-	;cmp r9b, 0                           This is to avoid printing null characters, might be useful in the future\n\
-	;je _no_increment\n\
+	mov r8b, byte[rax]                  ; Move a char element into r8\n\
+	cmp r8b, 0                          ; This is to avoid printing null characters, might be useful in the future\n\
+	jne _increment\n\
+    sub rax, 8\n\
+    jmp _char_L1\n\
+_increment:\n\
+	mov [r10], r8b                      ; Put char element on the stack\n\
 	inc rcx                             ; Increment counter\n\
-_no_increment:\n\
 	dec r10                             ; Move print pointer to next empty space\n\
 	sub rax, 8                          ; Subtract 8 from rax to get the next element of the array\n\
-	cmp rcx, r11                        ; Check if the entire array has been put on the stack\n\
-	jle _char_L1                        ; Keep putting elements on the stack if more still exist\n\
+	cmp rax, r9                         ; Check if the entire array has been put on the stack\n\
+	jge _char_L1                        ; Keep putting elements on the stack if more still exist\n\
 	lea rsi, [r10+1]                    ; Load address of last element added to the stack to rsi\n\
 	cld                                 ; Clear direction flag to ensure movsb processes the stack in the correct order\n\
 _char__L1:\n\
@@ -99,7 +101,7 @@ _char__L1:\n\
 	pop r11                             ;\n\
 	pop r10                             ;\n\
 	pop r9                              ;\n\
-	pop r8                              ; EPILOGUE\
+	pop r8                              ; EPILOGUE\n\
 	mov rsp, rbp                        ;\n\
 	pop rbp                             ;\n\
 	ret                                 ;\n\n");
@@ -139,7 +141,30 @@ void IR_create_print_string(void) {
 	ret                                 ;\n\n");
 }
 
-void IR_create_print_int(void) {
+void IR_create_print_bool(void) {
+    linked_list_append(CG_generated_code,
+"_print_bool:\n\
+	push rbp\n\
+	mov rbp, rsp\n\
+	push r11\n\
+	cmp rdi, 0\n\
+	je _print_false\n\
+_print_true:\n\
+	mov r11, qword[_true]\n\
+	sys_write 1, _true_elem, r11\n\
+	jmp _end_print_bool\n\
+_print_false:\n\
+	mov r11, qword[_false]\n\
+	sys_write 1, _false_elem, r11\n\
+_end_print_bool:\n\
+	pop r11\n\
+	mov rsp, rbp\n\
+	pop rbp\n\
+	ret\n\n");
+}
+
+void IR_create_print_int(void)
+{
     // Print prelude
     linked_list_append(CG_generated_code, \
     "print_int:\n\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tpush r9\n\tpush r10\n\tpush r11\n\tpush rdi\n\tmov rdi, output\n\tlea r10, [rsp-1]\n\txor rcx, rcx\n");
@@ -701,7 +726,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 //printf("yurr\n");
                 name = (char *) calloc(128, sizeof(char));
                 if (operation->arg2 && operation->arg2->constant == TYPE_CHAR) {
-                    if (operation->arg3->constant == 1) {
+                    if (operation->arg3->constant > 0) {
                         sprintf(name, "\tcall _print_char_array\t\t\t\t; Call _print_char_array");
                     } else {
                         sprintf(name, "\tcall print_char\t\t\t\t; Call print_char");
@@ -711,6 +736,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     linked_list_append(CG_generated_code, name);
                     name = (char *) calloc(128, sizeof(char));
                     sprintf(name, "\tadd %s, 8\n\tmov rdi, %s\n\tcall _print_string\n\tadd rsp, 8", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
+                } else if (operation->arg2 && operation->arg2->constant == TYPE_BOOL) {
+                    sprintf(name, "\tcall _print_bool\t\t\t\t; Call _print_bool");
                 } else {
                     sprintf(name, "\tcall print_int\t\t\t\t; Call print_int");
                 }
@@ -910,7 +937,7 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
             if (node->array_decl.type == TYPE_INT || node->array_decl.type == TYPE_STRING) {
                 sprintf(buffer, "\t%s dq ", name);
             } else {
-                sprintf(buffer, "\t%s db ", name);
+                sprintf(buffer, "\t%s dq ", name);
             }
             CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             strcat(buffer, "\n");
@@ -952,9 +979,16 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     IR_create_print_macro();
     linked_list_append(data_section, \
                 "section .bss\n\toutput resb 256\n\theap resq 1000000\n\theap_pointer resq 1\n");
-    linked_list_append(data_section, \
-                "section .data\n\ttable db '0123456789'\n\tnewline db 0xa\n");
+    linked_list_append(data_section,
+"section .data\n\
+    table db '0123456789'\n\
+    newline db 0xa\n\
+    _false dq 6\n\
+	_false_elem db \"False\",0xa\n\
+	_true dq 5\n\
+	_true_elem db \"True\",0xa\n");
     IR_create_print_int();
+    IR_create_print_bool();
     create_print_char_array();
     IR_create_print_char();
     IR_create_print_string();
