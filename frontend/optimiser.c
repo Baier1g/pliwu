@@ -109,14 +109,16 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                 if (!n1) {
                     return NULL;
                 }
-
+                int arg2;
                 int arg1 = n1->primary_expr.bool_value;
-                int arg2 = n2 ? n2->primary_expr.bool_value : NULL;
+                if (n2) {
+                    arg2 = n2->primary_expr.bool_value;
+                }
                 switch (node->binary_expr.op) {
                     case A_AND:
                         if (!arg1) {
                             temp = arg1;}
-                        else if (arg2) {
+                        else if (n2) {
                             temp = arg1 && arg2;
                         } else {
                             return NULL;
@@ -125,7 +127,7 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                     case A_OR:
                         if (arg1) {
                             temp = arg1;
-                        } else if (arg2) {
+                        } else if (n2) {
                             temp = arg1 || arg2;
                         } else {
                             return NULL;
