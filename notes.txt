@@ -75,66 +75,10 @@ func function(int a) {
 }
 STATUS: Think I fixed it, not sure
 
-
-a[2][4];
-_alloc:
-    push rbp
-    mov rbp, rsp
-    push r8
-    push r9
-    push r10
-
-    mov rax, qword[heap_pointer]; move base address of memory segment into rax
-    mov qword[rax], rdi         ; move element size onto the heap
-    lea r8, [rax + 8]            ; r15 = address of dimensionality of a
-    mov qword[r8], rsi         ; move dimensionality of a onto the heap
-    mov r9, 16                 ; r14 = offset from base_address of first dim_size
-    mov rbx, 1                  ; accumulator register
-_alloc_loop:
-    mov r10, r9                ; r13 = current offset from base_address
-    mov r10, qword[rbp + r10]   ; r13 = value of dimension size
-    mov qword[rax + r9], r10   ; set dimension size on the heap
-    imul rbx, r10               ; rbx = accumulates total dimension size
-    dec rsi                     ; decrement rsi (dimensionality)
-    add r9, 8                  ; add 8 to the running offset
-    test rsi, rsi               ; test whether dimension sizes have been added
-    jnz _alloc_loop
-    mov qword[rax + r9], rbx   ; move total element size onto the heap
-    add r9, 8
-    mov qword[rax + r9], 1     ; reference count, move 1 on allocation
-    add rbx, 1
-    imul rbx, qword[rax]        ; calculate actual byte size of the array
-    add qword[heap_pointer], rbx
-
-    pop r10
-    pop r9
-    pop r8
-    mov rsp, rbp
-    pop rbp
-    ret
-
-    
-
-a[5][10]
-
-    lea r8, [a + 8]
-    mov r9, qword[r8]
-    add r8, 8
-    cmp r9, 1
-    je _index_done
-_outer_index_loop:
-
-
-_index_done:
-
-
-T1 <- 5
-T2 <- 10
-T3 <- a
-T4 <- 
-
-T5 <- mul T1, T4
-T6 <- add T5, T2
-
-T7 <- a[T6]
-
+FIXES:
+1. Allow and implement string arrays
+2. Fix char printer [EVERYTHING IS QUADWORDS]
+3. Implement bool printer [Works now]
+4. Fix _print_char_array
+5. Implement multidimensional functionality for array printers
+6. Don't print NULL characters in char arrays [FIXED]

@@ -570,17 +570,21 @@ int recurse_IR_tree(AST_node *node) {
                 }
             }
             //printf("%d\n", type);
-            int is_array = 0;
+            int array_dim = 0;
             if (node->print_stmt.expression->kind == A_PRIMARY_EXPR) {
                 if (node->print_stmt.expression->primary_expr.type == TYPE_IDENTIFIER) {
-                    //printf("shalom\n");
                     var_info *variable = symbol_table_get(node->table, node->print_stmt.expression->primary_expr.identifier_name);
                     if (variable->ast_node && variable->ast_node->kind == A_ARRAY_DECL) {
-                        is_array = 1;
+                        AST_node *array_node = variable->ast_node;
+                        if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
+                            array_dim = array_node->array_decl.sizes->size - node->print_stmt.expression->indexing.indices->size;
+                        } else {
+                            array_dim = array_node->array_decl.sizes->size;
+                        }
                     }
                 }
             }
-            op = create_op(IR_PRINT, expr, create_operand(P_CONSTANT, type), create_operand(P_CONSTANT, is_array));
+            op = create_op(IR_PRINT, expr, create_operand(P_CONSTANT, type), create_operand(P_CONSTANT, array_dim));
             op->in_frame = current_frame;
             op->in_seg = current_segment;
             linked_list_append(current_segment->operations, op);
