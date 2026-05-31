@@ -200,7 +200,7 @@ data_type recurse_type(AST_node *node) {
             switch (node->binary_expr.op){
                 case A_EQUALS:
                 case A_NEQUALS:
-                    if (!(d_type == TYPE_BOOL || d_type == TYPE_INT)){
+                    if (!(d_type == TYPE_BOOL || d_type == TYPE_INT || d_type == TYPE_CHAR)){
                         type_to_error("Illegal type for relational expression", node);
                     }
                     break;
