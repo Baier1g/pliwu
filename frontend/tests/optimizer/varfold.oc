@@ -7,7 +7,18 @@ func main() {
     if (false && b) {
         print(1);
     }
+    if (true && false) {
+        print(1);
+    }
     if (true && true) {
         print(1);
     }
 }
+
+/*
+Should fold to 
+    if (a && b)
+    if (false)
+    if (false)
+    if (true)
+*/

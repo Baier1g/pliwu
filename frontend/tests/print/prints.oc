@@ -1,0 +1,25 @@
+func main() {
+    print(1);
+    print("a");
+    print(true);
+    print("hello world!");
+
+    int intarr[] = {1,2,3};
+    char chararr[] = {"a", "b", "c"};
+    bool boolarr[] = {true, false, true};
+    //string stringarr[] = {"this", "was", "a", "triumph!"};
+    print("intarray");
+    print(intarr[0]);
+    print(intarr[2]);
+
+    print("chararray");
+    print(chararr[0]);
+    print(chararr[2]);
+    
+    print("boolarray");
+    print(boolarr[0]);
+    print(boolarr[2]);
+
+    //print(stringarr[0]);
+    //print(stringarr[3]);
+}

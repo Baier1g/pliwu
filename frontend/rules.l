@@ -28,6 +28,8 @@
     int find_keyword(char* keywrd);
     int find_type(char* type);
     int find_digraph(char* digraph);
+
+    void yyerror(char const*);
 %}
 
 COMMENT_START       \/\*
@@ -92,6 +94,8 @@ ILLEGAL_IDENTIFIER  [_0-9]([_a-zA-Z0-9]*)
 }
 
 <STR><<EOF>> {
+    yyerror("non-terminated string");
+    BEGIN(INITIAL);
     return YYerror;
 }
 
