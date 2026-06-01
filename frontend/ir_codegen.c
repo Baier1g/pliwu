@@ -434,23 +434,16 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    printf("recursing segment\n");
+    //printf("recursing segment\n");
     CG_current_segment = seg;
-    printf("here?\n");
+    //printf("here?\n");
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
         linked_list_append(CG_generated_code, ":\n");
     }
-    printf("out\n");
     var_info *info;
     int param_count = 0;
-    if (seg) {
-        printf("seg: %d\n", seg);
-        if (seg->operations) {
-            printf("ops: %d\n", seg->operations->size);
-        }
-    }
-
+    
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
         print_operation(operation);
@@ -765,6 +758,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     i++;
                 }
                 CG_create_static_link(operation);
+                printf("yup\n");
                 sprintf(name, "\tcall %s\t\t\t\t; Call function\n\tadd rsp, 8\t\t\t\t; Yeet the static link\n", operation->arg2->call->name);
                 linked_list_append(CG_generated_code, name);
                 while (i > param_count) {
