@@ -6,6 +6,12 @@ func main () {
         bool i = true;
         print(i);
     }
+
+    if (true) {
+        int i = 40;
+        print(i);
+    }
+
     //i = 20;
     print(i);
 }

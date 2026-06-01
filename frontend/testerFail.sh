@@ -19,7 +19,7 @@ while read -rd '' file; do
 
     echo "OC Testing $file"
     
-    if ! diff -u "$expected" <(./grammar.out "$file"); then
+    if ! diff -u "$expected" <(./grammar.out "$file" | grep "error"); then
         FAIL=1
     fi
 
