@@ -433,7 +433,7 @@ void generate_code_helper(AST_node *node) {
             switch (node->primary_expr.type) {
                 case TYPE_INT:
                     //printf("sprintf result (num_bytes_printed): %d\n", sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value));
-                    sprintf(op, "\tmov rax, %d\n", node->primary_expr.integer_value);
+                    sprintf(op, "\tmov rax, %ld\n", node->primary_expr.integer_value);
                     linked_list_append(generated_code, op);
                     break;
                 case TYPE_CHAR:

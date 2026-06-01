@@ -75,7 +75,7 @@ struct CG_operand {
     CG_operand_mode mode;
     union {
         reg_color reg;
-        int constant;
+        long constant;
         char *label;
         struct {
             reg_color reg;

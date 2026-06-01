@@ -1,15 +1,15 @@
 #include "register_allocation.h"
 
-int temp_c;
+long temp_c;
 RA_graph *glob_graph;
 
-RA_graph *create_graph(int num_nodes) {
+RA_graph *create_graph(long num_nodes) {
     RA_graph *graph = (RA_graph *) malloc(sizeof(RA_graph));
-    graph->num_nodes = num_nodes;
-    graph->adj_matrix = (int **) malloc((num_nodes + 1) * sizeof(int *));
+    graph->num_nodes = (int) num_nodes;
+    graph->adj_matrix = (long **) malloc((num_nodes + 1) * sizeof(long *));
     graph->adj_matrix[0] = NULL;
     for (int i = 1; i <= num_nodes; i++) {
-        graph->adj_matrix[i] = (int *) calloc(num_nodes + 1, sizeof(int));
+        graph->adj_matrix[i] = (long *)calloc(num_nodes + 1, sizeof(long));
         //graph->adj_matrix[i][i] = 1;
     }
     graph->nodes = (RA_node **) malloc(sizeof(RA_node *) * (num_nodes + 1));
@@ -19,7 +19,7 @@ RA_graph *create_graph(int num_nodes) {
     return graph;
 }
 
-RA_node *create_graph_node(int max_connections) {
+RA_node *create_graph_node(long max_connections) {
     RA_node *node = malloc(sizeof(RA_node));
     node->color = 0;
     node->connections = (int *) calloc(max_connections, sizeof(int));
@@ -28,7 +28,7 @@ RA_node *create_graph_node(int max_connections) {
     return node;
 }
 
-void connect_nodes(RA_graph *graph, int temp1, int temp2) {
+void connect_nodes(RA_graph *graph, long temp1, long temp2) {
     //printf("connect_nodes: temp_val T_one: %d, T_two: %d, max temp: %d\n", temp1, temp2, graph->num_nodes);
     //print_adj_matrix(graph);
     RA_node *node1 = graph->nodes[temp1];
@@ -61,7 +61,7 @@ void graph_handle_operation(RA_graph *graph, IR_operation *op) {
             i = (int) n->data;
             linked_list_node *ln = n->next;
             while (ln) {
-                connect_nodes(graph, i, (int) ln->data);
+                connect_nodes(graph, (long) i, (long) ln->data);
                 ln = ln->next;
             }
         }
@@ -120,7 +120,7 @@ void connect_graph(frame *frm) {
     }
 }
 
-RA_graph *remake_graph(RA_graph *graph, int size) {
+RA_graph *remake_graph(RA_graph *graph, long size) {
     RA_graph *new_graph = create_graph(size);
     RA_node **nodes = graph->nodes;
     for (int i = 1; i < graph->num_nodes + 1; i++) {
@@ -160,9 +160,9 @@ void print_adj_matrix(RA_graph *graph) {
         }
         for (int j = 1; j < graph->num_nodes; j++) {
             if (j < 10) {
-                printf(" %d ", graph->adj_matrix[i][j]);
+                printf(" %ld ", graph->adj_matrix[i][j]);
             } else {
-                printf(" %d ", graph->adj_matrix[i][j]);
+                printf(" %ld ", graph->adj_matrix[i][j]);
             }
         }
         printf("\n");
@@ -336,7 +336,7 @@ int RA_select(int *simple, int *potential_spill, int *spill) {
         }
         i++;
     }
-    printf("RA_select finished, spill count is: %d\n", spill_count);
+    //printf("RA_select finished, spill count is: %d\n", spill_count);
     //print_graph(graph);
     //print_adj_matrix(graph);
     return spill_count;
@@ -483,9 +483,6 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
             int temp_num = spilled_nodes[count];
             //printf("count: %d, temp: %d\n", count, temp_num);
             IR_operation *op = (IR_operation *) glob_graph->nodes[temp_num]->definition;
-            if (!op) {
-                printf("shit\n");
-            }
             segment *seg = op->in_seg;
             //printf("WE got here\n");
             name = (char *) calloc(9, sizeof(char));
@@ -535,7 +532,7 @@ RA_graph *register_allocation(int temps, frame *program) {
     temp_c = temps;
     //printf("in reg\n");
     RA_graph *graph = create_graph(temp_c);
-    printf("graph created\n");
+    //printf("graph created\n");
     glob_graph = graph;
     connect_graph(program);
     //print_graph(graph);
@@ -566,8 +563,8 @@ RA_graph *register_allocation(int temps, frame *program) {
     //printf("got outta* there\n");
     //print_graph(graph);
     while (spill) {
-        printf("Spills: %d, runs: %d\n", spill, count);
-        printf("spill node is: %d and temp count is: %d\n", actual_spill[0], temp_c);
+        //printf("Spills: %d, runs: %d\n", spill, count);
+        //printf("spill node is: %d and temp count is: %ld\n", actual_spill[0], temp_c);
         //print_graph(graph);
         //print_IR_tree(program);
         rewrite_program(program, actual_spill, 0);
@@ -595,7 +592,7 @@ RA_graph *register_allocation(int temps, frame *program) {
     }
     //print_graph(graph);
     //print_IR_tree(program);
-    printf("Temps: %d, spills: %d, runs: %d\n", temp_c, spill, count);
+    //printf("Temps: %ld, spills: %d, runs: %d\n", temp_c, spill, count);
     //free(simple_nodes);
     //free(potential_spill);
     //free(actual_spill);

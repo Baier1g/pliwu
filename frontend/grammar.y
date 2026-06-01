@@ -30,7 +30,7 @@
     struct AST_node *nval;
     struct linked_list *llval;
     double fval;
-    int ival;
+    long long int ival;
     char cval;
     struct {
         int length;
@@ -325,7 +325,7 @@ AST_node* run_bison(const char* filename, unsigned int* errors) {
     bison_errors = errors;
 
     yyparse();
-    printf("Bison read file with %u lines and %ld characters\n", line_number, current_character);
+    //printf("Bison read file with %u lines and %ld characters\n", line_number, current_character);
     yyrestart(yyin);
     fclose(yyin);
     return prog;

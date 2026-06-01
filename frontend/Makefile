@@ -1,6 +1,6 @@
 CC = gcc
 OUT = grammar.out
-WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion
+WFLAGS = -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-int-conversion -Wno-incompatible-pointer-types
 MEMFLAG = -fsanitize=address,leak,undefined
 
 BISON = lex.yy.c grammar.tab.c
@@ -16,9 +16,9 @@ all: flexbison
 	nasm -f elf64 gen_asm.asm -o out.o && ld -m elf_x86_64 out.o -o out
 
 %: #can not have flexbison as dependency, as then clean doesn't work for some reason.
-	make flexbison		
-	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
-	bash run.sh $*
+	@make flexbison						> /dev/null
+	@$(CC) $(WFLAGS) -o $(OUT) $(FILES) > /dev/null
+	@bash run.sh $*
 
 # check tests/ folder
 tester:

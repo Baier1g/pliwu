@@ -266,7 +266,7 @@ struct AST_node {
         struct {
             data_type type;
             union {
-                int integer_value;
+                long integer_value;
                 char char_value;
                 short bool_value;
                 char* identifier_name;

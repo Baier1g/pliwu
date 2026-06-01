@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include "ast.h"
-#include "y.tab.h"
+#include "grammar.tab.h"
 #include "oc_errors.h"
 #include "scope.h"
 #include "type_checking.h"
@@ -39,13 +39,13 @@ int main(int argc, char* argv[]) {
         linked_list_append(prog->program.modules, module);
     }
     //AST_printer(prog);  
-    printf("scope checking: \n");
+    //printf("scope checking: \n");
     if (scopecheck(prog, errors)) {
         print_errors(errors, "scope");
         returnValue = -1;
         goto ret;
     }
-    printf("type checking: \n");
+    //printf("type checking: \n");
     if (typecheck(prog, errors)){
         print_errors(errors, "type");
         returnValue = -1;
@@ -55,17 +55,17 @@ int main(int argc, char* argv[]) {
     //AST_printer(prog);
 
     int *count = calloc(1, sizeof(int));
-    printf("Converting to IR:\n");
+    //printf("Converting to IR:\n");
     root = create_IR_tree(count, prog);
     //print_IR_tree(root);
-    printf("Register allocation\n");
+    //printf("Register allocation\n");
     graph = register_allocation(count[0], root);
     //print_IR_tree(root);
     //print_graph(graph);
-    printf("generating code\n");
+    //printf("generating code\n");
     codegen(gen_asm, root, graph);
 
-    printf("Writing to file\n");
+    //printf("Writing to file\n");
     fp = fopen("gen_asm.asm", "w");
     int cou = 0;
     for (linked_list_node *n = gen_asm->head; n != NULL; n = n->next) {
@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
         kill_graph(graph);
     }
     if (!returnValue) {
-        printf("All done!\n");
+        printf("All done! Enjoy your OC program :)\n");
     }
     return returnValue;
 }

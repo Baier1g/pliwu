@@ -1,7 +1,7 @@
 /***DEFINITIONS***/
 %{
     //#include <string.h>
-    #include "y.tab.h"
+    #include "grammar.tab.h"
     #define NUM_KEYWORDS 6
     #define NUM_TYPES    4
     #define NUM_DIGRAPHS 7
@@ -183,8 +183,9 @@ REST                \n|.
 
 <INITIAL>{INTEGER} {
     increment_counter(yyleng);
-    yylval.ival = atoi(yytext);
-    //printf("%s; %d \tinteger\n", yytext, yylval.ival);
+    //printf("%lld\n", atoll(yytext));
+    yylval.ival = (long long int) atoll(yytext);
+    //printf("%s; %lld \tinteger\n", yytext, yylval.ival);
     return T_INT;
 }
 

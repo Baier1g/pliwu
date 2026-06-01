@@ -70,7 +70,7 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
             node->primary_expr.type = (data_type) a;
             switch (node->primary_expr.type) {
                 case TYPE_INT:
-                    node->primary_expr.integer_value = (int) b;
+                    node->primary_expr.integer_value = (long) b;
                     break;
                 case TYPE_CHAR:
                     node->primary_expr.char_value = (char) b;
@@ -209,7 +209,7 @@ int define_sizes(AST_node* anode, linked_list *sizes, linked_list *values){
         return -1;
     }
     for (linked_list_node *lln = sizes->head; lln != NULL; lln = lln->next) {
-        lln->data = create_binary_node(anode->pos.startchar, anode->pos.line, A_PRIMARY_EXPR, TYPE_INT, (int) lln->data);
+        lln->data = create_binary_node(anode->pos.startchar, anode->pos.line, A_PRIMARY_EXPR, TYPE_INT, (long) lln->data);
     }
     return 0;
 }
@@ -557,7 +557,7 @@ void AST_printer(AST_node *node) {
             print_indents();
             switch (node->primary_expr.type) {
                 case TYPE_INT:
-                    printf("Literal: %d\n", node->primary_expr.integer_value);
+                    printf("Literal: %ld\n", node->primary_expr.integer_value);
                     break;
                 case TYPE_CHAR:
                     printf("Literal: %c\n", node->primary_expr.char_value);

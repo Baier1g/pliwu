@@ -98,7 +98,7 @@ union YYSTYPE
     struct AST_node *nval;
     struct linked_list *llval;
     double fval;
-    int ival;
+    long long int ival;
     char cval;
     struct {
         int length;

@@ -191,7 +191,7 @@ struct IR_operand {
     operand_type type;
     union {
         char *variable_name;
-        int constant;
+        long constant;
         segment *dest;
         frame *call;
     };

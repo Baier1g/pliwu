@@ -145,14 +145,14 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
             }
         case A_RELATIONAL_EXPR:
             if (node->binary_expr.left->kind == A_PRIMARY_EXPR && node->binary_expr.right->kind == A_PRIMARY_EXPR) {
-                int temp;
+                long temp;
                 AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
                 AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
                 if (!n1 || !n2) {
                     return NULL;
                 }
-                int arg1 = node->binary_expr.left->primary_expr.integer_value;
-                int arg2 = node->binary_expr.right->primary_expr.integer_value;
+                long arg1 = node->binary_expr.left->primary_expr.integer_value;
+                long arg2 = node->binary_expr.right->primary_expr.integer_value;
                 switch (node->binary_expr.op) {
                     case A_LESS:
                         temp = arg1 < arg2;
@@ -184,7 +184,7 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
             }
         case A_ARITHMETIC_EXPR:
             if (node->binary_expr.left->kind == A_PRIMARY_EXPR && node->binary_expr.right->kind == A_PRIMARY_EXPR) {
-                int temp;
+                long temp;
 
                 AST_node *n1 = AST_optimiser_constant_folding(node->binary_expr.left);
                 AST_node *n2 = AST_optimiser_constant_folding(node->binary_expr.right);
@@ -192,8 +192,8 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
                     return NULL;
                 }
 
-                int arg1 = node->binary_expr.left->primary_expr.integer_value;
-                int arg2 = node->binary_expr.right->primary_expr.integer_value;
+                long arg1 = node->binary_expr.left->primary_expr.integer_value;
+                long arg2 = node->binary_expr.right->primary_expr.integer_value;
                 switch (node->binary_expr.op) {
                     case A_ADD:
                         temp = arg1 + arg2;

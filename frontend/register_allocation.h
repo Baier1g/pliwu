@@ -12,7 +12,7 @@ typedef enum reg_color reg_color;
  */
 struct RA_graph {
     int num_nodes;
-    int **adj_matrix;
+    long **adj_matrix;
     RA_node **nodes;
 };
 
@@ -51,9 +51,9 @@ enum reg_color {
     // needs precoloring to work with rax and rdx cause div and mod
 };
 
-RA_graph *create_graph(int);
-RA_node *create_graph_node(int);
-void connect_nodes(RA_graph *, int, int);
+RA_graph *create_graph(long);
+RA_node *create_graph_node(long);
+void connect_nodes(RA_graph *, long, long);
 void connect_graph(frame *);
 void print_graph(RA_graph *);
 void print_adj_matrix(RA_graph *);

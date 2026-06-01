@@ -4,7 +4,7 @@ segment *current_segment;
 frame *current_frame;
 symbol_table *current_frame_table;
 hash_map *local_variables;
-int temp_counter = 1;
+long temp_counter = 1;
 int if_counter = 0;
 int while_counter = 0;
 int IR_string_counter = 0;
@@ -186,7 +186,7 @@ IR_operand *create_operand(operand_type type, void *content) {
         case P_DEREFERENCE:
         case P_REFERENCE:
         case P_CONSTANT:
-            op->constant = (int) content;
+            op->constant = (long) content;
             break;
         case P_LABEL:
             op->dest = (segment *) content;
@@ -219,15 +219,15 @@ void CG_remove_segment(segment * seg) {
     }
 }
 
-int recurse_IR_tree(AST_node *node) {
+long recurse_IR_tree(AST_node *node) {
     if (!node) {
         return 0;
     }
 
-    printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
+    /*printf("Current node kind is %s\n", kind_enum_to_string(node->kind));
     if (current_segment && current_segment->name) {
         printf("Current segment name: %s\n", current_segment->name);
-    }
+    }*/
 
 
     int condition;
@@ -273,11 +273,11 @@ int recurse_IR_tree(AST_node *node) {
                         new_info->offset = old_info->offset;
                         new_info->type = old_info->type;
 
-                        printf("delete: %d\n", symbol_table_delete(node->table, n->func_def.identifier->primary_expr.identifier_name));
-                        printf("insert: %d\n", symbol_table_insert(node->table, name, new_info));
+                        symbol_table_delete(node->table, n->func_def.identifier->primary_expr.identifier_name);
+                        symbol_table_insert(node->table, name, new_info);
                     }
-                    printf("got name: %s\n", name);
-                    printf("Created frame: %d\n", fr);
+                    //printf("got name: %s\n", name);
+                    //printf("Created frame: %ld\n", (long) fr);
                     linked_list_append(current_frame->nested_frames, fr);
                     //printf("appended frame\n");
                     symbol_table_insert(current_frame_table, name, fr);
@@ -292,11 +292,6 @@ int recurse_IR_tree(AST_node *node) {
             current_frame_table = old_table;
             current_frame = old_frame;
             current_segment = old_segment;
-            linked_list *lll = get_keys(node->table);
-            for (linked_list_node *lln = lll->head; lln != NULL; lln = lln->next) {
-                printf("%s, ", (char *) lln->data);
-            }
-            printf("\n");
             break;
         case A_FUNC_DEF:
             int length = strlen(node->func_def.identifier->primary_expr.identifier_name);
@@ -330,8 +325,8 @@ int recurse_IR_tree(AST_node *node) {
                     new_info->num_params = old_info->num_params;
                     new_info->offset = old_info->offset;
                     new_info->type = old_info->type;
-                    printf("delete: %d\n", symbol_table_delete(node->func_def.function_block->table, n->func_def.identifier->primary_expr.identifier_name));
-                    printf("insert: %d\n", symbol_table_insert(node->func_def.function_block->table, name, new_info));
+                    symbol_table_delete(node->func_def.function_block->table, n->func_def.identifier->primary_expr.identifier_name);
+                    symbol_table_insert(node->func_def.function_block->table, name, new_info);
                     linked_list_append(current_frame->nested_frames, fr);
                     symbol_table_insert(current_frame_table, name, fr);
                 }
@@ -476,9 +471,7 @@ int recurse_IR_tree(AST_node *node) {
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
                 linked_list_append(current_segment->operations, op);
-
             }
-            
             break;
         case A_BLOCK_STMT:
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
@@ -575,10 +568,6 @@ int recurse_IR_tree(AST_node *node) {
             linked_list_append(current_segment->operations, op);
             
             current_segment = current_segment->left;
-            if (!current_segment) {
-                printf("fuck\n");
-                exit(-1);
-            }
             recurse_IR_tree(node->while_loop.block);
             op = create_op(IR_GOTO, create_operand(P_LABEL, seg), NULL, NULL);
             //printf("seg now: %d\n", seg);
@@ -610,16 +599,12 @@ int recurse_IR_tree(AST_node *node) {
                     } else if (child->kind == A_RELATIONAL_EXPR || child->kind == A_LOGICAL_EXPR) {
                         type = TYPE_BOOL;
                     } else if (child->kind == A_CALL_EXPR) {
-                        printf("hi\n");
                         linked_list *keys = get_keys(current_segment->table);
                         label1 = NULL;
                         int name_length = strlen(child->call_expr.identifier->primary_expr.identifier_name);
-                        printf("called function name: %s\n", child->call_expr.identifier->primary_expr.identifier_name);
                         for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
                             char *frame_name = (char *) lln->data;
-                            printf("name: %s\n", frame_name);
                             if (strncmp(child->call_expr.identifier->primary_expr.identifier_name, frame_name, name_length) == 0) {
-                                printf("yuss\n");
                                 label1 = frame_name;
                                 break;
                             }
@@ -638,7 +623,6 @@ int recurse_IR_tree(AST_node *node) {
                     if (variable->ast_node && variable->ast_node->kind == A_ARRAY_DECL) {
                         AST_node *array_node = variable->ast_node;
                         if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
-                            printf("arr: %d, index: %d\n", array_node->array_decl.sizes->size, node->print_stmt.expression->indexing.indices->size);
                             array_dim = array_node->array_decl.sizes->size - node->print_stmt.expression->indexing.indices->size;
                         } else {
                             array_dim = array_node->array_decl.sizes->size;
@@ -649,7 +633,6 @@ int recurse_IR_tree(AST_node *node) {
                 var_info *variable = symbol_table_get(node->table, node->print_stmt.expression->indexing.identifier->primary_expr.identifier_name);
                 AST_node *array_node = variable->ast_node;
                 if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
-                    printf("arr: %d, index: %d\n", array_node->array_decl.sizes->size, node->print_stmt.expression->indexing.indices->size);
                     array_dim = array_node->array_decl.sizes->size - node->print_stmt.expression->indexing.indices->size;
                 }
             }
@@ -867,10 +850,10 @@ int recurse_IR_tree(AST_node *node) {
             }
             return temp_counter++;
         case A_PRIMARY_EXPR:
-            int val = 0;
+            long val = 0;
             switch (node->primary_expr.type) {
                 case TYPE_CHAR:
-                    val = (int) node->primary_expr.char_value;
+                    val = (long) node->primary_expr.char_value;
                     break;
                 case TYPE_INT:
                     val = node->primary_expr.integer_value;
@@ -885,7 +868,7 @@ int recurse_IR_tree(AST_node *node) {
             IR_operand *tmp = create_operand(P_TEMP, temp_counter);
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
-                printf("hej\n");
+                //printf("hej\n");
                 if (hash_map_contains(current_segment->scope_variables, name)) {
                     return ((IR_operand *) hash_map_get(current_segment->scope_variables, name))->constant;
                 } else if (hash_map_contains(local_variables, name)) {
@@ -947,12 +930,9 @@ int recurse_IR_tree(AST_node *node) {
             linked_list *keys = get_keys(current_segment->table);
             label1 = NULL;
             int name_length = strlen(node->call_expr.identifier->primary_expr.identifier_name);
-            printf("called function name: %s\n", node->call_expr.identifier->primary_expr.identifier_name);
             for (linked_list_node *lln = keys->head; lln != NULL; lln = lln->next) {
                 char *frame_name = (char *) lln->data;
-                printf("name: %s\n", frame_name);
                 if (strncmp(node->call_expr.identifier->primary_expr.identifier_name, frame_name, name_length) == 0) {
-                    printf("yuss\n");
                     label1 = frame_name;
                     break;
                 }
@@ -961,16 +941,6 @@ int recurse_IR_tree(AST_node *node) {
                 exit(1);
             }
             frame *called_func = (frame *) symbol_table_get(current_frame_table, label1);
-            if (!called_func) {
-                printf("why!!!!\n");
-                exit(0);
-            }
-            printf("Call: ");
-            lll = get_keys(current_segment->table);
-            for (linked_list_node *lln = lll->head; lln != NULL; lln = lln->next) {
-                printf("%s, ", (char *) lln->data);
-            }
-            printf("\n");
             op = create_op(IR_CALL, create_operand(P_TEMP, temp_counter), create_operand(P_FUNC_CALL, called_func), NULL);
             //print_operation(op);
             op->in_frame = current_frame;
@@ -1015,14 +985,14 @@ void print_operand(IR_operand *op) {
             printf("%s", op->variable_name);
             break;
         case P_DEREFERENCE:
-            printf("[T%d]", op->constant);
+            printf("[T%ld]", op->constant);
             break;
         case P_REFERENCE:
             printf("*");
         case P_TEMP:
             printf("T");
         case P_CONSTANT:
-            printf("%d", op->constant);
+            printf("%ld", op->constant);
             break;
         case P_FUNC_CALL:
             printf("%s", op->call->name);
@@ -1196,13 +1166,13 @@ frame *create_IR_tree(int *count, AST_node *root) {
         printf("You serve A LOT of purpose, you should love yourself NOW!\n");
         exit(2);
     }
-    printf("liveness analysis:\n");
+    //printf("liveness analysis:\n");
     //print_IR_tree(current_frame);
     liveness(current_frame);
     //print_graph(graph);
-    printf("temp_counter: %d\n", temp_counter);
+    //printf("temp_counter: %ld\n", temp_counter);
     //print_graph(graph);
-    printf("Finished IR creation\n");
+    //printf("Finished IR creation\n");
     count[0] = temp_counter;
     return global_frame;
 }

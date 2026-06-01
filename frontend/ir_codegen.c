@@ -396,7 +396,7 @@ CG_operand *CG_create_operand(CG_operand_type type, CG_operand_mode mode, void *
             tmp->reg = (reg_color) a;
             break;
         case O_CONSTANT:
-            tmp->constant = (int) a;
+            tmp->constant = (long) a;
             break;
         case O_LABEL:
             int len = strlen((char *) a);
@@ -436,7 +436,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    printf("recursing segment\n");
+    //printf("recursing segment\n");
     CG_current_segment = seg;
     //printf("here?\n");
     if (seg->name) {
@@ -448,7 +448,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        print_operation(operation);
+        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s\n", IR_op_code_to_string(code));
@@ -474,7 +474,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     char *op2_reg;
                     switch(type) {
                         case P_CONSTANT:
-                            sprintf(name, "\tmov %s, %d\t\t\t\t; Put constant value into register", op1_reg, operation->arg2->constant);
+                            sprintf(name, "\tmov %s, %ld\t\t\t\t; Put constant value into register", op1_reg, operation->arg2->constant);
                             break;
                         case P_TEMP:
                             op2_reg = CG_reg_color_to_string(graph->nodes[operation->arg2->constant]->color);
@@ -509,7 +509,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         linked_list_append(CG_generated_code, label);
                         sprintf(name, "\tmov qword[%s], rax\t\t\t\t; Move value of rax into memory address pointed to by %s", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg));
                     } else if (operation->arg2->type == P_CONSTANT) {
-                        sprintf(name, "\tmov qword[%s], %d\t\t\t\t; Move value of a constant into memory address pointed to by %s", CG_reg_color_to_string(reg), operation->arg2->constant, CG_reg_color_to_string(reg));
+                        sprintf(name, "\tmov qword[%s], %ld\t\t\t\t; Move value of a constant into memory address pointed to by %s", CG_reg_color_to_string(reg), operation->arg2->constant, CG_reg_color_to_string(reg));
                     } else {
                         sprintf(name, "\tmov qword[%s], %s\t\t\t\t; Move value of %s into memory address pointed to by %s\n", CG_reg_color_to_string(reg), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg2), CG_reg_color_to_string(reg));
                     }
@@ -518,7 +518,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     var_info *var = (var_info *) symbol_table_get(seg->table, tmp);
                     CG_var_address(var);
                     if (operation->arg2->type == P_CONSTANT) {
-                        sprintf(name, "\tmov qword[rax], %d\t\t\t; Put constant value into variable", operation->arg2->constant);
+                        sprintf(name, "\tmov qword[rax], %ld\t\t\t; Put constant value into variable", operation->arg2->constant);
                     } else {
                         reg_color reg = (reg_color) graph->nodes[operation->arg2->constant]->color;
                         sprintf(name, "\tmov qword[rax], %s\t\t\t; Load value of variable into register", CG_reg_color_to_string(reg));
@@ -542,7 +542,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     if (operation->arg1->type == P_TEMP) {
                         sprintf(name, "\tmov %s, %s\t\t\t\t; Move function argument into %s", CG_reg_color_to_string(param_count + 11), CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color), CG_reg_color_to_string(param_count + 11));
                     } else if (operation->arg1->type == P_CONSTANT) {
-                        sprintf(name, "\tmov %s, %d\t\t\t\t; Move constant function argument into %s", CG_reg_color_to_string(param_count + 11), operation->arg1->constant, CG_reg_color_to_string(param_count + 11));
+                        sprintf(name, "\tmov %s, %ld\t\t\t\t; Move constant function argument into %s", CG_reg_color_to_string(param_count + 11), operation->arg1->constant, CG_reg_color_to_string(param_count + 11));
                     } else {
                         var_info *info = symbol_table_get(seg->table, operation->arg1->variable_name);
                         CG_var_address(info);
@@ -567,10 +567,10 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_POP_PARAM:
                 name = (char *) calloc(128, sizeof(char));
                 if (param_count > 4) {
-                    sprintf(name, "\tadd rsp, %d\t\t\t\t\t; Reset stack pointer after function call", operation->arg1->constant);
+                    sprintf(name, "\tadd rsp, %ld\t\t\t\t\t; Reset stack pointer after function call", operation->arg1->constant);
                     param_count = 4;
                 } else if (operation->arg2) {
-                    sprintf(name, "\tadd rsp, %d\t\t\t\t\t; Reset stack pointer after alloc call", operation->arg1->constant);
+                    sprintf(name, "\tadd rsp, %ld\t\t\t\t\t; Reset stack pointer after alloc call", operation->arg1->constant);
                 } else {
                     if (param_count <= CG_current_frame->func_params) {
                         sprintf(name, "\tpop %s\t\t\t\t\t; Pop current function parameter %s from the stack", CG_reg_color_to_string(param_count + 10), CG_reg_color_to_string(param_count + 10));
@@ -607,7 +607,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     if (operation->arg3->type == P_DEREFERENCE) {
                         sprintf(label, "%s rax, qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg3->color));
                     } else if (operation->arg3->type == P_CONSTANT) {
-                        sprintf(label, "%s rax, %d\n", CG_IR_op_code_to_string(code), operation->arg3->constant);
+                        sprintf(label, "%s rax, %ld\n", CG_IR_op_code_to_string(code), operation->arg3->constant);
                     } else {
                         sprintf(label, "%s rax, %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
                     }
@@ -718,7 +718,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 } else if (operation->arg1->type == P_DEREFERENCE && operation->arg2->constant != TYPE_STRING) {
                     sprintf(name, "\tmov rdi, qword[%s]\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 } else if (operation->arg1->type == P_CONSTANT) {
-                    sprintf(name, "\tmov rdi, %d\t\t\t\t; Move value to be printed into rdi\n", operation->arg1->constant);
+                    sprintf(name, "\tmov rdi, %ld\t\t\t\t; Move value to be printed into rdi\n", operation->arg1->constant);
                 } else if (operation->arg1->type == P_TEMP && operation->arg2->constant != TYPE_STRING) {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
@@ -760,7 +760,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     i++;
                 }
                 CG_create_static_link(operation);
-                printf("yup\n");
                 sprintf(name, "\tcall %s\t\t\t\t; Call function\n\tadd rsp, 8\t\t\t\t; Yeet the static link\n", operation->arg2->call->name);
                 linked_list_append(CG_generated_code, name);
                 while (i > param_count) {
@@ -914,7 +913,7 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
         for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
             AST_node *node = ((AST_node *) lln->data);
             if (node->primary_expr.type == TYPE_INT) {
-                sprintf(elem, "%d,", node->primary_expr.integer_value);
+                sprintf(elem, "%ld,", node->primary_expr.integer_value);
             } else if (node->primary_expr.type == TYPE_CHAR) {
                 sprintf(elem, "%d,", node->primary_expr.char_value);
             } else if (node->primary_expr.type == TYPE_BOOL) {
