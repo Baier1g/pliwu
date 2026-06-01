@@ -23,7 +23,7 @@ TODOS:
 6. Clean inputs on identifiers in rules.l (done??) (possibly better solution: Manually set '\0' character on strings)
 7. Add filename to module in AST_node, to improve error handling clarity.
 8. Hella memory leaks in codegen when writing lines with specific offsets (too bad!)
-9. Der skal startes fra main og den må ikke kalde sig selv
+9. [x] Der skal startes fra main og den må ikke kalde sig selv
 10. Declaring unassigned variables not working in codegen
 11. Add type to print statement (in ast node) ((so we can decide which assembly function to use easier))
 12. Eliminate dead code, either in scope or later
