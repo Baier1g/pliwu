@@ -1,0 +1,11 @@
+func main () {
+    int i = 10;
+    print(i);
+
+    if (true) {
+        bool i = true;
+        print(i);
+    }
+    //i = 20;
+    print(i);
+}

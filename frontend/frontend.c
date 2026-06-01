@@ -51,7 +51,6 @@ int main(int argc, char* argv[]) {
         returnValue = -1;
         goto ret;
     }
-
     AST_optimiser_constant_folding(prog);
     //AST_printer(prog);
 

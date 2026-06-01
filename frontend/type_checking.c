@@ -238,6 +238,7 @@ data_type recurse_type(AST_node *node) {
             break;
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
+                var_info *v = (symbol_table_get(type_scope, node->primary_expr.identifier_name));
                 return ((var_info *) (symbol_table_get(type_scope, node->primary_expr.identifier_name)))->type;
             } else {
                 return node->primary_expr.type;

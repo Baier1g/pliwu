@@ -4,6 +4,8 @@
 
 typedef struct call_info call_info;
 
+#define SHADOW_MAX_WIDTH 5
+
 linked_list *scope_errors;
 symbol_table *current_scope; // string name -> var_info
 linked_list *calls;          // list->data = ast_node
@@ -31,6 +33,13 @@ void to_error(char *error_msg, AST_node *n) {
     linked_list_append(scope_errors, pack_error(n, error_msg));
 }
 
+char *scope_generate_label(char* string, int i) {
+    char *tmp = calloc(strlen(string) + SHADOW_MAX_WIDTH, sizeof(char));
+    sprintf(tmp, "%d%s", i, string);
+    return tmp;
+}
+
+
 void recurse_scope_array(linked_list *values, int depth, int current_depth) {
     if (current_depth == depth) {
         for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
@@ -45,21 +54,24 @@ void recurse_scope_array(linked_list *values, int depth, int current_depth) {
 
 short recurse_scope(AST_node *node) {
     symbol_table *outer_table;
-    char *name;
+    char *name, *label;
     var_info *v;
     short l,r;
     l = r = 0;
+    //printf("scope: %s\n", kind_enum_to_string(node->kind));
     switch(node->kind) {
         case A_PROGRAM:
             printf("scope.c::recurse_scope: entered with kind A_PROGRAM\n");
             break;
         case A_MODULE:
             nesting_depth++;
+            outer_table = current_scope;
             node->table = create_symbol_table(current_scope, current_scope->global);
+            current_scope = node->table;
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 recurse_scope((AST_node *) lln->data);
             }
-
+            current_scope = outer_table;
             nesting_depth--;
             break;
         case A_FUNC_DEF:
@@ -87,21 +99,23 @@ short recurse_scope(AST_node *node) {
             short was_in = is_in_function;
             is_in_function = 1;
             nesting_depth++;
-
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
             }
-            l = recurse_scope(node->func_def.function_block);
+            nesting_depth--; //this fakes the nesting depth as parameters are in a separate table. ensures static link traversal works.
+
+            r = recurse_scope(node->func_def.function_block);
+
             if (node->func_def.return_type == TYPE_VOID && !l) {
                 //Ensure epilogue
                 linked_list_append(node->func_def.function_block->block.stmt_list, create_unary_node(0, 0, A_RETURN_STMT, NULL));
             } else {
-                if (!l) {
+                if (!r) {
                     to_error("Function missing return statement", node);
                 }
             }
             
-            nesting_depth--;
+            
             current_scope = outer_table;
             is_in_function = was_in;
             break;
@@ -109,39 +123,45 @@ short recurse_scope(AST_node *node) {
             if (node->var_decl.expr_stmt) {
                 recurse_scope(node->var_decl.expr_stmt);
             }
-            v = (var_info *) symbol_table_get(current_scope, node->var_decl.identifier->primary_expr.identifier_name);
-            if (!v) {
-                v = create_var_info(nesting_depth);
-                v->kind = ID_VARIABLE;
-                symbol_table_insert(current_scope, node->var_decl.identifier->primary_expr.identifier_name, v);
-            } else {
-                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION || v->kind == ID_ARRAY) {
-                    to_error("Tried to to redefine function or parameter or array", node);
-                }
-                if (symbol_table_insert(current_scope, node->var_decl.identifier->primary_expr.identifier_name, v)) {
+            name = node->var_decl.identifier->primary_expr.identifier_name;
+            label = scope_generate_label(name, nesting_depth);
+            v = (var_info *) symbol_table_get(current_scope, label);
+            if (v) {
+                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION) {
+                    to_error("Tried to redefine function or parameter", node);
+                } else if (v->nesting_depth == nesting_depth) {
                     to_error("Variable name already in use in this scope", node);
                 }
             }
+            v = create_var_info(nesting_depth);
+            v->kind = ID_VARIABLE;
+            symbol_table_insert(current_scope, label, v);
+            free(name);
+            node->var_decl.identifier->primary_expr.identifier_name = label;
             break;
         case A_ARRAY_DECL:
             if (node->array_decl.values){
                 recurse_scope_array(node->array_decl.values, node->array_decl.sizes->size, 1);
             }
             //check identifier, if free, insert
-            v = (var_info *) symbol_table_get(current_scope, node->array_decl.identifier->primary_expr.identifier_name);
-            if (!v) {
-                v = create_var_info(nesting_depth);
-                v->kind = ID_ARRAY;
-                v->ast_node = node;
-                symbol_table_insert(current_scope, node->array_decl.identifier->primary_expr.identifier_name, v);
-            } else {
-                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION || v->kind == ID_VARIABLE) {
-                    to_error("Tried to to redefine function or parameter or variable", node);
+            name = node->array_decl.identifier->primary_expr.identifier_name;
+            label = scope_generate_label(name, nesting_depth);
+            v = (var_info *) symbol_table_get(current_scope, label);
+            if (v) {
+                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION) {
+                    to_error("Tried to to redefine function or parameter", node);
                 }
-                if (symbol_table_insert(current_scope, node->array_decl.identifier->primary_expr.identifier_name, v)) {
+                if (v->nesting_depth == nesting_depth) {
                     to_error("Array name already in use in this scope", node);
                 }
             }
+            v = create_var_info(nesting_depth);
+            v->kind = ID_ARRAY;
+            v->ast_node = node;
+            symbol_table_insert(current_scope, label, v);
+
+            free(name);
+            node->array_decl.identifier->primary_expr.identifier_name = label;
             //check bracket expressions
             for (linked_list_node *lln = node->array_decl.sizes->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
@@ -151,10 +171,12 @@ short recurse_scope(AST_node *node) {
             outer_table = current_scope;
             current_scope = create_symbol_table(current_scope, current_scope->global);
             node->table = current_scope;
+            nesting_depth++;
             for (linked_list_node *lln = node->block.stmt_list->head; lln != NULL; lln = lln->next) {
                 l = recurse_scope(lln->data);
                 if(l){r=1;}
             }
+            nesting_depth--;
             current_scope = outer_table;
             if (r) {return 1;}
             break;
@@ -211,19 +233,39 @@ short recurse_scope(AST_node *node) {
             break;
         case A_PRIMARY_EXPR:
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
-                if (!symbol_table_contains(current_scope, node->primary_expr.identifier_name)){
+                name = node->primary_expr.identifier_name;
+                if (symbol_table_contains(current_scope, name)){
+                    //is a func param
+                    break;
+                }
+
+                int exists = 0;
+                for (int depth = nesting_depth; !exists && depth >= 0; depth--) {
+                    label = scope_generate_label(name,depth);
+                    if (symbol_table_contains(current_scope, label)){
+                        exists = 1;
+                        break;
+                    }
+                    free(label);
+                }
+                if (!exists) {
                     to_error("Undefined identifier", node);
                     break;
                 }
-                var_info *v = (var_info *) symbol_table_get(current_scope, node->primary_expr.identifier_name);
+
+                var_info *v = (var_info *) symbol_table_get(current_scope, label);
                 if (v->kind == ID_FUNCTION) {
                     to_error("Tried to access a function when variable was expected.", node);
                     break;
+                } else {
+                    free(name);
+                    node->primary_expr.identifier_name = label;
                 }
                 if (v->nesting_depth < nesting_depth) {
                     v->escaping = 1;
                 }
             }
+            
             break;
         case A_CALL_EXPR:
             linked_list_append(calls, create_call_info(node, current_scope));
@@ -234,6 +276,7 @@ short recurse_scope(AST_node *node) {
         case A_PARAMETER_EXPR:
             // [x] check params for duplicates
             name = node->parameter.identifier->primary_expr.identifier_name;
+
             v = create_var_info(nesting_depth);
             v->kind = ID_FUNC_PARAM;
             if (symbol_table_insert(current_scope, name, v)) {
@@ -242,13 +285,10 @@ short recurse_scope(AST_node *node) {
             break;
         case A_INDEX_EXPR:
             name = node->indexing.identifier->primary_expr.identifier_name;
-            recurse_scope(node->indexing.identifier);
             //check arrayname in scope
-            v = (var_info *) symbol_table_get(current_scope, name);
-            if(!v){
-                to_error("Tried accessing undeclared array", node);
-            }
-            //check brackets in scope
+            recurse_scope(node->indexing.identifier);
+            
+            //check if indexing is in scope
             for (linked_list_node *lln = node->indexing.indices->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
             }
