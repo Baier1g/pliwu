@@ -256,8 +256,3 @@ AST_node *AST_optimiser_constant_folding(AST_node *node) {
     }
     return NULL;
 }
-
-AST_node *AST_optimiser_dead_code_elimination(AST_node *node) {
-    // TO BE IMPLEMENTED
-    return NULL;
-}

@@ -210,7 +210,6 @@ short recurse_scope(AST_node *node) {
                 recurse_scope(node->var_decl.expr_stmt);
             }
             name = node->var_decl.identifier->primary_expr.identifier_name;
-            //printf(" == vardclname: %s\n", name);
             v = (var_info *) symbol_table_get(current_scope, name);
             if (v) {
                 if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION && v->func_nesting_depth == func_nesting_depth) {

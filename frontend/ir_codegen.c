@@ -347,7 +347,6 @@ char *CG_IR_op_code_to_string(IR_op_code code) {
  * Performs static link traversal and leaves the address of the variable in question in rax
  */
 void CG_var_address(var_info *var) {
-    //int depth = var->nesting_depth;
     int var_offset = var->offset;
     int in_frame = 0;
     
@@ -356,7 +355,6 @@ void CG_var_address(var_info *var) {
     if (var->func_nesting_depth == -1) {
         var->func_nesting_depth = CG_frame_depth;
     }
-    //printf("var: %d, frame_depth: %d, offset: %d\n", var->nesting_depth, CG_frame_depth, var->offset);
     if (var->func_nesting_depth == CG_frame_depth) {
         in_frame = 1;
     } else {
@@ -371,7 +369,6 @@ void CG_var_address(var_info *var) {
 
     char *buffer = (char *) calloc(128, sizeof(char));
     if (var->kind == ID_VARIABLE) {
-        // Local variable
         if (in_frame) {
             sprintf(buffer, "\tlea rax, qword[rbp-%d]\t\t; Load the value of a variable into rax\n", var_offset);
         } else {
@@ -380,7 +377,6 @@ void CG_var_address(var_info *var) {
     } else if (var->kind == ID_FUNC_PARAM) {
         sprintf(buffer, "\tlea rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
     } else {
-        // Function parameter
         var_offset = -(var_offset);
         sprintf(buffer, "\tlea rax, qword[rbp+%d]\t\t; Load function argument from above base pointer\n", var_offset);
     }
@@ -416,7 +412,6 @@ CG_operand *CG_create_operand(CG_operand_type type, CG_operand_mode mode, void *
 
 void CG_create_static_link(IR_operation *operation) {
     var_info *var = (var_info *) symbol_table_get(operation->in_seg->table, operation->arg2->call->name);
-    //printf("Calling %s, we are at frame depth %d and the called function has depth %d\n", node->call_expr.identifier->primary_expr.identifier_name, frame_depth, var->nesting_depth);
     if (CG_frame_depth == var->func_nesting_depth) {
         linked_list_append(CG_generated_code, "\tlea rax, [rbp]\t\t\t; Calling a nested function, static link is calling functions rbp\n");
     } else {
@@ -425,7 +420,6 @@ void CG_create_static_link(IR_operation *operation) {
         int depth_diff = (CG_frame_depth - 1) - var->func_nesting_depth;
         while (depth_diff > 0) {                    //rax + 16
             linked_list_append(CG_generated_code, "\tlea rax, [rax+16]\n\tmov rax, qword[rax]\t\t\t\t; Traversing static link\n");
-            //print_rax();
             depth_diff--;
         }
     }
@@ -436,9 +430,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    //printf("recursing segment\n");
     CG_current_segment = seg;
-    //printf("here?\n");
     if (seg->name) {
         linked_list_append(CG_generated_code, seg->name);
         linked_list_append(CG_generated_code, ":\n");
@@ -448,10 +440,8 @@ void recurse_segment(segment *seg, RA_graph *graph) {
 
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        //print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
-        //printf("op_code: %s\n", IR_op_code_to_string(code));
         char *name, *label, *label2;
         switch (code) {
             case IR_VAR_DECL:
@@ -466,7 +456,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 break;
             case IR_ASSIGN:
                 name = (char *) calloc(256, sizeof(char));
-                //printf("henlo\n");
                 if (operation->arg1->type == P_TEMP || operation->arg1->type == P_REFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
                     if (operation->arg2->type == P_TEMP && reg == (reg_color) graph->nodes[operation->arg2->constant]->color) {
@@ -491,7 +480,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         case P_VARIABLE:
                             var_info *var = (var_info *) symbol_table_get(seg->table, operation->arg2->variable_name);
                             if (operation->arg2->variable_name[0] == '_') {
-                                //printf("Got here\n");
                                 label = operation->arg2->variable_name;
                                 sprintf(name, "\tlea %s, [%s]\t\t\t; Load starting address of string literal %s into %s\n", op1_reg, label, label, op1_reg);
                             } else {
@@ -736,7 +724,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     sprintf(name, "\tmov rdi, %s\t\t\t\t; Move value to be printed into rdi\n", CG_reg_color_to_string(graph->nodes[operation->arg1->constant]->color));
                 }
                 linked_list_append(CG_generated_code, name);
-                //printf("yurr\n");
                 name = (char *) calloc(128, sizeof(char));
                 if (operation->arg2 && operation->arg2->constant == TYPE_CHAR) {
                     if (operation->arg3->constant > 0) {
@@ -765,7 +752,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
             case IR_CALL:
                 name = (char *) calloc(128, sizeof(char));
                 int i = param_count;
-                //print_operation(operation);
                 while (i < CG_current_frame->func_params && i < 4) {
                     sprintf(name, "\tpush %s\t\t\t\t; Push function parameter %s to the stack (caller save)\n", CG_reg_color_to_string(i + 11), CG_reg_color_to_string(i + 11));
                     linked_list_append(CG_generated_code, name);
@@ -802,7 +788,6 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 linked_list_append(CG_generated_code, "\tmov rsp, rbp\t\t\t\t; Restore the old stack pointer before exit\n\tpop rbp\t\t\t\t\t\t; Restore the base pointer of the previous stack\n\tret\n");
                 break;
             case IR_GOTO:
-                // Whenever a goto is encountered, we straight up just return, works 10/10 times
                 linked_list_append(CG_generated_code, "\tjmp ");
                 linked_list_append(CG_generated_code, (char *) operation->arg1->dest->name);
                 linked_list_append(CG_generated_code, "\n");
@@ -898,7 +883,6 @@ void CG_regs_used(frame *frm, RA_graph *graph) {
     while (frames->size) {
         current_frame = linked_list_pop_front(frames);
         CG_regs_used_helper(current_frame->segment, graph);
-        //printf("color: %d\n", CG_reg_max);
         current_frame->regs_used = CG_reg_max;
         CG_reg_max = 0;
         for (linked_list_node *lln = current_frame->nested_frames->head; lln != NULL; lln = lln->next) {
@@ -968,12 +952,10 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
 void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     for (linked_list_node *lln = program->data->head; lln != NULL; lln = lln->next) {
         AST_node *node = (AST_node *) lln->data;
-        //printf("yurr\n");
         char *buffer = (char *) calloc(50000, sizeof(char));
         if (node->kind == A_PRIMARY_EXPR) {
             char *string_name = IR_generate_label("_string", CG_string_counter++);
             sprintf(buffer, "\t%s dq %d\n\t%s_elem db \"%s\"\n", string_name, node->primary_expr.string.length, string_name, node->primary_expr.string.value);
-            //printf("%s", buffer);
             free(string_name);
             linked_list_append(data_section, buffer);
         } else {
@@ -1001,10 +983,8 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
                 free(array);
             }
             strcat(buffer, "\n");
-            //printf("%s\n", buffer);
             linked_list_append(data_section, buffer);
         }
-        //printf("we made it\n");
     }
     if (program->name) {
         prologue(program);
@@ -1065,10 +1045,6 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     
     CG_regs_used(program, graph);
 
-    /**
-     * THIS ONLY WORKS FOR ONE MODULE
-     * Ideally, the global scope holds all global variables from a single basepointer
-     */
     CG_offset = ((frame *) program->nested_frames->head->data)->regs_used;
     if (CG_offset == 0) {
         CG_offset = 1;

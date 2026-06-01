@@ -35,7 +35,6 @@ data_type recurse_type(AST_node *node) {
     data_type d_type, d_type_right;
     kind type = node->kind;
     symbol_table *outer_table;
-    //printf("%s\n", kind_enum_to_string(type));
     
     switch (type) {
         case A_MODULE:

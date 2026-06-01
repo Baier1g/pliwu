@@ -69,7 +69,6 @@ REST                \n|.
 }
 
 <COMMENT>{COMMENT_END} {
-    //printf("multi line comment\n");
     increment_counter(yyleng);
     BEGIN(INITIAL);
 }
@@ -99,7 +98,6 @@ REST                \n|.
     yylval.string.sval = (char *) calloc(stringptr + 1, sizeof(char));
     yylval.string.length = stringptr + 1;
     strncpy(yylval.string.sval, stringbuffer, yylval.string.length);
-    //printf("%s\n", yylval.string.sval);
     BEGIN(INITIAL);
     return T_STRING;
 }
@@ -111,9 +109,7 @@ REST                \n|.
 }
 
 <STR>{CHARACTER} {
-    //printf("%s \tcharacter\n", yytext);
     increment_counter(yyleng);
-    //printf("%d\n", stringptr);
 
     if(stringptr > STRING_MAX_LENGTH) {
         printf("String too long on line %d \n", line_number);
@@ -132,35 +128,29 @@ REST                \n|.
 }
 
 <INITIAL>{SINGLE_LINE_COMMENT} {
-    //printf("%s \tsingle line comment\n", yytext);
     increment_counter(yyleng);
 }
 
 <COMMENT>. {
-    //printf("%s\n", yytext);
     increment_counter(yyleng);
 }
 
 <INITIAL>{LEFT_PAR} {
-    //printf("%s \tleft parentheses\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_PAREN;
 }
 
 <INITIAL>{RIGHT_PAR} {
-    //printf("%s \tright parentheses\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_PAREN;
 }
 
 <INITIAL>{LEFT_BRACE} {
-    //printf("%s \tleft brace\n", yytext);
     increment_counter(yyleng);
     return T_LEFT_BRACE;
 }
 
 <INITIAL>{RIGHT_BRACE} {
-    //printf("%s \tright brace\n", yytext);
     increment_counter(yyleng);
     return T_RIGHT_BRACE;
 }
@@ -176,21 +166,17 @@ REST                \n|.
 }
 
 <INITIAL>{COMMA} {
-    //printf("%s \tcomma\n", yytext);
     increment_counter(yyleng);
     return T_COMMA;
 }
 
 <INITIAL>{INTEGER} {
     increment_counter(yyleng);
-    //printf("%lld\n", atoll(yytext));
     yylval.ival = (long long int) atoll(yytext);
-    //printf("%s; %lld \tinteger\n", yytext, yylval.ival);
     return T_INT;
 }
 
 <INITIAL>{BOOL_VALUE} {
-    //printf("%s \tboolean value\n", yytext);
     increment_counter(yyleng);
     if (!strcmp("true", yytext)) {
         yylval.ival = 1;
@@ -201,14 +187,12 @@ REST                \n|.
 }
 
 <INITIAL>{KEYWORD} {
-    //printf("%s \tkeyword\n", yytext);
     increment_counter(yyleng);
     return find_keyword(yytext);
 }
 
 
 <INITIAL>{TYPE} {
-    //printf("%s \ttype\n", yytext);
     increment_counter(yyleng);
     return find_type(yytext);
 }
@@ -218,37 +202,29 @@ REST                \n|.
         printf("Identifier name too long (%d characters) on line %d\n", yyleng, line_number);
         exit(-1);
     }
-    //printf("=%s \tidentifier, length: %d\n", yytext, yyleng);
     increment_counter(yyleng);
     yylval.string.sval = calloc(yyleng + 1, sizeof(char));
     yylval.string.length = yyleng;
-    //memset(yylval.sval, 0, (yyleng + 1) *sizeof(char));
-    //printf("%s \tyylval post memset, length: %ld\n", yylval.sval, strlen(yylval.sval) + 1);
     strncpy(yylval.string.sval, yytext, yyleng);
-    //printf("%s \tyylval efter copying, length: %ld\n", yylval.sval, strlen(yylval.sval));
     return T_IDENTIFIER;
 }
 
 <INITIAL>= {
-    //printf("%s \tassign\n", yytext);
     increment_counter(yyleng);
     return T_ASSIGN;
 }
 
 <INITIAL>{SINGLE_OPERATOR} {
-    //printf("%s \tsingle operator\n", yytext);
     increment_counter(yyleng);
     return yytext[0];
 }
 
 <INITIAL>{OPERATOR} {
-    //printf("%s \tdigraph operator\n", yytext);
     increment_counter(yyleng);
     return find_digraph(yytext);
 }
 
 <INITIAL>";" {
-    //printf("%s \tsemicolon\n", yytext);
     increment_counter(yyleng);
     return ';';
 }
@@ -259,12 +235,10 @@ REST                \n|.
 }
 
 <INITIAL>{WHITESPACES} {
-    //printf("%s \twhitespace\n", yytext); 
     increment_counter(yyleng);
 }
 
 <<EOF>> {
-    //printf("%s \tEOF\n", yytext);
     return 0; 
 }
 
@@ -335,22 +309,3 @@ int find_digraph(char* digraph) {
     }
     return -1;
 }
-
-/***main functions, reads files and processes contents***/
-/***int main(int argc, char** argv) {   
-    FILE *fp;
-    char *filename = argv[1];
-    puts("hello world!");
-
-    fp = fopen(filename,"r");
-    if (!fp) {
-        return -2;
-    }
-    yyin = fp;
-
-    yylex();
-    printf("\nNumber of lines in the file - %u\n", line_number);
-    printf("\nNumber of characters in the file - %ld\n", current_character);
-    return 0;
-}
-***/

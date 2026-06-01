@@ -150,31 +150,3 @@ int hash_map_contains(hash_map *map, const char *key) {
     }
     return 0;
 }
-
-/*int main() {
-    hash_map *map = create_hash_map(2);
-    if (!map) {
-        printf("fucked\n");
-        return -1;
-    }
-    hash_map_insert(map, "henlo", (void *) 5);
-    hash_map_insert(map, "fren", (void *) 4);
-    hash_map_insert(map, "gg",  (void * ) 6);
-    hash_map_insert(map, "frend", (void *) 10);
-    hash_map_insert(map, "frenzy", (void *) 4);
-    //if (hash_map_insert(map, "frenzy", (void *) 20)) {
-    //    printf("Shit's already there, fam\n");
-    //}
-    printf("Indices: %d, %d, %d, %d, %d\n", hash_function(map, "henlo"), hash_function(map, "fren"), hash_function(map, "gg"), hash_function(map, "frend"), hash_function(map, "frenzy"));
-    if (!hash_map_delete(map, "frenzy")) {
-        printf("Deletion succesful\n");
-    }
-    if (!hash_map_get(map, "frenzy")) {
-        printf("Truly gone :bless:\n");
-    }
-    printf("Indices: %d, %d, %d, %d\n", hash_map_get(map, "fren"), hash_map_get(map, "gg"), hash_map_get(map, "frend"), hash_map_get(map, "henlo"));
-    printf("Key: %s, value: %d\n", "gg", (int) hash_map_get(map, "gg"));
-
-    destroy_hash_map(map);
-    return 0;
-}*/

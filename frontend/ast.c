@@ -80,9 +80,7 @@ AST_node *create_binary_node(int startchar, int line, kind node_kind, void *a, v
                     break;
                 case TYPE_IDENTIFIER:
                     size_t len = strlen((char*) b);
-                    //printf("%ld length\n", len);
                     node->primary_expr.identifier_name = calloc(len + 1, sizeof(char));
-                    //memset(node->primary_expr.identifier_name, 0, len + 1);
                     strncpy(node->primary_expr.identifier_name, b, len);
                     break;
                 default:
@@ -161,8 +159,6 @@ AST_node *create_ternary_node(int startchar, int line, kind node_kind, void* a, 
 }
 
 int ds_helper(AST_node* anode, linked_list *sizes, linked_list *values, int depth){
-    //printf("depth %d, sizes.size %d, values.size %d\n", depth, sizes->size, values->size);
-    //printf("values->head: %d\n", values->head);
     if (depth >= sizes->size){
         if ((unsigned int) values->head > 30) {
             printf("ast.c::arr: initialisation array too deep\n");
@@ -332,7 +328,6 @@ void kill_tree(AST_node* node) {
         return;
     }
     kind type = node->kind;
-    //printf("%s\n", kind_enum_to_string(type));
     if (node->table && node->kind != A_PRINT_STMT) {
         destroy_symbol_table(node->table);
     }
@@ -631,26 +626,3 @@ void kill_ll(linked_list *ll) {
     }
     free(ll);
 }
-
-/*int main() {
-    char *id = malloc(sizeof(char) * 10);
-    strncpy(id, "hello", 10);
-    struct AST_node *node = create_binary_node(10, 2, A_PRIMARY_EXPR, TYPE_INT,  (void *) 50);
-    struct AST_node *unary_node = create_unary_node(10, 2, A_EXPR_STMT, node);
-    struct AST_node *node_2 = create_binary_node(10, 2, A_PRIMARY_EXPR, (void *) TYPE_IDENTIFIER, id);
-    struct AST_node *ternary_node = create_ternary_node(30, 10, A_ARITHMETIC_EXPR, node, (void *) A_ADD, node_2);
-
-    char *c;
-    printf("Digit in node: %d\n", node->primary_expr.integer_value);
-    printf("Pos value in unary_node: %d, %d\n", unary_node->pos.line, unary_node->pos.startchar);
-    printf("Value in nested nodes: %d\n", unary_node->expr_stmt.expression->primary_expr.integer_value);
-    printf("Value in left child: %d, value in right child: %s, operation: %s\n", ternary_node->binary_expr.left->primary_expr.integer_value, ternary_node->binary_expr.right->primary_expr.identifier_name, (c = binary_op_enum_to_string(ternary_node->binary_expr.op)));
-
-    free(c);
-    free(id);
-    free(unary_node->expr_stmt.expression);
-    free(unary_node);
-    free(ternary_node->binary_expr.right->primary_expr.identifier_name);
-    free(ternary_node->binary_expr.right);
-    free(ternary_node);
-}*/
