@@ -264,7 +264,7 @@ int recurse_IR_tree(AST_node *node) {
                         name = IR_generate_label(n->func_def.identifier->primary_expr.identifier_name, IR_function_counter++);
                         fr = create_named_frame(name);
                         var_info *old_info = symbol_table_get(node->table, n->func_def.identifier->primary_expr.identifier_name);
-                        var_info *new_info = create_var_info(old_info->nesting_depth);
+                        var_info *new_info = create_var_info(old_info->nesting_depth, old_info->func_nesting_depth);
                         new_info->escaping = old_info->escaping;
                         new_info->kind = old_info->kind;
                         new_info->ast_node = old_info->ast_node;
@@ -326,7 +326,7 @@ int recurse_IR_tree(AST_node *node) {
                     if (!old_info) {
                         printf("I'm tired, boss...\n");
                     }
-                    var_info *new_info = create_var_info(old_info->nesting_depth);
+                    var_info *new_info = create_var_info(old_info->nesting_depth, old_info->func_nesting_depth);
                     new_info->escaping = old_info->escaping;
                     new_info->kind = old_info->kind;
                     new_info->ast_node = old_info->ast_node;

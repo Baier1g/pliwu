@@ -494,7 +494,7 @@ void rewrite_program(frame *frm, int* spilled_nodes, int count) {
                 //printf("Is already there, blood\n");
             }
 
-            var_info *var = create_var_info(-1);
+            var_info *var = create_var_info(-1, -1);
             var->kind = ID_VARIABLE;
             if (symbol_table_insert(seg->table, name, var)) {
                 //printf("Alrady in there, cuh\n");

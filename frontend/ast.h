@@ -83,6 +83,7 @@ struct var_info {
     id_type kind;
     data_type type;
     int nesting_depth;
+    int func_nesting_depth;
     int offset;
     int escaping;
     // For functions
@@ -93,7 +94,7 @@ struct var_info {
 /*
  * Creates a var_info struct with a provided nesting depth.
  */
-var_info *create_var_info(int);
+var_info *create_var_info(int, int);
 
 /*
  * Creates a unary AST node.

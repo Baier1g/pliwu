@@ -15,13 +15,14 @@ pos create_pos(int start, int line) {
     return pos;
 }
 
-var_info *create_var_info(int nesting_depth) {
+var_info *create_var_info(int nesting_depth, int func_nesting_depth) {
     var_info *tmp = calloc(1, sizeof(var_info));
     if (!tmp) {
         printf("ast.c::create_var_info: calloc FAILED\n");
         return NULL;
     }
     tmp->nesting_depth = nesting_depth;
+    tmp->func_nesting_depth = func_nesting_depth; 
     return tmp;
 }
 

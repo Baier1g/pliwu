@@ -11,6 +11,7 @@ symbol_table *current_scope; // string name -> var_info
 linked_list *calls;          // list->data = ast_node
 short is_in_function = 0;
 short nesting_depth = 0;
+short func_nesting_depth = 0;
 int main_def = 0;
 
 struct call_info {
@@ -65,6 +66,7 @@ short recurse_scope(AST_node *node) {
             break;
         case A_MODULE:
             nesting_depth++;
+            func_nesting_depth++;
             outer_table = current_scope;
             node->table = create_symbol_table(current_scope, current_scope->global);
             current_scope = node->table;
@@ -72,12 +74,13 @@ short recurse_scope(AST_node *node) {
                 recurse_scope((AST_node *) lln->data);
             }
             current_scope = outer_table;
+            func_nesting_depth--;
             nesting_depth--;
             break;
         case A_FUNC_DEF:
             // [x] check name
             // [x] name -> symboltable
-            v = create_var_info(nesting_depth);
+            v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_FUNCTION;
             v->num_params = node->func_def.parameters->size;
             v->ast_node = node;
@@ -98,6 +101,7 @@ short recurse_scope(AST_node *node) {
             node->table = current_scope;
             short was_in = is_in_function;
             is_in_function = 1;
+            func_nesting_depth++;
             nesting_depth++;
             for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
@@ -115,7 +119,7 @@ short recurse_scope(AST_node *node) {
                 }
             }
             
-            
+            func_nesting_depth--;
             current_scope = outer_table;
             is_in_function = was_in;
             break;
@@ -133,7 +137,7 @@ short recurse_scope(AST_node *node) {
                     to_error("Variable name already in use in this scope", node);
                 }
             }
-            v = create_var_info(nesting_depth);
+            v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_VARIABLE;
             symbol_table_insert(current_scope, label, v);
             free(name);
@@ -155,7 +159,7 @@ short recurse_scope(AST_node *node) {
                     to_error("Array name already in use in this scope", node);
                 }
             }
-            v = create_var_info(nesting_depth);
+            v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_ARRAY;
             v->ast_node = node;
             symbol_table_insert(current_scope, label, v);
@@ -235,7 +239,13 @@ short recurse_scope(AST_node *node) {
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
                 if (symbol_table_contains(current_scope, name)){
-                    //is a func param
+                    //is a func param; check escaping
+                    var_info *v = (var_info *) symbol_table_get(current_scope, name);
+                    printf("name: %s\n", name);
+                    if (v->func_nesting_depth != func_nesting_depth) {
+                        puts("name tttt");
+                        v->escaping = 1;
+                    }
                     break;
                 }
 
@@ -261,7 +271,7 @@ short recurse_scope(AST_node *node) {
                     free(name);
                     node->primary_expr.identifier_name = label;
                 }
-                if (v->nesting_depth < nesting_depth) {
+                if (v->func_nesting_depth < func_nesting_depth) {
                     v->escaping = 1;
                 }
             }
@@ -277,7 +287,7 @@ short recurse_scope(AST_node *node) {
             // [x] check params for duplicates
             name = node->parameter.identifier->primary_expr.identifier_name;
 
-            v = create_var_info(nesting_depth);
+            v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_FUNC_PARAM;
             if (symbol_table_insert(current_scope, name, v)) {
                 to_error("Parameter name already declared in function definition", node);

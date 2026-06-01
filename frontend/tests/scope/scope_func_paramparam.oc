@@ -1,11 +1,15 @@
 func main () {
 	foo(1);
-
 	func foo(int a) {
 		print(a);
 		bar(2);
+		baz();
 
 		func bar (int a) {
+			print(a);
+		}
+
+		func baz () {
 			print(a);
 		}
 	}	
