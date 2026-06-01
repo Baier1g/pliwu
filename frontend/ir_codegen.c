@@ -434,7 +434,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     if (!seg) {
         return;
     }
-    //printf("recursing segment\n");
+    printf("recursing segment\n");
     CG_current_segment = seg;
     //printf("here?\n");
     if (seg->name) {
@@ -443,7 +443,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     }
     var_info *info;
     int param_count = 0;
-    
+
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
         print_operation(operation);

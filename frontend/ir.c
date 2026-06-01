@@ -168,6 +168,7 @@ segment *create_segment(symbol_table *table) {
     tmp->left = tmp->right = NULL;
     tmp->iteration = 0;
     tmp->table = table;
+    tmp->scope_variables = create_hash_map(1024);
     tmp->pred = linked_list_new();
     tmp->operations = linked_list_new();
     return tmp;
@@ -322,10 +323,6 @@ int recurse_IR_tree(AST_node *node) {
                     char *name = IR_generate_label(n->func_def.identifier->primary_expr.identifier_name, IR_function_counter++);
                     frame *fr = create_named_frame(name);
                     var_info *old_info = symbol_table_get(node->func_def.function_block->table, n->func_def.identifier->primary_expr.identifier_name);
-                    printf("hi: %s\n", name);
-                    if (!old_info) {
-                        printf("I'm tired, boss...\n");
-                    }
                     var_info *new_info = create_var_info(old_info->nesting_depth, old_info->func_nesting_depth);
                     new_info->escaping = old_info->escaping;
                     new_info->kind = old_info->kind;
@@ -372,11 +369,6 @@ int recurse_IR_tree(AST_node *node) {
             current_frame_table = old_table;
             current_frame = old_frame;
             current_segment = old_segment;
-            lll = get_keys(node->table);
-            for (linked_list_node *lln = lll->head; lln != NULL; lln = lln->next) {
-                printf("%s, ", (char *) lln->data);
-            }
-            printf("\n");
             break;
         case A_VAR_DECL:
             name = node->var_decl.identifier->primary_expr.identifier_name;
@@ -391,7 +383,6 @@ int recurse_IR_tree(AST_node *node) {
                     if (node->var_decl.expr_stmt->kind == A_INDEX_EXPR) {
                         expr->type = P_DEREFERENCE;
                     }
-                    temp_counter++;
                     op = create_op(IR_VAR_DECL, id, expr, NULL);
                 } else {
                     id = create_operand(P_TEMP, temp_counter);
@@ -402,6 +393,7 @@ int recurse_IR_tree(AST_node *node) {
                     temp_counter++;
                     op = create_op(IR_ASSIGN, id, expr, NULL);
                     hash_map_insert(local_variables, name, id);
+                    hash_map_insert(current_segment->scope_variables, name, id);
                 }
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
@@ -437,6 +429,7 @@ int recurse_IR_tree(AST_node *node) {
             //printf("hi\n");
             op = create_op(IR_ALLOC, id, NULL, NULL);
             hash_map_insert(local_variables, name, id);
+            hash_map_insert(current_segment->scope_variables, name, id);
             linked_list_append(current_segment->operations, op);
             op = create_op(IR_POP_PARAM, create_operand(P_CONSTANT, node->array_decl.sizes->size * 8), create_operand(P_CONSTANT, 0), NULL);
             linked_list_append(current_segment->operations, op);
@@ -457,6 +450,7 @@ int recurse_IR_tree(AST_node *node) {
                 op->in_frame = current_frame;
                 op->in_seg = current_segment;
                 hash_map_insert(local_variables, name, id);
+                hash_map_insert(current_segment->scope_variables, name, id);
                 linked_list_append(current_segment->operations, op);
                 
                 op = create_op(IR_PARAM, create_operand(P_TEMP, id_temp), NULL, NULL);
@@ -688,7 +682,11 @@ int recurse_IR_tree(AST_node *node) {
             }
             if (node->assign_expr.identifier->kind == A_PRIMARY_EXPR) {
                 name = node->assign_expr.identifier->primary_expr.identifier_name;
-                if (hash_map_contains(local_variables, name)) {
+                if (hash_map_contains(current_segment->scope_variables, name)) {
+                    id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(current_segment->scope_variables, name))->constant);
+                    // printf("%s\n", name);
+                    op = create_op(IR_ASSIGN, id, expr, NULL);
+                } else if (hash_map_contains(local_variables, name)) {
                     id = create_operand(P_TEMP, ((IR_operand *) hash_map_get(local_variables, name))->constant);
                     //printf("%s\n", name);
                     op = create_op(IR_ASSIGN, id, expr, NULL);
@@ -887,7 +885,10 @@ int recurse_IR_tree(AST_node *node) {
             IR_operand *tmp = create_operand(P_TEMP, temp_counter);
             if (node->primary_expr.type == TYPE_IDENTIFIER) {
                 name = node->primary_expr.identifier_name;
-                if (hash_map_contains(local_variables, name)) {
+                printf("hej\n");
+                if (hash_map_contains(current_segment->scope_variables, name)) {
+                    return ((IR_operand *) hash_map_get(current_segment->scope_variables, name))->constant;
+                } else if (hash_map_contains(local_variables, name)) {
                     //printf("Prim done\n");
                     return ((IR_operand *) hash_map_get(local_variables, name))->constant; 
                 }

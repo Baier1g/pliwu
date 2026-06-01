@@ -165,6 +165,7 @@ struct segment {
     linked_list *pred;
     segment *left, *right;
     symbol_table *table;
+    hash_map *scope_variables;
     linked_list *operations;
 };
 
