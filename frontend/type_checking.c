@@ -129,7 +129,9 @@ data_type recurse_type(AST_node *node) {
             recurse_type(node->while_loop.block);
             break;
         case A_PRINT_STMT:
-            recurse_type(node->print_stmt.expression);
+            if (recurse_type(node->print_stmt.expression) == TYPE_VOID) {
+                type_to_error("Trying to print void type", node);
+            }
             break;
         case A_EXPR_STMT:
             recurse_type(node->expr_stmt.expression);

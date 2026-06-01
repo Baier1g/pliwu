@@ -353,14 +353,14 @@ void CG_var_address(var_info *var) {
     
     // intermediate, non-user variables have a nesting depth of -1 by default.
     // Since they can only be accessed from the frame they were created in, their real nesting depth is CG_frame_depth
-    if (var->nesting_depth == -1) {
-        var->nesting_depth = CG_frame_depth;
+    if (var->func_nesting_depth == -1) {
+        var->func_nesting_depth = CG_frame_depth;
     }
     //printf("var: %d, frame_depth: %d, offset: %d\n", var->nesting_depth, CG_frame_depth, var->offset);
-    if (var->nesting_depth == CG_frame_depth) {
+    if (var->func_nesting_depth == CG_frame_depth) {
         in_frame = 1;
     } else {
-        int depth_diff = CG_frame_depth - var->nesting_depth;
+        int depth_diff = CG_frame_depth - var->func_nesting_depth;
         linked_list_append(CG_generated_code, "\tlea rax, [rbp+16]\n\tmov rax, qword[rax]\n");
         depth_diff--;
         while (depth_diff > 0) {                    //rax + 16
@@ -377,6 +377,8 @@ void CG_var_address(var_info *var) {
         } else {
             sprintf(buffer, "\tlea rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
         }
+    } else if (var->kind == ID_FUNC_PARAM) {
+        sprintf(buffer, "\tlea rax, qword[rax-%d]\t\t; Load the value of a variable into rax\n", var_offset);
     } else {
         // Function parameter
         var_offset = -(var_offset);
@@ -415,12 +417,12 @@ CG_operand *CG_create_operand(CG_operand_type type, CG_operand_mode mode, void *
 void CG_create_static_link(IR_operation *operation) {
     var_info *var = (var_info *) symbol_table_get(operation->in_seg->table, operation->arg2->call->name);
     //printf("Calling %s, we are at frame depth %d and the called function has depth %d\n", node->call_expr.identifier->primary_expr.identifier_name, frame_depth, var->nesting_depth);
-    if (CG_frame_depth == var->nesting_depth) {
+    if (CG_frame_depth == var->func_nesting_depth) {
         linked_list_append(CG_generated_code, "\tlea rax, [rbp]\t\t\t; Calling a nested function, static link is calling functions rbp\n");
     } else {
         linked_list_append(CG_generated_code, "\tlea rax, [rbp+16]\t\t\t; Load the address containing the address of the static link for link traversal\n\tmov rax, qword[rax]\t\t\t; Dereference rax to get the address of the static link\n");
         //print_rax();
-        int depth_diff = (CG_frame_depth - 1) - var->nesting_depth;
+        int depth_diff = (CG_frame_depth - 1) - var->func_nesting_depth;
         while (depth_diff > 0) {                    //rax + 16
             linked_list_append(CG_generated_code, "\tlea rax, [rax+16]\n\tmov rax, qword[rax]\t\t\t\t; Traversing static link\n");
             //print_rax();
@@ -814,7 +816,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
     recurse_segment(seg->right, graph);
 }
 
-void CG_find_offset(segment *seg) {
+void CG_find_offset(segment *seg, linked_list *ll) {
     if (!seg) {
         return;
     }
@@ -826,21 +828,29 @@ void CG_find_offset(segment *seg) {
         if (op->op == IR_GOTO) {
             return;
         }
-        if (op->op != IR_VAR_DECL || op->arg1->type == P_TEMP) {
+        if (op->op != IR_VAR_DECL) {
             continue;
         }
+        if (op->arg1->type == P_TEMP) {
+            if (op->arg2->type == P_VARIABLE) {
+                char *name = op->arg2->variable_name;
+                var_info *info = (var_info *) symbol_table_get(seg->table, name);
+                if (info->kind == ID_FUNC_PARAM && info->escaping) {
+                    printf("offset: %d, escape: %d\n", info->offset, info->escaping);
+                    linked_list_append(ll, info);
+                }
+            }
+            continue;
+        }
+
         char *name = op->arg1->variable_name;
         var_info *info = (var_info *) symbol_table_get(seg->table, name);
-        if (info->kind == ID_FUNC_PARAM) {
-            continue;
-        }
-        //print_operation(op);
         
         info->offset = 8 * CG_offset;
         CG_offset++;
     }
-    CG_find_offset(seg->left);
-    CG_find_offset(seg->right);
+    CG_find_offset(seg->left, ll);
+    CG_find_offset(seg->right, ll);
     return;
 }
 
@@ -999,7 +1009,15 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
     CG_frame_depth++;
     for (linked_list_node *lln = program->nested_frames->head; lln != NULL; lln = lln->next) {
         CG_offset = ((frame *) lln->data)->regs_used;
-        CG_find_offset(((frame *) lln->data)->segment);
+        linked_list *ll = linked_list_new();
+        CG_find_offset(((frame *) lln->data)->segment, ll);
+        int tmp = CG_offset + 1;
+        for (linked_list_node *lln = ll->head; lln != NULL; lln = lln->next) {
+            var_info *v = (var_info *) lln->data;
+            v->offset = tmp * 8;
+            tmp++;
+        }
+        linked_list_delete(ll);
         ((frame *) lln->data)->max_offset = CG_offset * 8;
         code_emit(emitted_code, (frame *) lln->data, graph);
     }
@@ -1043,7 +1061,15 @@ void codegen(linked_list *ll, frame *program, RA_graph *graph) {
     if (CG_offset == 0) {
         CG_offset = 1;
     }
-    CG_find_offset(((frame *) program->nested_frames->head->data)->segment);
+    linked_list *params = linked_list_new();
+    CG_find_offset(((frame *) program->nested_frames->head->data)->segment, params);
+    int tmp = CG_offset + 1;
+    for (linked_list_node *lln = params->head; lln != NULL; lln = lln->next) {
+        var_info *v = (var_info *) lln->data;
+        v->offset = tmp * 8;
+        tmp++;
+    }
+    linked_list_delete(params);
     ((frame *) program->nested_frames->head->data)->max_offset = CG_offset * 8;
     char *stack_mov = (char *) calloc(128, sizeof(char));
     sprintf(stack_mov, "\tsub rsp, %d\t\t\t\t; Move the stackpointer beyond the global variables\n", ((frame *) program->nested_frames->head->data)->max_offset);
