@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 
-set -euo pipefail
+set -eo pipefail
 
 TEST_ROOT="tests"
+
+if [[ -n "$1" ]]; then
+    TEST_ROOT=$(find . -type d -name "$1")
+fi
 
 FAIL=0
 

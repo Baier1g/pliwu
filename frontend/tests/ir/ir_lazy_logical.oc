@@ -1,0 +1,35 @@
+func main() {
+
+    print("= the following tests should never print >>evaluated true/false<<");
+    if (false && t()) {} else {print("and skip");}
+    if (true  || t()) {print("or skip");}
+
+    print("== larger mix tests");
+    if (false && (f() || t())) {
+        print("failure");
+    } else {
+        print("success");
+    }
+
+    if (true && true && true && false && t() && t() && t()) {
+        print("failure");
+    } 
+    else {
+        print("success");
+    }
+    if (false || false && true || true || t() || f() || t()) {
+        print("failure");
+    } else {
+        print("success");
+    }
+
+
+    func t() -> bool {
+        print("evaluated true");
+        return true;
+    }
+    func f() -> bool {
+        print("evaluated false");
+        return false;
+    }
+}

@@ -20,10 +20,16 @@ all: flexbison
 	$(CC) $(WFLAGS) -o $(OUT) $(FILES)
 	bash run.sh $*
 
+# check tests/ folder
 tester:
 	@make flexbison 					> /dev/null 2>&1
 	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
 	@bash tester.sh
+# check specific folder
+tester.%:
+	@make flexbison 					> /dev/null 2>&1
+	@$(CC) $(WFLAGS) -o $(OUT) $(FILES)	> /dev/null 2>&1
+	@bash tester.sh $*
 
 testerFail:
 	@make flexbison 					> /dev/null 2>&1

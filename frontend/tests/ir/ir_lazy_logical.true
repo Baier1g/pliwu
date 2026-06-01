@@ -1,0 +1,7 @@
+= the following tests should never print >>evaluated true/false<<
+and skip
+or skip
+== larger mix tests
+success
+success
+success
