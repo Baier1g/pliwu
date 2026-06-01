@@ -1,0 +1,28 @@
+func main() {
+    foo();
+    bar();
+    baz();
+
+    func foo() {
+        p();
+
+        func p() {
+            print("from foo");
+        }
+    }
+    func bar() {
+        p();
+
+        func p() {
+            print("from bar");
+        }
+    }
+}
+
+func baz() {
+        p();
+
+        func p() {
+            print("from baz");
+        }
+    }
