@@ -1,0 +1,85 @@
+# new vs old test
+raw data for tests.
+
+# regcomp_count
+## new
+real    0m1.713s
+user    0m1.708s
+sys     0m0.002s
+
+real    0m1.742s
+user    0m1.737s
+sys     0m0.001s
+
+real    0m1.762s
+user    0m1.755s
+sys     0m0.001s
+
+## old
+real    0m1.562s
+user    0m1.556s
+sys     0m0.001s
+
+real    0m1.525s
+user    0m1.517s
+sys     0m0.002s
+
+real    0m1.579s
+user    0m1.574s
+sys     0m0.000s
+
+
+# regcomp_simple
+## new
+real    0m3.476s
+user    0m3.470s
+sys     0m0.000s
+
+real    0m3.492s
+user    0m3.487s
+sys     0m0.000s
+
+real    0m3.506s
+user    0m3.499s
+sys     0m0.001s
+
+# old
+real    0m6.593s
+user    0m6.585s
+sys     0m0.002s
+
+real    0m6.598s
+user    0m6.595s
+sys     0m0.000s
+
+real    0m8.999s
+user    0m8.991s
+sys     0m0.002s
+
+
+# regcomp_small
+## new
+real    0m1.321s
+user    0m1.317s
+sys     0m0.000s
+
+real    0m1.349s
+user    0m1.335s
+sys     0m0.001s
+
+real    0m1.339s
+user    0m1.332s
+sys     0m0.002s
+
+## old
+real    0m2.019s
+user    0m2.012s
+sys     0m0.001s
+
+real    0m2.009s
+user    0m2.004s
+sys     0m0.001s
+
+real    0m2.002s
+user    0m1.993s
+sys     0m0.001s

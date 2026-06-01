@@ -1,0 +1,8 @@
+func main() {
+    int count = 0;
+    int result = 0;
+    while(count < 2147483647) {
+        count = count + 1;
+    }
+    print(result);
+}

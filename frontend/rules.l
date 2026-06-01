@@ -182,9 +182,9 @@ REST                \n|.
 }
 
 <INITIAL>{INTEGER} {
-    //printf("%s \tinteger\n", yytext);
     increment_counter(yyleng);
     yylval.ival = atoi(yytext);
+    //printf("%s; %d \tinteger\n", yytext, yylval.ival);
     return T_INT;
 }
 

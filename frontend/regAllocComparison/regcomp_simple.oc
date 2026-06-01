@@ -12,7 +12,7 @@ func regs() -> int {
     int e = 1;
     int f = 1;
     int r = 0;
-    while(count < 100000000000) {
+    while(count < 2147483647) {
         r = 0;
         r = r+a;
         r = r+b;
