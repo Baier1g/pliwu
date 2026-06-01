@@ -71,7 +71,7 @@ void create_print_char_array(void) {
 	xor rcx, rcx                        ; Clear rcx\n\
 	mov byte[r10], 0xa                  ; Move a newline onto the stack\n\
 	dec r10                             ; Decrement print pointer\n\
-	mov r9, qword[rbp-40]				; Move the base address of the array to be printed into r9\n\
+	lea r9, [r9 - 16]				    ; Move the base address of the array to be printed into r9\n\
 	lea rax, [r9 + 32]                  ; Load the address of the first element of the array into rax\n\
 	mov r8, r11                         ; Move the length of the arrayu into r8\n\
 	imul r8, 8                          ; Multiply length by 8 to get amount of bytes used for elements (since everything is quadwords)\n\
@@ -133,7 +133,7 @@ void IR_create_print_string(void) {
     dec rcx                             ; Decrement rcx to get rid of the null character\n\
 	sys_write 1, r11, rcx               ; Write to input string terminal\n\
 	mov r11, qword[newline]             ; Move a newline into r11\n\
-	mov [output], r11\n                 ; Put newline in output\n\
+	mov [output], r11                   ; Put newline in output\n\
 	sys_write 1, output, 1              ; Print newline\n\
 	pop r11                             ;\n\
 	mov rsp, rbp                        ; EPILOGUE\n\
@@ -163,8 +163,7 @@ _end_print_bool:\n\
 	ret\n\n");
 }
 
-void IR_create_print_int(void)
-{
+void IR_create_print_int(void) {
     // Print prelude
     linked_list_append(CG_generated_code, \
     "print_int:\n\tpush rbp\n\tmov rbp, rsp\n\tpush r8\n\tpush r9\n\tpush r10\n\tpush r11\n\tpush rdi\n\tmov rdi, output\n\tlea r10, [rsp-1]\n\txor rcx, rcx\n");
@@ -442,13 +441,12 @@ void recurse_segment(segment *seg, RA_graph *graph) {
         linked_list_append(CG_generated_code, seg->name);
         linked_list_append(CG_generated_code, ":\n");
     }
-    //printf("out\n");
     var_info *info;
     int param_count = 0;
-
+    
     for (linked_list_node *lln = seg->operations->head; lln != NULL; lln = lln->next) {
         IR_operation *operation = (IR_operation *) lln->data;
-        //print_operation(operation);
+        print_operation(operation);
         IR_operation *prev;
         IR_op_code code = operation->op;
         //printf("op_code: %s\n", IR_op_code_to_string(code));
@@ -760,6 +758,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                     i++;
                 }
                 CG_create_static_link(operation);
+                printf("yup\n");
                 sprintf(name, "\tcall %s\t\t\t\t; Call function\n\tadd rsp, 8\t\t\t\t; Yeet the static link\n", operation->arg2->call->name);
                 linked_list_append(CG_generated_code, name);
                 while (i > param_count) {
@@ -903,12 +902,36 @@ void CG_recurse_initialised_array(char* buffer, linked_list *values, int depth, 
     if (current_depth == depth) {
         char *elem = (char *) calloc(10000, sizeof(char));
         for (linked_list_node *lln = values->head; lln != NULL; lln = lln->next) {
-            if (((AST_node *) lln->data)->primary_expr.type == TYPE_INT) {
-                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.integer_value);
-            } else if (((AST_node *) lln->data)->primary_expr.type == TYPE_CHAR) {
-                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.char_value);
-            } else if (((AST_node *) lln->data)->primary_expr.type == TYPE_BOOL) {
-                sprintf(elem, "%d,", ((AST_node *)lln->data)->primary_expr.bool_value);
+            AST_node *node = ((AST_node *) lln->data);
+            if (node->primary_expr.type == TYPE_INT) {
+                sprintf(elem, "%d,", node->primary_expr.integer_value);
+            } else if (node->primary_expr.type == TYPE_CHAR) {
+                sprintf(elem, "%d,", node->primary_expr.char_value);
+            } else if (node->primary_expr.type == TYPE_BOOL) {
+                sprintf(elem, "%d,", node->primary_expr.bool_value);
+            } else if (node->primary_expr.type == TYPE_STRING) {
+                char *name = IR_generate_label("_string", CG_string_counter++);
+                sprintf(elem, "\t%s dq %d\n\t%s_elem db \"", name, node->primary_expr.string.length, name);
+                int counter = 0;
+                char c;
+                while (counter < node->primary_expr.string.length) {
+                    c = node->primary_expr.string.value[counter++];
+                    if (c == '\n' || c == '\t') {
+                        sprintf(name, "\", %d, \"", (int) c);
+                    } else {
+                        sprintf(name, "%c", c);
+                    }
+                    strcat(elem, name);
+                }
+                if (c == '\n' || c == '\t' && lln->next) {
+                    strcat(elem, "\n");
+                } else {
+                    strcat(elem, "\"");
+                    if (lln->next) {
+                        strcat(elem, "\n");
+                    }
+                }
+                free(name);
             }
             strcat(buffer, elem);
         }
@@ -934,12 +957,27 @@ void code_emit(linked_list *emitted_code, frame *program, RA_graph *graph) {
         } else {
             int total_length = 1;
             char* name = IR_generate_label("_array", CG_array_counter++);
-            if (node->array_decl.type == TYPE_INT || node->array_decl.type == TYPE_STRING) {
+            if (node->array_decl.type != TYPE_STRING) {
                 sprintf(buffer, "\t%s dq ", name);
+                CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             } else {
-                sprintf(buffer, "\t%s dq ", name);
+                int tmp_str_counter = CG_string_counter;
+                CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
+                char *array = (char *) calloc(10000, sizeof(char));
+                sprintf(array, "\n\t%s dq ", name);
+                while (tmp_str_counter < CG_string_counter) {
+                    free(name);
+                    name = (char *) calloc(32, sizeof(char));
+                    sprintf(name, "%s", IR_generate_label("_string", tmp_str_counter++));
+                    strcat(array, name);
+                    if (tmp_str_counter != CG_string_counter) {
+                        strcat(array, ", ");
+                    }
+                }
+                free(name);
+                strcat(buffer, array);
+                free(array);
             }
-            CG_recurse_initialised_array(buffer, node->array_decl.values, node->array_decl.sizes->size, 1, node);
             strcat(buffer, "\n");
             //printf("%s\n", buffer);
             linked_list_append(data_section, buffer);

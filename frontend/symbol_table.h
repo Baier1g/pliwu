@@ -20,6 +20,13 @@ void destroy_symbol_table(symbol_table *);
  * Returns 0 upon succesful insertion, -1 otherwise
  */
 int symbol_table_insert(symbol_table *, char *, void *);
+
+/*
+ * Deletes the entry in the symbol table associated with the supplied key 
+ * Returns 0 upon succesful deletion, -1 otherwise
+ */
+int symbol_table_delete(symbol_table *, char *);
+
 void *symbol_table_get(symbol_table *, char *);
 /*
  * recursively checks if the key already exists in the given symbol table

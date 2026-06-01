@@ -79,6 +79,6 @@ FIXES:
 1. Allow and implement string arrays
 2. Fix char printer [EVERYTHING IS QUADWORDS]
 3. Implement bool printer [Works now]
-4. Fix _print_char_array
+4. Fix _print_char_array [FIXED]
 5. Implement multidimensional functionality for array printers
 6. Don't print NULL characters in char arrays [FIXED]

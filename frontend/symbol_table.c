@@ -17,6 +17,16 @@ int symbol_table_insert(symbol_table *table, char *key, void *value) {
     return hash_map_insert(table->map, key, value);
 }
 
+int symbol_table_delete(symbol_table *table, char *key) {
+    if (!table) {
+        return -1;
+    }
+    if (hash_map_get(table->map, key)) {
+        return hash_map_delete(table->map, key);
+    }
+    return symbol_table_delete(table->outer, key);
+}
+
 void *symbol_table_get(symbol_table *table, char* key) {
     if (!table) {
         return NULL;
@@ -39,5 +49,12 @@ int symbol_table_contains(symbol_table *table, char *key) {
 }
 
 linked_list *get_keys(symbol_table *table) {
-    return table->map->keys;
+    linked_list *key = linked_list_new();
+    while (table) {
+        for (linked_list_node *lln = table->map->keys->head; lln != NULL; lln = lln->next) {
+            linked_list_append(key, lln->data);
+        }
+        table = table->outer;
+    }
+    return key;
 }
