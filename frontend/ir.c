@@ -10,6 +10,7 @@ int while_counter = 0;
 int IR_string_counter = 0;
 int IR_array_counter = 0;
 int IR_logic_counter = 0;
+int IR_function_counter = 0;
 
 
 char *IR_op_code_to_string(IR_op_code op) {
@@ -255,10 +256,14 @@ int recurse_IR_tree(AST_node *node) {
                 //printf("Made it to %s in module\n", kind_enum_to_string(((AST_node *)lln->data)->kind));
                 if (((AST_node *) lln->data)->kind == A_FUNC_DEF) {
                     n = (AST_node *) lln->data;
-                    char *name = n->func_def.identifier->primary_expr.identifier_name;
-                    //printf("got name\n");
+                    if (strcmp(n->func_def.identifier->primary_expr.identifier_name, "main") == 0) {
+                        name = n->func_def.identifier->primary_expr.identifier_name;
+                    } else {
+                        name = IR_generate_label(n->func_def.identifier->primary_expr.identifier_name, IR_function_counter++);
+                    }
+                    printf("got name: %s\n", name);
                     frame *fr = create_named_frame(name);
-                    //printf("Created frame\n");
+                    printf("Created frame: %d\n", fr);
                     linked_list_append(current_frame->nested_frames, fr);
                     //printf("appended frame\n");
                     symbol_table_insert(current_frame_table, name, fr);
@@ -275,7 +280,16 @@ int recurse_IR_tree(AST_node *node) {
             current_segment = old_segment;
             break;
         case A_FUNC_DEF:
-            frm = symbol_table_get(current_frame_table, node->func_def.identifier->primary_expr.identifier_name);
+            int length = strlen(node->func_def.identifier->primary_expr.identifier_name);
+            for (linked_list_node *lln = current_frame->nested_frames->head; lln != NULL; lln = lln->next) {
+                frame *fram = (frame *) lln->data;
+                //printf("%s\n", (char *) ((frame *) lln->data)->name);
+                if (strncmp(node->func_def.identifier->primary_expr.identifier_name, (char *) ((frame *) lln->data)->name, length) == 0) {
+                    label1 = (char *) ((frame *) lln->data)->name;
+                    break;
+                }
+            }
+            frm = symbol_table_get(current_frame_table, label1);
             frm->segment = create_segment(node->func_def.function_block->table);
             sym = create_symbol_table(current_frame_table, current_frame_table->global);
             old_table = current_frame_table;
@@ -287,13 +301,12 @@ int recurse_IR_tree(AST_node *node) {
             for (linked_list_node *lln = node->func_def.function_block->block.stmt_list->head; lln != NULL; lln = lln->next) {
                 AST_node *n;
                 if ((n = ((AST_node *) lln->data))->kind == A_FUNC_DEF) {
-                    char *name = n->func_def.identifier->primary_expr.identifier_name;
+                    char *name = IR_generate_label(n->func_def.identifier->primary_expr.identifier_name, IR_function_counter++);
                     frame *fr = create_named_frame(name);
                     linked_list_append(current_frame->nested_frames, fr);
                     symbol_table_insert(current_frame_table, name, fr);
                 }
             }
-            
             tmp = local_variables;
 
             
@@ -577,11 +590,19 @@ int recurse_IR_tree(AST_node *node) {
                     if (variable->ast_node && variable->ast_node->kind == A_ARRAY_DECL) {
                         AST_node *array_node = variable->ast_node;
                         if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
+                            printf("arr: %d, index: %d\n", array_node->array_decl.sizes->size, node->print_stmt.expression->indexing.indices->size);
                             array_dim = array_node->array_decl.sizes->size - node->print_stmt.expression->indexing.indices->size;
                         } else {
                             array_dim = array_node->array_decl.sizes->size;
                         }
                     }
+                }
+            } else if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
+                var_info *variable = symbol_table_get(node->table, node->print_stmt.expression->indexing.identifier->primary_expr.identifier_name);
+                AST_node *array_node = variable->ast_node;
+                if (node->print_stmt.expression->kind == A_INDEX_EXPR) {
+                    printf("arr: %d, index: %d\n", array_node->array_decl.sizes->size, node->print_stmt.expression->indexing.indices->size);
+                    array_dim = array_node->array_decl.sizes->size - node->print_stmt.expression->indexing.indices->size;
                 }
             }
             op = create_op(IR_PRINT, expr, create_operand(P_CONSTANT, type), create_operand(P_CONSTANT, array_dim));
@@ -1371,7 +1392,7 @@ void liveness(frame *frm) {
     linked_list_delete(new_segments);
 
     // Liveness analysis of nested frames
-    printf("%d\n", iteration);
+    //printf("%d\n", iteration);
     for (linked_list_node *lln = frm->nested_frames->head; lln != NULL; lln = lln->next) {
         liveness((frame *) lln->data);
     }

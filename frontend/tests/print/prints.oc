@@ -7,7 +7,7 @@ func main() {
     int intarr[] = {1,2,3};
     char chararr[] = {'a', 'b', 'c'};
     bool boolarr[] = {true, false, true};
-    //string stringarr[] = {"this", "was", "a", "triumph!"};
+    string stringarr[] = {"this", "was", "a", "triumph!"};
     print("intarray");
     print(intarr[0]);
     print(intarr[2]);
@@ -20,6 +20,6 @@ func main() {
     print(boolarr[0]);
     print(boolarr[2]);
 
-    //print(stringarr[0]);
-    //print(stringarr[3]);
+    print(stringarr[0]);
+    print(stringarr[3]);
 }
