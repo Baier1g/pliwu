@@ -8,7 +8,6 @@ typedef struct call_info call_info;
 
 linked_list *scope_errors;
 symbol_table *current_scope; // string name -> var_info
-linked_list *calls;          // list->data = ast_node
 short is_in_function = 0;
 short nesting_depth = 0;
 short func_nesting_depth = 0;
@@ -59,7 +58,7 @@ short recurse_scope(AST_node *node) {
     var_info *v;
     short l,r;
     l = r = 0;
-    //printf("scope: %s\n", kind_enum_to_string(node->kind));
+    printf("scope: %s\n", kind_enum_to_string(node->kind));
     switch(node->kind) {
         case A_PROGRAM:
             printf("scope.c::recurse_scope: entered with kind A_PROGRAM\n");
@@ -70,6 +69,30 @@ short recurse_scope(AST_node *node) {
             outer_table = current_scope;
             node->table = create_symbol_table(current_scope, current_scope->global);
             current_scope = node->table;
+            //find funcs
+            for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
+                if (((AST_node *) lln->data)->kind == A_FUNC_DEF) {
+                    AST_node* func_node = ((AST_node*) lln->data);
+                    if (strcmp(func_node->func_def.identifier->primary_expr.identifier_name, "main") == 0) {
+                        if (main_def == 0) {
+                            main_def += 1;
+                        } else {
+                            to_error("Multiple main functions defined", func_node);
+                        }
+                    }
+                    v = create_var_info(nesting_depth, func_nesting_depth);
+                    v->kind = ID_FUNCTION;
+                    v->num_params = func_node->func_def.parameters->size;
+                    v->ast_node = func_node;
+                    name = func_node->func_def.identifier->primary_expr.identifier_name;
+                    if (symbol_table_contains(current_scope, name)){
+                        to_error("function name already used", func_node);
+                    } else {
+                        symbol_table_insert(current_scope, name, v);
+                    }
+                }
+            }
+            //recurse block
             for (linked_list_node *lln = node->module.module_declarations->head; lln != NULL; lln = lln->next) {
                 recurse_scope((AST_node *) lln->data);
             }
@@ -78,15 +101,74 @@ short recurse_scope(AST_node *node) {
             nesting_depth--;
             break;
         case A_FUNC_DEF:
+            //check existance
+            name = node->func_def.identifier->primary_expr.identifier_name;
+            if (!symbol_table_contains(current_scope, name)) {
+                to_error("function defined in nested scope, not nested function scope", node);
+            }
+
+            //enter func
+            outer_table = current_scope;
+            node->table = create_symbol_table(current_scope, current_scope->global);
+            current_scope = node->table;
+            func_nesting_depth++;
+            nesting_depth++;
+            short was_in = is_in_function;
+            is_in_function = 1;
+            
+            //find funcs
+            for (linked_list_node *lln = node->func_def.function_block->block.stmt_list->head; lln != NULL; lln = lln->next) {
+                if (((AST_node *) lln->data)->kind == A_FUNC_DEF) {
+                    AST_node * func_node = (AST_node *) lln->data;
+                    v = create_var_info(nesting_depth, func_nesting_depth);
+                    v->kind = ID_FUNCTION;
+                    v->num_params = func_node->func_def.parameters->size;
+                    v->ast_node = func_node;
+                    name = func_node->func_def.identifier->primary_expr.identifier_name;
+                    if (symbol_table_contains(current_scope, name)){
+                        to_error("function name already used", func_node);
+                    } else {
+                        symbol_table_insert(current_scope, name, v);
+                    }
+                }
+            }
+
+            //add params
+            for (linked_list_node *lln = node->func_def.parameters->head; lln != NULL; lln = lln->next) {
+                recurse_scope(lln->data);
+            }
+            nesting_depth--; //this fakes the nesting depth as parameters are in a separate table; recursing block increments depth. ensures static link traversal works.
+
+            //recurse block
+            r = recurse_scope(node->func_def.function_block);
+
+            if (node->func_def.return_type == TYPE_VOID && !r) {
+                //Ensure epilogue
+                linked_list_append(node->func_def.function_block->block.stmt_list, create_unary_node(0, 0, A_RETURN_STMT, NULL));
+            } else {
+                if (!r) {
+                    to_error("Function missing return statement", node);
+                }
+            }
+
+            //exit func
+            current_scope = outer_table;
+            func_nesting_depth--;
+            is_in_function = was_in;
+            break;
+            //----
+
             // [x] check name
             // [x] name -> symboltable
             v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_FUNCTION;
             v->num_params = node->func_def.parameters->size;
             v->ast_node = node;
-            if (symbol_table_insert(current_scope, node->func_def.identifier->primary_expr.identifier_name, v)){
+            if (symbol_table_contains(current_scope, node->func_def.identifier->primary_expr.identifier_name)){
                 to_error("function name already used", node);
                 return 0;
+            } else {
+                symbol_table_insert(current_scope, node->func_def.identifier->primary_expr.identifier_name, v);
             }
             if (strcmp(node->func_def.identifier->primary_expr.identifier_name, "main") == 0) {
                 if (nesting_depth != 1) {
@@ -99,7 +181,7 @@ short recurse_scope(AST_node *node) {
             outer_table = current_scope;
             current_scope = create_symbol_table(current_scope, current_scope->global);
             node->table = current_scope;
-            short was_in = is_in_function;
+            was_in = is_in_function;
             is_in_function = 1;
             func_nesting_depth++;
             nesting_depth++;
@@ -241,9 +323,7 @@ short recurse_scope(AST_node *node) {
                 if (symbol_table_contains(current_scope, name)){
                     //is a func param; check escaping
                     var_info *v = (var_info *) symbol_table_get(current_scope, name);
-                    printf("name: %s\n", name);
                     if (v->func_nesting_depth != func_nesting_depth) {
-                        puts("name tttt");
                         v->escaping = 1;
                     }
                     break;
@@ -278,7 +358,16 @@ short recurse_scope(AST_node *node) {
             
             break;
         case A_CALL_EXPR:
-            linked_list_append(calls, create_call_info(node, current_scope));
+            var_info *v = (var_info*) symbol_table_get(current_scope, node->call_expr.identifier->primary_expr.identifier_name);
+            if (!v) {
+                to_error("call to undefined function", node);
+            } else if (v->kind != ID_FUNCTION) {
+                to_error("tried to call a non-function", node);
+            }
+            if (node->call_expr.arguments->size != v->num_params) {
+                to_error("Number of arguments does not match function definition", node);
+            }
+
             for (linked_list_node *lln = node->call_expr.arguments->head; lln != NULL; lln = lln->next) {
                 recurse_scope(lln->data);
             }
@@ -315,7 +404,6 @@ short recurse_scope(AST_node *node) {
 int scopecheck(AST_node *root, linked_list *ll){
     current_scope = create_symbol_table(NULL, NULL);
     current_scope->global = current_scope;
-    calls = linked_list_new();
     scope_errors = ll;
     root->table = current_scope;
 
@@ -324,30 +412,8 @@ int scopecheck(AST_node *root, linked_list *ll){
         recurse_scope((AST_node *) lln->data);
     }
 
-    //scope check calls for out of order definitions
-    for (linked_list_node *lln = calls->head; lln != NULL; lln = lln->next) {
-        //printf("calls\n");
-        call_info *c = ((call_info *) lln->data);
-        AST_node *node = c->node;
-        var_info *v = symbol_table_get(c->called_scope, node->call_expr.identifier->primary_expr.identifier_name);
-        if (!v) {
-            to_error("call to undefined function", c->node);
-            continue;
-        }
-        if (v->kind != ID_FUNCTION) {
-            to_error("tried to call a variable", c->node);
-            continue;
-        }
-        if (node->call_expr.arguments->size != v->num_params){
-            to_error("Number of arguments does not match function definition", c->node);
-            continue;
-        }
-    }
-    //printf("calls done\n");
     if (main_def == 0) {
         to_error("Missing main function definition", NULL);
-    } else if (main_def > 1) {
-        to_error("Multiple definitions of main", NULL);
     }
 
     return ll->size;
