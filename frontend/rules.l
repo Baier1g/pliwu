@@ -79,7 +79,7 @@ REST                \n|.
         if (yytext[1] == 'n') {yylval.cval = '\n';}
         if (yytext[1] == 't') {yylval.cval = '\t';}
     } else {
-        yylval.cval = yytext[0];
+        yylval.cval = yytext[1];
     }
     if (yytext[0] == '\n') {
         increment_line();
