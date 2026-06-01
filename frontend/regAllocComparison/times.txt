@@ -3,16 +3,16 @@ raw data for tests.
 
 # regcomp_count
 ## new
-real    0m1.713s
-user    0m1.708s
-sys     0m0.002s
-
-real    0m1.742s
-user    0m1.737s
+real    0m1.182s
+user    0m1.179s
 sys     0m0.001s
 
-real    0m1.762s
-user    0m1.755s
+real    0m1.255s
+user    0m1.251s
+sys     0m0.000s
+
+real    0m1.224s
+user    0m1.219s
 sys     0m0.001s
 
 ## old
@@ -31,17 +31,17 @@ sys     0m0.000s
 
 # regcomp_simple
 ## new
-real    0m3.476s
-user    0m3.470s
-sys     0m0.000s
+real    0m2.002s
+user    0m1.986s
+sys     0m0.005s
 
-real    0m3.492s
-user    0m3.487s
-sys     0m0.000s
+real    0m2.001s
+user    0m1.992s
+sys     0m0.004s
 
-real    0m3.506s
-user    0m3.499s
-sys     0m0.001s
+real    0m2.019s
+user    0m2.006s
+sys     0m0.005s
 
 # old
 real    0m6.593s
@@ -59,17 +59,17 @@ sys     0m0.002s
 
 # regcomp_small
 ## new
-real    0m1.321s
-user    0m1.317s
-sys     0m0.000s
-
-real    0m1.349s
-user    0m1.335s
+real    0m1.543s
+user    0m1.538s
 sys     0m0.001s
 
-real    0m1.339s
-user    0m1.332s
-sys     0m0.002s
+real    0m1.596s
+user    0m1.590s
+sys     0m0.001s
+
+real    0m1.629s
+user    0m1.623s
+sys     0m0.001s
 
 ## old
 real    0m2.019s
