@@ -1,0 +1,25 @@
+func main() {
+    int d = 10;
+    string hello = "Henlo :)";
+    print(hello);
+    nested_function(d, 2, 3);
+
+    func nested_function(int a, int b, int c) -> void {
+        print(d);
+        int d = a + b + c;
+        print(d);
+        print(nesteder_function(d, b));
+        print(a);
+        print(b);
+        print(c);
+        print(d);
+
+        func nesteder_function(int e, int f) -> int {
+            a = e + f;
+            return a;
+        }
+        return;
+    }
+    print("Done!");
+    return;
+}
