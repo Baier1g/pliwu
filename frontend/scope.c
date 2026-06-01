@@ -58,7 +58,7 @@ short recurse_scope(AST_node *node) {
     var_info *v;
     short l,r;
     l = r = 0;
-    printf("scope: %s\n", kind_enum_to_string(node->kind));
+    //printf("scope: %s\n", kind_enum_to_string(node->kind));
     switch(node->kind) {
         case A_PROGRAM:
             printf("scope.c::recurse_scope: entered with kind A_PROGRAM\n");
@@ -210,15 +210,22 @@ short recurse_scope(AST_node *node) {
                 recurse_scope(node->var_decl.expr_stmt);
             }
             name = node->var_decl.identifier->primary_expr.identifier_name;
-            label = scope_generate_label(name, nesting_depth);
-            v = (var_info *) symbol_table_get(current_scope, label);
+            v = (var_info *) symbol_table_get(current_scope, name);
             if (v) {
-                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION) {
+                int failed = 0;
+                if (v->kind == ID_FUNC_PARAM || v->kind == ID_FUNCTION && v->func_nesting_depth == func_nesting_depth) {
                     to_error("Tried to redefine function or parameter", node);
+                    failed = 1;
                 } else if (v->nesting_depth == nesting_depth) {
                     to_error("Variable name already in use in this scope", node);
+                    failed = 1;
+                }
+                if (failed) {
+                    break;
                 }
             }
+            label = scope_generate_label(name, nesting_depth);
+            v = (var_info *) symbol_table_get(current_scope, label);
             v = create_var_info(nesting_depth, func_nesting_depth);
             v->kind = ID_VARIABLE;
             symbol_table_insert(current_scope, label, v);

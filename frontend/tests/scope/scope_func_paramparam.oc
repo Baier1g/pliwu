@@ -10,6 +10,7 @@ func main () {
 		}
 
 		func baz () {
+			int a = 2;
 			print(a);
 		}
 	}	

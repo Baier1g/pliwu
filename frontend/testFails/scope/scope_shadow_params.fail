@@ -1,0 +1,3 @@
+Bison read file with 8 lines and 104 characters
+scope checking: 
+scope_error on line 2: Tried to redefine function or parameter
