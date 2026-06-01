@@ -1,0 +1,7 @@
+func main() {
+    int b = 3;
+    int c = 5;
+    int a[b * c];
+    a[14] = 500;
+    print(a[14]);
+}

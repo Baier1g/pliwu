@@ -1,5 +1,4 @@
 int yarr = 500;
-main();
 
 func main() {
     test2();
@@ -56,7 +55,6 @@ func test2() {
                     j = j - j;
                 }
             } else {
-                i = j;
                 j = k - g;
             }
             print(g);

@@ -469,6 +469,9 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 //printf("henlo\n");
                 if (operation->arg1->type == P_TEMP || operation->arg1->type == P_REFERENCE) {
                     reg_color reg = (reg_color) graph->nodes[operation->arg1->constant]->color;
+                    if (operation->arg2->type == P_TEMP && reg == (reg_color) graph->nodes[operation->arg2->constant]->color) {
+                        continue;
+                    }
                     char *op1_reg = CG_reg_color_to_string(reg);
                     operand_type type = operation->arg2->type;
                     char *op2_reg;
@@ -589,7 +592,7 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 name = (char *) calloc(128, sizeof(char));
                 if (operation->arg2->type == P_DEREFERENCE) {
                     sprintf(name, "\tmov rax, qword[%s]\n", CG_reg_color_to_string((reg_color)arg2->color));
-                } else {
+                } else if (code == IR_DIV || (operation->arg2->type == P_TEMP && arg1->color != arg2->color)) {
                     sprintf(name, "\tmov rax, %s\n", CG_reg_color_to_string((reg_color) arg2->color));
                 }
                 linked_list_append(CG_generated_code, name);
@@ -602,6 +605,14 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                         sprintf(label, "\txor rdx, rdx\n%s qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color) arg3->color));
                     } else {
                         sprintf(label, "\txor rdx, rdx\n%s %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg3->color));
+                    }
+                } else if (operation->arg2->type == P_TEMP && arg1->color == arg2->color) {
+                    if (operation->arg3->type == P_DEREFERENCE) {
+                        sprintf(label, "%s %s, qword[%s]\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg2->color), CG_reg_color_to_string((reg_color)arg3->color));
+                    } else if (operation->arg3->type == P_CONSTANT) {
+                        sprintf(label, "%s %s, %ld\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg2->color),  operation->arg3->constant);
+                    } else {
+                        sprintf(label, "%s %s, %s\n", CG_IR_op_code_to_string(code), CG_reg_color_to_string((reg_color)arg2->color), CG_reg_color_to_string((reg_color)arg3->color));
                     }
                 } else {
                     if (operation->arg3->type == P_DEREFERENCE) {
@@ -616,9 +627,11 @@ void recurse_segment(segment *seg, RA_graph *graph) {
                 if (code == IR_DIV && CG_current_frame->func_params > 3) {
                     linked_list_append(CG_generated_code, "\tpop rdx\t\t\t\t\t; Restore value of function parameter\n");
                 }
-                name = (char *) calloc(128, sizeof(char));
-                sprintf(name, "\tmov %s, rax", CG_reg_color_to_string((reg_color) arg1->color));
-                linked_list_append(CG_generated_code, name);
+                if (code == IR_DIV || operation->arg2->type != P_TEMP || arg1->color != arg2->color || operation->arg1->type == P_DEREFERENCE) {
+                    name = (char *) calloc(128, sizeof(char));
+                    sprintf(name, "\tmov %s, rax", CG_reg_color_to_string((reg_color) arg1->color));
+                    linked_list_append(CG_generated_code, name);
+                }
                 break;
             case IR_EQUALS:
             case IR_NEQUALS:
