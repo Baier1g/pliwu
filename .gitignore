@@ -11,3 +11,4 @@ frontend/.gdb_history
 frontend/y.tab.h
 frontend/grammar.output
 frontend/oldout
+frontend/gen_asm_old.asm
