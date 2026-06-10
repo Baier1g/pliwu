@@ -12,8 +12,6 @@ This section will hold a list of the functionalities to be implemented.
 - Arithmetic and logical assignment operators (+=, -=, *=, /=, &=, |= and %= (module maybe not))
 - Postfix expression or library function for length of arrays (either length(arr) or arr.length)
 - Constants and enums
-- Multi-module functionality
-- Proper I/O to and from files, as well as allowing for the passing of string args to programs
 
 ## Fixes and other things lackluster
 This section focuses on parts of the language that are unfinished, has errors that need to be fixed or are just generally implemented with a subpar set of features
@@ -28,5 +26,13 @@ Todos for arrays:
 - Arrays cannot be returned from functions
 - Possibly allow for deep copies of arrays to be passed around, so the user can decide whether they want to pass by reference or by value
 
-### Testing framework
-The testing framework of OC is very lackluster at the moment. While it does work, there is not a large amount test files to run and most of the ones that are implemented with the framework lack conciseness and direction. 
+### Test suite maturity
+The test suite for OC features is currently in its infancy. While it does work, there is not a large amount test files to run and most of the ones that are implemented with the framework lack conciseness and direction. 
+
+
+## Features
+This section describes features to be implemented and plans for these
+
+### Multi-module functionality
+
+### Proper I/O to and from files, as well as allowing for the passing of string args to programs
