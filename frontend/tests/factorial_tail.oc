@@ -1,0 +1,17 @@
+func main (){
+    print("hello world");
+    print(factorial(4, 1));
+}
+
+func factorial(int i, int curr) -> int {
+    if (i == 1) {
+        return curr;
+    } else {
+        print("curr");
+        print(curr);
+        print("i:");
+        print(i);
+        return factorial(i-1, curr*i);
+    }
+    return 1;
+}
